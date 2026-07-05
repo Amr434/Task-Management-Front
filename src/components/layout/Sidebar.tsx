@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { ChevronDown, ChevronRight, Plus, CheckSquare, Network, MoreHorizontal } from 'lucide-react';
-import { getSpaces, deleteSpace } from '@/features/spaces/api';
+import { ChevronDown, ChevronRight, Plus, CheckSquare, Network, MoreHorizontal, Pencil, Link2, Copy, Trash2 } from 'lucide-react';
+import { getSpaces, deleteSpace, duplicateSpace } from '@/features/spaces/api';
 import { getProjectsBySpace } from '@/features/projects/api';
 import { Space } from '@/features/spaces/types';
 import { Project } from '@/features/projects/types';
@@ -23,6 +23,21 @@ export const Sidebar = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [projectModalSpace, setProjectModalSpace] = useState<{ id: number; name: string } | null>(null);
+  const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
+  const [editingSpace, setEditingSpace] = useState<Space | null>(null);
+  const [duplicatingId, setDuplicatingId] = useState<number | null>(null);
+
+  // Close the space menu on any outside click. Only listen while a menu is open,
+  // and defer registration by a tick so the click that opened it doesn't close it.
+  useEffect(() => {
+    if (activeDropdown === null) return;
+    const close = () => setActiveDropdown(null);
+    const id = window.setTimeout(() => document.addEventListener('click', close), 0);
+    return () => {
+      window.clearTimeout(id);
+      document.removeEventListener('click', close);
+    };
+  }, [activeDropdown]);
 
   useEffect(() => {
     getSpaces().then(data => {
@@ -58,8 +73,8 @@ export const Sidebar = () => {
     setIsModalOpen(false);
   };
 
-  const openCreateProject = (space: Space, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const openCreateProject = (space: Space, e?: React.MouseEvent) => {
+    e?.stopPropagation();
     setProjectModalSpace({ id: space.id, name: space.name });
   };
 
@@ -86,6 +101,36 @@ export const Sidebar = () => {
     } catch (err) {
       console.warn("Failed to delete space", err instanceof Error ? err.message : String(err));
       alert("Failed to delete space");
+    }
+  };
+
+  const handleEditSpace = (space: Space) => {
+    setActiveDropdown(null);
+    setEditingSpace(space);
+  };
+
+  const handleSpaceUpdated = (updated: Space) => {
+    setSpaces(prev => prev.map(s => (s.id === updated.id ? updated : s)));
+    setEditingSpace(null);
+  };
+
+  const handleCopyLink = (spaceId: number) => {
+    setActiveDropdown(null);
+    navigator.clipboard?.writeText(`${window.location.origin}/spaces/${spaceId}`)
+      .catch(() => {/* clipboard unavailable (e.g. http) — ignore */});
+  };
+
+  const handleDuplicateSpace = async (space: Space) => {
+    setActiveDropdown(null);
+    setDuplicatingId(space.id);
+    try {
+      const newSpace = await duplicateSpace(space);
+      setSpaces(prev => [...prev, newSpace]);
+    } catch (err) {
+      console.warn("Failed to duplicate space", err instanceof Error ? err.message : String(err));
+      alert("Failed to duplicate space");
+    } finally {
+      setDuplicatingId(null);
     }
   };
 
@@ -136,9 +181,39 @@ export const Sidebar = () => {
                       <button className="action-btn" onClick={(e) => openCreateProject(space, e)} title="Add project">
                         <Plus size={15} />
                       </button>
-                      <button className="action-btn" onClick={(e) => handleDeleteSpace(space.id, e)} title={t.deleteSpace}>
-                        <MoreHorizontal size={16} />
-                      </button>
+                      <div className="dropdown-container" style={{ position: 'relative' }}>
+                        <button 
+                          className="action-btn" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveDropdown(activeDropdown === space.id ? null : space.id);
+                          }} 
+                          title="More options"
+                        >
+                          <MoreHorizontal size={16} />
+                        </button>
+                        
+                        {activeDropdown === space.id && (
+                          <div className="context-menu" onClick={(e) => e.stopPropagation()}>
+                            <button className="context-menu-item" onClick={() => handleEditSpace(space)}>
+                              <Pencil size={14} /> {t.editSpace}
+                            </button>
+                            <button className="context-menu-item" onClick={() => { setActiveDropdown(null); openCreateProject(space); }}>
+                              <Plus size={14} /> Add Project
+                            </button>
+                            <button className="context-menu-item" onClick={() => handleCopyLink(space.id)}>
+                              <Link2 size={14} /> Copy link
+                            </button>
+                            <button className="context-menu-item" onClick={() => handleDuplicateSpace(space)} disabled={duplicatingId === space.id}>
+                              <Copy size={14} /> {duplicatingId === space.id ? 'Duplicating...' : 'Duplicate'}
+                            </button>
+                            <div className="context-menu-divider" />
+                            <button className="context-menu-item danger" onClick={(e) => { setActiveDropdown(null); handleDeleteSpace(space.id, e); }}>
+                              <Trash2 size={14} /> {t.deleteSpace}
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -189,6 +264,14 @@ export const Sidebar = () => {
         <CreateSpaceModal
           onClose={() => setIsModalOpen(false)}
           onSuccess={handleCreateSpace}
+        />
+      )}
+
+      {editingSpace && (
+        <CreateSpaceModal
+          space={editingSpace}
+          onClose={() => setEditingSpace(null)}
+          onSuccess={handleSpaceUpdated}
         />
       )}
 
