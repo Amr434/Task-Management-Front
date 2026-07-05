@@ -2,59 +2,67 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { ChevronDown, ChevronRight, Folder, Hash, Briefcase, Plus } from 'lucide-react';
-import { getWorkspaces } from '@/features/workspaces/api/getWorkspaces';
-import { getProjectsByWorkspace } from '@/features/projects/api/getProjects';
-import { getListsByProject } from '@/features/lists/api/getLists';
-import { Workspace } from '@/features/workspaces/types';
+import { ChevronDown, ChevronRight, Folder, Hash, Briefcase, Plus, Trash2, Users, CheckSquare, Network, MoreHorizontal } from 'lucide-react';
+import { getSpaces } from '@/features/spaces/api';
+import { getProjectsBySpace } from '@/features/projects/api';
+import { deleteProject } from '@/features/projects/api';
+import { getListsByProject } from '@/features/lists/api';
+import { Space } from '@/features/spaces/types';
 import { Project } from '@/features/projects/types';
 import { List } from '@/features/lists/types';
+import { useI18n } from '@/contexts/I18nContext';
+import { CreateSpaceModal } from '@/features/spaces/components/CreateSpaceModal';
 
 export const Sidebar = () => {
   const router = useRouter();
   const pathname = usePathname();
+  const { t, language, setLanguage } = useI18n();
 
-  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
-  const [selectedWorkspace, setSelectedWorkspace] = useState<Workspace | null>(null);
-  
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [spaces, setSpaces] = useState<Space[]>([]);
+  const [expandedSpaces, setExpandedSpaces] = useState<Record<number, boolean>>({});
+  const [projectsBySpace, setProjectsBySpace] = useState<Record<number, Project[]>>({});
   const [expandedProjects, setExpandedProjects] = useState<Record<number, boolean>>({});
   const [listsByProject, setListsByProject] = useState<Record<number, List[]>>({});
 
-  useEffect(() => {
-    // Initial fetch of workspaces
-    getWorkspaces().then(data => {
-      setWorkspaces(data);
-      if (data.length > 0) {
-        setSelectedWorkspace(data[0]); // Auto-select first workspace
-      }
-    }).catch(console.error);
-  }, []);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    // Fetch projects when a workspace is selected
-    if (selectedWorkspace) {
-      getProjectsByWorkspace(selectedWorkspace.id).then(data => {
-        setProjects(data);
-      }).catch(console.error);
+    getSpaces().then(data => {
+      setSpaces(data);
+    }).catch(err => console.warn("Failed to fetch spaces:", err instanceof Error ? err.message : String(err)));
+  }, []);
+
+  const toggleSpace = async (spaceId: number) => {
+    const isExpanded = expandedSpaces[spaceId];
+    setExpandedSpaces(prev => ({ ...prev, [spaceId]: !isExpanded }));
+
+    if (!isExpanded && !projectsBySpace[spaceId]) {
+      try {
+        const projects = await getProjectsBySpace(spaceId);
+        setProjectsBySpace(prev => ({ ...prev, [spaceId]: projects }));
+      } catch (err) {
+        console.warn("Failed to fetch projects", err instanceof Error ? err.message : String(err));
+      }
     }
-  }, [selectedWorkspace]);
+  };
 
   const toggleProject = async (projectId: number) => {
     const isExpanded = expandedProjects[projectId];
-    
-    // Toggle state locally
     setExpandedProjects(prev => ({ ...prev, [projectId]: !isExpanded }));
 
-    // If we are expanding and haven't fetched lists yet, fetch them
     if (!isExpanded && !listsByProject[projectId]) {
       try {
         const lists = await getListsByProject(projectId);
         setListsByProject(prev => ({ ...prev, [projectId]: lists }));
       } catch (err) {
-        console.error("Failed to fetch lists", err);
+        console.warn("Failed to fetch lists", err instanceof Error ? err.message : String(err));
       }
     }
+  };
+
+  const handleSpaceClick = (spaceId: number) => {
+    toggleSpace(spaceId);
+    router.push(`/spaces/${spaceId}`);
   };
 
   const handleProjectClick = (projectId: number) => {
@@ -66,69 +74,120 @@ export const Sidebar = () => {
     router.push(`/lists/${listId}`);
   };
 
+  const handleCreateSpace = (newSpace: Space) => {
+    setSpaces(prev => [...prev, newSpace]);
+    setIsModalOpen(false);
+  };
+
+  const handleDeleteSpace = async (spaceId: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    // Assuming you have a deleteSpace API
+    // await deleteSpace(spaceId);
+    // setSpaces(prev => prev.filter(s => s.id !== spaceId));
+  };
+
   return (
     <aside className="sidebar">
-      {/* Workspace Switcher */}
+      {/* Top section instead of Workspace switcher */}
       <div className="workspace-switcher">
         <div className="workspace-icon">
-          {selectedWorkspace?.name.charAt(0).toUpperCase() || 'W'}
+          {spaces.length > 0 ? spaces[0].name.charAt(0).toUpperCase() : 'M'}
         </div>
-        <span className="workspace-name">{selectedWorkspace?.name || 'Select Workspace'}</span>
-        <ChevronDown size={16} className="ml-auto" />
+        <span className="workspace-name">{spaces.length > 0 ? t.spaces : 'My Spaces'}</span>
       </div>
 
       <nav className="sidebar-nav">
         <div className="nav-section">
-          <span className="section-title">Favorites</span>
+          <span className="section-title">{t.favorites}</span>
           <div className="nav-item" onClick={() => router.push('/')}>
-            <Hash size={16} /> Everything
+            <Network size={16} style={{ transform: 'rotate(90deg)' }} /> <span className="item-name">{t.everything || 'All Tasks'}</span>
           </div>
         </div>
 
         <div className="nav-section">
           <div className="section-header">
-            <span className="section-title">Spaces</span>
-            <button className="add-btn"><Plus size={14}/></button>
+            <span className="section-title">{t.spaces}</span>
+            <button className="add-btn" onClick={() => setIsModalOpen(true)} title={t.createSpace}><Plus size={14} /></button>
           </div>
-          
+
           <div className="projects-container">
-            {projects.map(project => {
-              const isExpanded = expandedProjects[project.id];
-              const projectLists = listsByProject[project.id] || [];
-              const isProjectActive = pathname === `/projects/${project.id}`;
+            {spaces.map(space => {
+              const isSpaceExpanded = expandedSpaces[space.id];
+              const spaceProjects = projectsBySpace[space.id] || [];
 
               return (
-                <div key={project.id} className="project-group">
-                  <div 
-                    className={`nav-item project-item ${isProjectActive ? 'active' : ''}`} 
-                    onClick={() => handleProjectClick(project.id)}
+                <div key={space.id} className="project-group">
+                  <div
+                    className={`nav-item project-item`}
+                    onClick={() => handleSpaceClick(space.id)}
                   >
                     <span className="chevron-icon" onClick={(e) => {
-                      e.stopPropagation(); // prevent navigation if only clicking chevron
-                      toggleProject(project.id);
+                      e.stopPropagation();
+                      toggleSpace(space.id);
                     }}>
-                      {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                      {isSpaceExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                     </span>
-                    <Briefcase size={16} className={isProjectActive ? "text-primary" : "text-accent"} />
-                    <span>{project.name}</span>
+                    <div className="space-icon-wrapper" style={{ backgroundColor: space.color || 'var(--accent-color)' }}>
+                      <Users size={14} color="white" />
+                    </div>
+                    <span className="item-name space-name">{space.name}</span>
+                    <div className="space-actions">
+                      <button className="action-btn" onClick={(e) => handleDeleteSpace(space.id, e)} title={t.deleteSpace}>
+                        <MoreHorizontal size={16} />
+                      </button>
+                    </div>
                   </div>
 
-                  {/* Nested Lists */}
-                  {isExpanded && (
-                    <div className="lists-container">
-                      {projectLists.length === 0 ? (
-                        <div className="empty-lists">No lists</div>
+                  {/* Nested Projects */}
+                  {isSpaceExpanded && (
+                    <div className="lists-container" style={{ paddingLeft: '8px' }}>
+                      {spaceProjects.length === 0 ? (
+                        <div className="empty-lists" style={{ paddingLeft: '16px' }}>No projects</div>
                       ) : (
-                        projectLists.map(list => {
-                          const isListActive = pathname === `/lists/${list.id}`;
+                        spaceProjects.map(project => {
+                          const isProjectExpanded = expandedProjects[project.id];
+                          const projectLists = listsByProject[project.id] || [];
+                          const isProjectActive = pathname === `/projects/${project.id}`;
+
                           return (
-                            <div 
-                              key={list.id} 
-                              className={`nav-item list-item ${isListActive ? 'active' : ''}`}
-                              onClick={() => handleListClick(list.id)}
-                            >
-                              <Folder size={14} className={isListActive ? "text-accent" : ""} />
-                              <span style={{ fontWeight: isListActive ? 600 : 400 }}>{list.name}</span>
+                            <div key={project.id} className="project-group">
+                              <div
+                                className={`nav-item project-item ${isProjectActive ? 'active' : ''}`}
+                                onClick={() => handleProjectClick(project.id)}
+                              >
+                                <span className="chevron-icon" onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleProject(project.id);
+                                }}>
+                                  {isProjectExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                                </span>
+                                <CheckSquare size={14} className={isProjectActive ? "text-primary" : ""} />
+                                <span className="item-name project-name">{project.name}</span>
+                                <span className="item-badge">{projectLists.length || 0}</span>
+                              </div>
+
+                              {/* Nested Lists */}
+                              {isProjectExpanded && (
+                                <div className="lists-container" style={{ paddingLeft: '16px' }}>
+                                  {projectLists.length === 0 ? (
+                                    <div className="empty-lists" style={{ paddingLeft: '16px' }}>{t.noLists}</div>
+                                  ) : (
+                                    projectLists.map(list => {
+                                      const isListActive = pathname === `/lists/${list.id}`;
+                                      return (
+                                        <div
+                                          key={list.id}
+                                          className={`nav-item list-item ${isListActive ? 'active' : ''}`}
+                                          onClick={() => handleListClick(list.id)}
+                                        >
+                                          <Hash size={14} className={isListActive ? "text-accent" : ""} />
+                                          <span style={{ fontWeight: isListActive ? 600 : 400 }}>{list.name}</span>
+                                        </div>
+                                      );
+                                    })
+                                  )}
+                                </div>
+                              )}
                             </div>
                           );
                         })
@@ -139,8 +198,25 @@ export const Sidebar = () => {
               );
             })}
           </div>
+          <div className="nav-item new-space-btn" onClick={() => setIsModalOpen(true)}>
+            <Plus size={16} className="text-secondary" style={{ marginRight: '8px' }} />
+            <span>New Space</span>
+          </div>
         </div>
       </nav>
+
+      {/* Language Toggle */}
+      <div className="language-toggle">
+        <button className={language === 'en' ? 'active' : ''} onClick={() => setLanguage('en')}>EN</button>
+        <button className={language === 'ar' ? 'active' : ''} onClick={() => setLanguage('ar')}>عربي</button>
+      </div>
+
+      {isModalOpen && (
+        <CreateSpaceModal
+          onClose={() => setIsModalOpen(false)}
+          onSuccess={handleCreateSpace as any}
+        />
+      )}
     </aside>
   );
 };

@@ -1,13 +1,17 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { getListsByProject } from '@/features/lists/api/getLists';
-import { getTasksByList } from '@/features/tasks/api/getTasks';
+import { getProjectById } from '@/features/projects/api';
+import { getListsByProject } from '@/features/lists/api';
+import { getTasksByList } from '@/features/tasks/api';
+import { Project } from '@/features/projects/types';
 import { List } from '@/features/lists/types';
 import { TaskItem } from '@/features/tasks/types';
-import { Plus } from 'lucide-react';
+import { SpaceListView } from '@/features/spaces/components/SpaceListView';
+import { LayoutGrid, List as ListIcon, Columns, Calendar, Plus, MoreHorizontal, Share2 } from 'lucide-react';
 
 export const ProjectBoard = ({ projectId }: { projectId: number }) => {
+  const [project, setProject] = useState<Project | null>(null);
   const [lists, setLists] = useState<List[]>([]);
   const [tasksByList, setTasksByList] = useState<Record<number, TaskItem[]>>({});
   const [isLoading, setIsLoading] = useState(true);
@@ -16,6 +20,10 @@ export const ProjectBoard = ({ projectId }: { projectId: number }) => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
+        // Fetch project details
+        const fetchedProject = await getProjectById(projectId);
+        setProject(fetchedProject);
+
         // Fetch all lists for this project
         const fetchedLists = await getListsByProject(projectId);
         setLists(fetchedLists);
@@ -30,7 +38,7 @@ export const ProjectBoard = ({ projectId }: { projectId: number }) => {
         );
         setTasksByList(tasksData);
       } catch (error) {
-        console.error("Failed to load project board", error);
+        console.warn("Failed to load project board", error instanceof Error ? error.message : String(error));
       } finally {
         setIsLoading(false);
       }
@@ -40,43 +48,61 @@ export const ProjectBoard = ({ projectId }: { projectId: number }) => {
   }, [projectId]);
 
   if (isLoading) {
-    return <div style={{ padding: '24px' }}>Loading board...</div>;
+    return <div className="space-loading" style={{ padding: '24px' }}>Loading Project...</div>;
+  }
+
+  if (!project) {
+    return <div style={{ padding: '24px' }}>Project not found.</div>;
   }
 
   return (
-    <div className="project-board">
-      <header className="board-header">
-        <h1>Project Board</h1>
-      </header>
-      <div className="columns-container">
-        {lists.map(list => (
-          <div key={list.id} className="list-column">
-            <div className="list-header">
-              <h3>{list.name} <span className="task-count">{tasksByList[list.id]?.length || 0}</span></h3>
-              <button className="icon-btn"><Plus size={16} /></button>
+    <div className="space-page">
+      <div className="space-view-container">
+        {/* Project Header using the exact same style as Space Header */}
+        <div className="space-header">
+          <div className="space-header-top">
+            <div className="space-title-container">
+              <div className="space-icon" style={{ backgroundColor: project.color || 'var(--accent-color)' }}>
+                <LayoutGrid size={16} color="white" />
+              </div>
+              <h1 className="space-title">{project.name}</h1>
+              <button className="icon-btn" style={{marginLeft: '8px'}}><MoreHorizontal size={18} /></button>
             </div>
-            
-            <div className="task-list">
-              {(!tasksByList[list.id] || tasksByList[list.id].length === 0) && (
-                <div className="empty-task">No tasks</div>
-              )}
-              {tasksByList[list.id]?.map(task => (
-                <div key={task.id} className="task-card">
-                  <div className="task-title">{task.title}</div>
-                  {task.description && <div className="task-desc">{task.description}</div>}
-                  <div className="task-meta">
-                    {/* Assuming PriorityLevel maps to ints 0-4 */}
-                    <span className={`priority p-${task.priority}`}>P{task.priority}</span>
-                  </div>
-                </div>
-              ))}
+            <div className="space-header-actions">
+              <div className="avatar-group" style={{marginRight: '12px'}}>
+                <div className="avatar" style={{ backgroundColor: '#ff7b72', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 500, fontSize: '12px' }}>A</div>
+              </div>
+              <button className="btn-secondary share-btn" style={{display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', fontSize: '13px'}}><Share2 size={14} /> Share</button>
             </div>
           </div>
-        ))}
-
-        <div className="add-list-column">
-          <button className="add-list-btn"><Plus size={16} /> Add List</button>
+          
+          <div className="space-tabs">
+            <button className="space-tab active">
+              <ListIcon size={14} />
+              List
+            </button>
+            <button className="space-tab">
+              <Columns size={14} />
+              Board
+            </button>
+            <button className="space-tab">
+              <Calendar size={14} />
+              Calendar
+            </button>
+            <div style={{width: '1px', height: '16px', backgroundColor: 'var(--border-color)', margin: '0 8px'}} />
+            <button className="space-tab add-tab" style={{color: 'var(--text-secondary)'}}>
+              <Plus size={14} />
+              View
+            </button>
+          </div>
         </div>
+
+        {/* Reuse the SpaceListView but pass only this project */}
+        <SpaceListView 
+          projects={[project]} 
+          listsByProjectId={{ [project.id]: lists }} 
+          tasksByListId={tasksByList} 
+        />
       </div>
     </div>
   );
