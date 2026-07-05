@@ -1,51 +1,74 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import { getProjectById } from '@/features/projects/api';
-import { getListsByProject } from '@/features/lists/api';
-import { getTasksByList } from '@/features/tasks/api';
+import React, { useCallback, useEffect, useState } from 'react';
+import { getProjectById, getProjectsBySpace } from '@/features/projects/api';
+import { getTasksByProject, patchTask } from '@/features/tasks/api';
 import { Project } from '@/features/projects/types';
-import { List } from '@/features/lists/types';
-import { TaskItem } from '@/features/tasks/types';
+import { TaskItem, TaskStatus } from '@/features/tasks/types';
 import { SpaceListView } from '@/features/spaces/components/SpaceListView';
+import { BoardView } from '@/features/tasks/components/BoardView';
+import { CalendarView } from '@/features/tasks/components/CalendarView';
+import { CreateTaskModal } from '@/features/tasks/components/CreateTaskModal';
 import { LayoutGrid, List as ListIcon, Columns, Calendar, Plus, MoreHorizontal, Share2 } from 'lucide-react';
 
-export const ProjectBoard = ({ projectId }: { projectId: number }) => {
-  const [project, setProject] = useState<Project | null>(null);
-  const [lists, setLists] = useState<List[]>([]);
-  const [tasksByList, setTasksByList] = useState<Record<number, TaskItem[]>>({});
-  const [isLoading, setIsLoading] = useState(true);
+type ProjectView = 'list' | 'board' | 'calendar';
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        // Fetch project details
+export const ProjectBoard = ({ projectId, spaceId }: { projectId: number; spaceId?: number }) => {
+  const [project, setProject] = useState<Project | null>(null);
+  const [tasks, setTasks] = useState<TaskItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeView, setActiveView] = useState<ProjectView>('list');
+  const [isAddingTask, setIsAddingTask] = useState(false);
+
+  const fetchData = useCallback(async () => {
+    setIsLoading(true);
+
+    // Project details are a best-effort fetch: the backend does not (yet) expose
+    // GET /Projects/{id}, so fall back to a minimal project rather than blocking the board.
+    try {
+      if (spaceId) {
+        const spaceProjects = await getProjectsBySpace(spaceId);
+        const foundProject = spaceProjects.find((p) => p.id === projectId);
+        if (foundProject) {
+          setProject(foundProject);
+        } else {
+          throw new Error(`Project ${projectId} not found in space ${spaceId}`);
+        }
+      } else {
         const fetchedProject = await getProjectById(projectId);
         setProject(fetchedProject);
-
-        // Fetch all lists for this project
-        const fetchedLists = await getListsByProject(projectId);
-        setLists(fetchedLists);
-
-        // Fetch tasks for all lists concurrently
-        const tasksData: Record<number, TaskItem[]> = {};
-        await Promise.all(
-          fetchedLists.map(async (list) => {
-            const tasks = await getTasksByList(list.id);
-            tasksData[list.id] = tasks;
-          })
-        );
-        setTasksByList(tasksData);
-      } catch (error) {
-        console.warn("Failed to load project board", error instanceof Error ? error.message : String(error));
-      } finally {
-        setIsLoading(false);
       }
-    };
+    } catch (error) {
+      console.warn("Could not load project details", error instanceof Error ? error.message : String(error));
+      setProject({ id: projectId, name: `Project #${projectId}`, spaceId: spaceId || 0 });
+    }
 
-    fetchData();
+    try {
+      const fetchedTasks = await getTasksByProject(projectId);
+      setTasks(fetchedTasks);
+    } catch (error) {
+      console.warn("Failed to load project tasks", error instanceof Error ? error.message : String(error));
+    } finally {
+      setIsLoading(false);
+    }
   }, [projectId]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Move a task to another status (drag & drop on the board). Optimistic, with refetch on failure.
+  const handleMoveTask = useCallback((taskId: number, toStatus: TaskStatus) => {
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task || task.status === toStatus) return;
+
+    setTasks((prev) => prev.map(t => t.id === taskId ? { ...t, status: toStatus } : t));
+
+    patchTask(task, { status: toStatus }).catch((error) => {
+      console.warn("Failed to update task status", error instanceof Error ? error.message : String(error));
+      fetchData(); // revert to server truth
+    });
+  }, [tasks, fetchData]);
 
   if (isLoading) {
     return <div className="space-loading" style={{ padding: '24px' }}>Loading Project...</div>;
@@ -77,15 +100,15 @@ export const ProjectBoard = ({ projectId }: { projectId: number }) => {
           </div>
           
           <div className="space-tabs">
-            <button className="space-tab active">
+            <button className={`space-tab ${activeView === 'list' ? 'active' : ''}`} onClick={() => setActiveView('list')}>
               <ListIcon size={14} />
               List
             </button>
-            <button className="space-tab">
+            <button className={`space-tab ${activeView === 'board' ? 'active' : ''}`} onClick={() => setActiveView('board')}>
               <Columns size={14} />
               Board
             </button>
-            <button className="space-tab">
+            <button className={`space-tab ${activeView === 'calendar' ? 'active' : ''}`} onClick={() => setActiveView('calendar')}>
               <Calendar size={14} />
               Calendar
             </button>
@@ -97,13 +120,35 @@ export const ProjectBoard = ({ projectId }: { projectId: number }) => {
           </div>
         </div>
 
-        {/* Reuse the SpaceListView but pass only this project */}
-        <SpaceListView 
-          projects={[project]} 
-          listsByProjectId={{ [project.id]: lists }} 
-          tasksByListId={tasksByList} 
-        />
+        {activeView === 'list' && (
+          <SpaceListView
+            projects={[project]}
+            tasksByProjectId={{ [project.id]: tasks }}
+            onTaskCreated={fetchData}
+          />
+        )}
+
+        {activeView === 'board' && (
+          <BoardView
+            tasks={tasks}
+            onMoveTask={handleMoveTask}
+            onAddTask={() => setIsAddingTask(true)}
+          />
+        )}
+
+        {activeView === 'calendar' && (
+          <CalendarView tasks={tasks} />
+        )}
       </div>
+
+      {isAddingTask && (
+          <CreateTaskModal
+            onClose={() => setIsAddingTask(false)}
+            projects={[project]}
+            defaultProjectId={project.id}
+            onTaskCreated={fetchData}
+          />
+      )}
     </div>
   );
 };

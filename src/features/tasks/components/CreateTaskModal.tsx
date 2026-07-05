@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { X, LayoutGrid, CheckCircle2, ChevronDown, User, Calendar, Flag, Tag, MoreHorizontal, Plus, Paperclip, Bell } from 'lucide-react';
 import { Project } from '@/features/projects/types';
-import { List } from '@/features/lists/types';
 import { createTask } from '../api';
+import { Priority } from '../types';
 
 interface CreateTaskModalProps {
   onClose: () => void;
   projects?: Project[];
-  listsByProjectId?: Record<number, List[]>;
   defaultProjectId?: number;
   onTaskCreated?: () => void;
 }
@@ -15,34 +14,23 @@ interface CreateTaskModalProps {
 export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ 
   onClose, 
   projects = [], 
-  listsByProjectId = {}, 
   defaultProjectId,
   onTaskCreated 
 }) => {
   const [taskName, setTaskName] = useState('');
   const [description, setDescription] = useState('');
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(defaultProjectId || (projects.length > 0 ? projects[0].id : null));
-  const [selectedListId, setSelectedListId] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isProjectDropdownOpen, setIsProjectDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-
-  // Default to the first list of the selected project
-  useEffect(() => {
-    if (selectedProjectId && listsByProjectId[selectedProjectId] && listsByProjectId[selectedProjectId].length > 0) {
-      setSelectedListId(listsByProjectId[selectedProjectId][0].id);
-    } else {
-      setSelectedListId(null);
-    }
-  }, [selectedProjectId, listsByProjectId]);
 
   const handleCreateTask = async () => {
     if (!taskName.trim()) {
       alert("Task name is required");
       return;
     }
-    if (!selectedListId) {
-      alert("Please select a valid project and list to add the task to.");
+    if (!selectedProjectId) {
+      alert("Please select a valid project to add the task to.");
       return;
     }
 
@@ -51,8 +39,9 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
       await createTask({
         title: taskName,
         description: description,
-        listId: selectedListId,
-        priority: 4, // Default low priority for now
+        projectId: selectedProjectId,
+        status: 0, // TaskStatus.ToDo
+        priority: Priority.Low, // Backend enum: Low=0 .. Urgent=3
         order: 0,
       });
       if (onTaskCreated) onTaskCreated();
