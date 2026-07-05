@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
-import { createSpace } from '@/features/spaces/api/createSpace';
+import { createSpace } from '@/features/spaces/api';
 import { Space } from '@/features/spaces/types';
 
 interface CreateSpaceModalProps {

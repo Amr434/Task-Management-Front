@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { SpaceProjectSection } from './SpaceProjectSection';
 import { Project } from '@/features/projects/types';
 import { List } from '@/features/lists/types';
 import { TaskItem } from '@/features/tasks/types';
 import { Filter, CheckCircle2, User, SlidersHorizontal, Plus } from 'lucide-react';
+import { CreateTaskModal } from '@/features/tasks/components/CreateTaskModal';
 
 interface SpaceListViewProps {
   projects: Project[];
@@ -12,6 +13,8 @@ interface SpaceListViewProps {
 }
 
 export const SpaceListView: React.FC<SpaceListViewProps> = ({ projects, listsByProjectId, tasksByListId }) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   return (
     <div className="space-list-view">
       <div className="space-action-bar">
@@ -28,17 +31,11 @@ export const SpaceListView: React.FC<SpaceListViewProps> = ({ projects, listsByP
           <button className="icon-text-btn"><CheckCircle2 size={14} /> Closed</button>
           <button className="icon-text-btn"><User size={14} /> Assignee</button>
           <button className="icon-text-btn"><SlidersHorizontal size={14} /> Customize</button>
-          <button className="btn-primary add-task-btn">Add Task <ChevronDownIcon /></button>
+          <button className="btn-primary add-task-btn" onClick={() => setIsModalOpen(true)}>Add Task <ChevronDownIcon /></button>
         </div>
       </div>
       
-      <div className="table-header">
-        <div className="th-cell th-name">Name</div>
-        <div className="th-cell th-assignee">Assignee</div>
-        <div className="th-cell th-due">Due date</div>
-        <div className="th-cell th-priority">Priority</div>
-        <div className="th-cell th-add"><Plus size={14} /></div>
-      </div>
+
       
       <div className="table-body">
         {projects.length > 0 ? (
@@ -48,6 +45,7 @@ export const SpaceListView: React.FC<SpaceListViewProps> = ({ projects, listsByP
               project={project} 
               lists={listsByProjectId[project.id] || []}
               tasksByListId={tasksByListId}
+              onOpenModal={() => setIsModalOpen(true)}
             />
           ))
         ) : (
@@ -56,6 +54,15 @@ export const SpaceListView: React.FC<SpaceListViewProps> = ({ projects, listsByP
           </div>
         )}
       </div>
+
+      {isModalOpen && (
+        <CreateTaskModal 
+          onClose={() => setIsModalOpen(false)} 
+          projects={projects}
+          listsByProjectId={listsByProjectId}
+          onTaskCreated={() => window.location.reload()}
+        />
+      )}
     </div>
   );
 };
