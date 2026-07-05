@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
-import { createSpace } from '@/features/spaces/api';
+import { createSpace, updateSpace } from '@/features/spaces/api';
 import { Space } from '@/features/spaces/types';
 import { SPACE_ICONS, SPACE_COLORS } from '@/features/spaces/icons';
 import { SpaceIcon } from './SpaceIcon';
@@ -10,14 +10,17 @@ import { SpaceIcon } from './SpaceIcon';
 interface CreateSpaceModalProps {
   onClose: () => void;
   onSuccess: (space: Space) => void;
+  /** When provided, the modal edits this space instead of creating a new one. */
+  space?: Space;
 }
 
-export const CreateSpaceModal: React.FC<CreateSpaceModalProps> = ({ onClose, onSuccess }) => {
+export const CreateSpaceModal: React.FC<CreateSpaceModalProps> = ({ onClose, onSuccess, space }) => {
   const { t } = useI18n();
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [color, setColor] = useState(SPACE_COLORS[0]);
-  const [icon, setIcon] = useState<string>(SPACE_ICONS[0]);
+  const isEdit = !!space;
+  const [name, setName] = useState(space?.name ?? '');
+  const [description, setDescription] = useState(space?.description ?? '');
+  const [color, setColor] = useState(space?.color ?? SPACE_COLORS[0]);
+  const [icon, setIcon] = useState<string>(space?.icon ?? SPACE_ICONS[0]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,15 +32,13 @@ export const CreateSpaceModal: React.FC<CreateSpaceModalProps> = ({ onClose, onS
     setError(null);
 
     try {
-      const newSpace = await createSpace({
-        name,
-        description,
-        color,
-        icon,
-      });
-      onSuccess(newSpace);
+      const payload = { name, description, color, icon };
+      const savedSpace = isEdit
+        ? await updateSpace(space.id, payload)
+        : await createSpace(payload);
+      onSuccess(savedSpace);
     } catch (err: any) {
-      setError(err.message || 'Failed to create space');
+      setError(err.message || (isEdit ? 'Failed to update space' : 'Failed to create space'));
     } finally {
       setIsLoading(false);
     }
@@ -47,7 +48,7 @@ export const CreateSpaceModal: React.FC<CreateSpaceModalProps> = ({ onClose, onS
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>{t.createSpace}</h2>
+          <h2>{isEdit ? t.editSpace : t.createSpace}</h2>
           <button className="close-btn" onClick={onClose}><X size={20} /></button>
         </div>
 
@@ -117,7 +118,7 @@ export const CreateSpaceModal: React.FC<CreateSpaceModalProps> = ({ onClose, onS
               Cancel
             </button>
             <button type="submit" className="btn-primary" disabled={isLoading || !name.trim()}>
-              {isLoading ? 'Creating...' : t.createSpace}
+              {isLoading ? 'Saving...' : isEdit ? t.save : t.createSpace}
             </button>
           </div>
         </form>

@@ -1566,3 +1566,57 @@ body {
 .add-project-row:hover {
   color: var(--text-primary);
 }
+
+/* ---- ClickUp-style context menu ---- */
+.context-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: var(--bg-main);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  z-index: 200;
+  min-width: 180px;
+}
+.context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 7px 10px;
+  font-size: 13px;
+  background: transparent;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+.context-menu-item svg {
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+.context-menu-item:hover {
+  background-color: var(--bg-hover);
+}
+.context-menu-item:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.context-menu-item.danger {
+  color: #e2445c;
+}
+.context-menu-item.danger svg {
+  color: #e2445c;
+}
+.context-menu-item.danger:hover {
+  background-color: rgba(226, 68, 92, 0.12);
+}
+.context-menu-divider {
+  height: 1px;
+  background-color: var(--border-color);
+  margin: 4px 6px;
+}
