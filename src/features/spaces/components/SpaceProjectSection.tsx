@@ -9,6 +9,7 @@ interface SpaceProjectSectionProps {
   project: Project;
   lists: List[];
   tasksByListId: Record<number, TaskItem[]>;
+  onOpenModal?: () => void;
 }
 
 // Helper to determine list color based on name like ClickUp
@@ -20,19 +21,19 @@ const getListColor = (listName: string) => {
   return '#e2445c'; // Default colorful
 };
 
-export const SpaceProjectSection: React.FC<SpaceProjectSectionProps> = ({ project, lists, tasksByListId }) => {
+export const SpaceProjectSection: React.FC<SpaceProjectSectionProps> = ({ project, lists, tasksByListId, onOpenModal }) => {
   const [isExpanded, setIsExpanded] = useState(true);
 
   return (
     <div className="space-project-section">
+      <div className="team-space-title">Team Space</div>
       <div 
         className="project-section-header"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <span className="chevron-icon">
+        <span className="chevron-icon" style={{marginRight: '8px'}}>
           {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
         </span>
-        <Folder size={16} className="project-icon" />
         <span className="project-title">{project.name}</span>
         <button className="icon-btn project-actions" onClick={(e) => { e.stopPropagation(); }}>
           <MoreHorizontal size={14} />
@@ -48,6 +49,7 @@ export const SpaceProjectSection: React.FC<SpaceProjectSectionProps> = ({ projec
                 list={list} 
                 tasks={tasksByListId[list.id] || []} 
                 color={getListColor(list.name)}
+                onOpenModal={onOpenModal}
               />
             ))
           ) : (

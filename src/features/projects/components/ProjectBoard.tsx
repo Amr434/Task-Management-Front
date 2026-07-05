@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { getProjectById } from '@/features/projects/api/getProjects';
-import { getListsByProject } from '@/features/lists/api/getLists';
-import { getTasksByList } from '@/features/tasks/api/getTasks';
+import { getProjectById } from '@/features/projects/api';
+import { getListsByProject } from '@/features/lists/api';
+import { getTasksByList } from '@/features/tasks/api';
 import { Project } from '@/features/projects/types';
 import { List } from '@/features/lists/types';
 import { TaskItem } from '@/features/tasks/types';

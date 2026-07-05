@@ -3,10 +3,10 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { ChevronDown, ChevronRight, Folder, Hash, Briefcase, Plus, Trash2, Users, CheckSquare, Network, MoreHorizontal } from 'lucide-react';
-import { getSpaces } from '@/features/spaces/api/getSpaces';
-import { getProjectsBySpace } from '@/features/projects/api/getProjects';
-import { deleteProject } from '@/features/projects/api/deleteProject';
-import { getListsByProject } from '@/features/lists/api/getLists';
+import { getSpaces } from '@/features/spaces/api';
+import { getProjectsBySpace } from '@/features/projects/api';
+import { deleteProject } from '@/features/projects/api';
+import { getListsByProject } from '@/features/lists/api';
 import { Space } from '@/features/spaces/types';
 import { Project } from '@/features/projects/types';
 import { List } from '@/features/lists/types';
