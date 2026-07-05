@@ -4,23 +4,20 @@ import { X } from 'lucide-react';
 import { useI18n } from '@/contexts/I18nContext';
 import { createSpace } from '@/features/spaces/api';
 import { Space } from '@/features/spaces/types';
+import { SPACE_ICONS, SPACE_COLORS } from '@/features/spaces/icons';
+import { SpaceIcon } from './SpaceIcon';
 
 interface CreateSpaceModalProps {
   onClose: () => void;
   onSuccess: (space: Space) => void;
-  workspaceId?: number;
 }
 
-const COLORS = [
-  '#FF5733', '#33FF57', '#3357FF', '#F333FF', '#33FFF3',
-  '#FFD133', '#FF33A8', '#8A33FF', '#33FF8A', '#FF8A33'
-];
-
-export const CreateSpaceModal: React.FC<CreateSpaceModalProps> = ({ onClose, onSuccess, workspaceId = 1 }) => {
+export const CreateSpaceModal: React.FC<CreateSpaceModalProps> = ({ onClose, onSuccess }) => {
   const { t } = useI18n();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [color, setColor] = useState(COLORS[0]);
+  const [color, setColor] = useState(SPACE_COLORS[0]);
+  const [icon, setIcon] = useState<string>(SPACE_ICONS[0]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,7 +33,7 @@ export const CreateSpaceModal: React.FC<CreateSpaceModalProps> = ({ onClose, onS
         name,
         description,
         color,
-        workspaceId,
+        icon,
       });
       onSuccess(newSpace);
     } catch (err: any) {
@@ -56,18 +53,22 @@ export const CreateSpaceModal: React.FC<CreateSpaceModalProps> = ({ onClose, onS
 
         <form onSubmit={handleSubmit} className="modal-form">
           {error && <div className="error-message">{error}</div>}
-          
-          <div className="form-group">
-            <label htmlFor="name">{t.spaceName}</label>
-            <input
-              id="name"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g., Marketing, Engineering..."
-              autoFocus
-              required
-            />
+
+          {/* Live preview + name */}
+          <div className="space-preview-row">
+            <SpaceIcon icon={icon} color={color} size={44} />
+            <div className="form-group" style={{ flex: 1, margin: 0 }}>
+              <label htmlFor="name">{t.spaceName}</label>
+              <input
+                id="name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g., Marketing, Engineering..."
+                autoFocus
+                required
+              />
+            </div>
           </div>
 
           <div className="form-group">
@@ -77,15 +78,31 @@ export const CreateSpaceModal: React.FC<CreateSpaceModalProps> = ({ onClose, onS
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="What is this space for?"
-              rows={3}
+              rows={2}
             />
+          </div>
+
+          <div className="form-group">
+            <label>Icon</label>
+            <div className="icon-picker">
+              {SPACE_ICONS.map((emoji) => (
+                <button
+                  type="button"
+                  key={emoji}
+                  className={`icon-option ${icon === emoji ? 'selected' : ''}`}
+                  onClick={() => setIcon(emoji)}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="form-group">
             <label>Color</label>
             <div className="color-picker">
-              {COLORS.map(c => (
-                <div 
+              {SPACE_COLORS.map((c) => (
+                <div
                   key={c}
                   className={`color-option ${color === c ? 'selected' : ''}`}
                   style={{ backgroundColor: c }}

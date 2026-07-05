@@ -1,17 +1,25 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronRight, Plus } from 'lucide-react';
-import { List } from '@/features/lists/types';
-import { TaskItem } from '@/features/tasks/types';
+import { TaskItem, TaskStatus } from '@/features/tasks/types';
 import { TaskRow } from '@/features/tasks/components/TaskRow';
 
-interface SpaceListSectionProps {
-  list: List;
+interface SpaceStatusSectionProps {
+  status: TaskStatus;
   tasks: TaskItem[];
   color?: string; // We can pass a color based on status, e.g. Grey for TODO, Blue for In Progress
   onOpenModal?: () => void;
 }
 
-export const SpaceListSection: React.FC<SpaceListSectionProps> = ({ list, tasks, color = '#87909e', onOpenModal }) => {
+const getStatusName = (status: TaskStatus) => {
+  switch (status) {
+    case TaskStatus.ToDo: return 'TO DO';
+    case TaskStatus.InProgress: return 'IN PROGRESS';
+    case TaskStatus.Complete: return 'COMPLETE';
+    default: return 'UNKNOWN';
+  }
+};
+
+export const SpaceStatusSection: React.FC<SpaceStatusSectionProps> = ({ status, tasks, color = '#87909e', onOpenModal }) => {
   const [isExpanded, setIsExpanded] = useState(true);
 
   return (
@@ -24,9 +32,9 @@ export const SpaceListSection: React.FC<SpaceListSectionProps> = ({ list, tasks,
           {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
         </span>
         
-        <div className={`list-badge ${list.name.toLowerCase().includes('to do') ? 'outline' : ''}`} style={{ backgroundColor: color }}>
+        <div className={`list-badge ${status === TaskStatus.ToDo ? 'outline' : ''}`} style={{ backgroundColor: color }}>
           <span className="list-badge-icon"></span>
-          {list.name.toUpperCase()}
+          {getStatusName(status)}
         </div>
         
         <span className="task-count">{tasks.length}</span>

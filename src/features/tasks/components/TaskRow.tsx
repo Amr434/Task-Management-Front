@@ -1,6 +1,6 @@
 import React from 'react';
 import { User, Calendar, Flag, CheckCircle2, Circle } from 'lucide-react';
-import { TaskItem } from '../types';
+import { TaskItem, toPriority } from '../types';
 
 interface TaskRowProps {
   task: TaskItem;
@@ -39,7 +39,7 @@ export const TaskRow: React.FC<TaskRowProps> = ({ task, onToggleStatus }) => {
       </div>
       
       <div className="task-cell task-priority-cell">
-        <div className={`priority-flag priority-${task.priority}`}>
+        <div className={`priority-flag priority-${toPriority(task.priority)}`}>
           <Flag size={14} />
         </div>
       </div>

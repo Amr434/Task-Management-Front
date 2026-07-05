@@ -2,8 +2,14 @@ import apiClient from '@/services/apiClient';
 import { Project } from '../types';
 
 
-export const createProject = async (data: Omit<Project, 'id'>): Promise<Project> => {
-  return apiClient.post<any, Project>('/Projects', data);
+export interface CreateProjectDTO {
+  name: string;
+  description?: string;
+  spaceId: number;
+}
+
+export const createProject = async (data: CreateProjectDTO): Promise<Project> => {
+  return apiClient.post<CreateProjectDTO, Project>('/Projects', data);
 };
 
 

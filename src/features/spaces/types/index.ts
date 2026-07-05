@@ -4,5 +4,4 @@ export interface Space {
   description?: string;
   color?: string;
   icon?: string;
-  workspaceId: number;
 }

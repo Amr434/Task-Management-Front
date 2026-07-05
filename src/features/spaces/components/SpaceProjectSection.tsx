@@ -1,27 +1,25 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronRight, Folder, MoreHorizontal } from 'lucide-react';
 import { Project } from '@/features/projects/types';
-import { SpaceListSection } from './SpaceListSection';
-import { List } from '@/features/lists/types';
-import { TaskItem } from '@/features/tasks/types';
+import { SpaceStatusSection } from './SpaceStatusSection';
+import { TaskItem, TaskStatus } from '@/features/tasks/types';
 
 interface SpaceProjectSectionProps {
   project: Project;
-  lists: List[];
-  tasksByListId: Record<number, TaskItem[]>;
+  tasks: TaskItem[];
   onOpenModal?: () => void;
 }
 
-// Helper to determine list color based on name like ClickUp
-const getListColor = (listName: string) => {
-  const upper = listName.toUpperCase();
-  if (upper.includes('TODO') || upper.includes('TO DO')) return '#87909e';
-  if (upper.includes('IN PROGRESS') || upper.includes('DOING')) return '#2684ff';
-  if (upper.includes('DONE') || upper.includes('CLOSED') || upper.includes('COMPLETE')) return '#00c875';
-  return '#e2445c'; // Default colorful
+const getStatusColor = (status: TaskStatus) => {
+  switch (status) {
+    case TaskStatus.ToDo: return '#87909e';
+    case TaskStatus.InProgress: return '#2684ff';
+    case TaskStatus.Complete: return '#00c875';
+    default: return '#e2445c'; // Default colorful
+  }
 };
 
-export const SpaceProjectSection: React.FC<SpaceProjectSectionProps> = ({ project, lists, tasksByListId, onOpenModal }) => {
+export const SpaceProjectSection: React.FC<SpaceProjectSectionProps> = ({ project, tasks, onOpenModal }) => {
   const [isExpanded, setIsExpanded] = useState(true);
 
   return (
@@ -42,21 +40,18 @@ export const SpaceProjectSection: React.FC<SpaceProjectSectionProps> = ({ projec
       
       {isExpanded && (
         <div className="project-lists-container">
-          {lists.length > 0 ? (
-            lists.map(list => (
-              <SpaceListSection 
-                key={list.id} 
-                list={list} 
-                tasks={tasksByListId[list.id] || []} 
-                color={getListColor(list.name)}
+          {[TaskStatus.ToDo, TaskStatus.InProgress, TaskStatus.Complete].map(status => {
+            const statusTasks = tasks.filter(t => t.status === status);
+            return (
+              <SpaceStatusSection 
+                key={status} 
+                status={status} 
+                tasks={statusTasks} 
+                color={getStatusColor(status)}
                 onOpenModal={onOpenModal}
               />
-            ))
-          ) : (
-            <div className="empty-project">
-              No lists in this project.
-            </div>
-          )}
+            );
+          })}
         </div>
       )}
     </div>
