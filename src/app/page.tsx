@@ -1,14 +1,13 @@
-import { WorkspaceList } from "@/features/workspaces/components/WorkspaceList";
+import { SpaceList } from "@/features/spaces/components/SpaceList";
 
 export default function Home() {
   return (
     <main className="main-layout">
       <header className="app-header">
-        <h1>Task Management App</h1>
+        <h1>Your Spaces</h1>
       </header>
       <section className="dashboard-content">
-        <h2>Your Workspaces</h2>
-        <WorkspaceList />
+        <SpaceList />
       </section>
     </main>
   );

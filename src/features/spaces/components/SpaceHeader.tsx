@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutGrid, List as ListIcon, Columns, Calendar, Plus, MoreHorizontal, Settings, Share2, Search, Filter } from 'lucide-react';
+import { LayoutGrid, MoreHorizontal, Share2 } from 'lucide-react';
 import { Space } from '../types';
 
 interface SpaceHeaderProps {
@@ -25,26 +25,6 @@ export const SpaceHeader: React.FC<SpaceHeaderProps> = ({ space }) => {
           </div>
           <button className="btn-secondary share-btn" style={{display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', fontSize: '13px'}}><Share2 size={14} /> Share</button>
         </div>
-      </div>
-      
-      <div className="space-tabs">
-        <button className="space-tab active">
-          <ListIcon size={14} />
-          List
-        </button>
-        <button className="space-tab">
-          <Columns size={14} />
-          Board
-        </button>
-        <button className="space-tab">
-          <Calendar size={14} />
-          Calendar
-        </button>
-        <div style={{width: '1px', height: '16px', backgroundColor: 'var(--border-color)', margin: '0 8px'}} />
-        <button className="space-tab add-tab" style={{color: 'var(--text-secondary)'}}>
-          <Plus size={14} />
-          View
-        </button>
       </div>
     </div>
   );

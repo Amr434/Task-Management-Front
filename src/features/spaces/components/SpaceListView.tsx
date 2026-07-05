@@ -1,18 +1,17 @@
 import React, { useState } from 'react';
 import { SpaceProjectSection } from './SpaceProjectSection';
 import { Project } from '@/features/projects/types';
-import { List } from '@/features/lists/types';
 import { TaskItem } from '@/features/tasks/types';
 import { Filter, CheckCircle2, User, SlidersHorizontal, Plus } from 'lucide-react';
 import { CreateTaskModal } from '@/features/tasks/components/CreateTaskModal';
 
 interface SpaceListViewProps {
   projects: Project[];
-  listsByProjectId: Record<number, List[]>;
-  tasksByListId: Record<number, TaskItem[]>;
+  tasksByProjectId: Record<number, TaskItem[]>;
+  onTaskCreated?: () => void;
 }
 
-export const SpaceListView: React.FC<SpaceListViewProps> = ({ projects, listsByProjectId, tasksByListId }) => {
+export const SpaceListView: React.FC<SpaceListViewProps> = ({ projects, tasksByProjectId, onTaskCreated }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
@@ -43,8 +42,7 @@ export const SpaceListView: React.FC<SpaceListViewProps> = ({ projects, listsByP
             <SpaceProjectSection 
               key={project.id} 
               project={project} 
-              lists={listsByProjectId[project.id] || []}
-              tasksByListId={tasksByListId}
+              tasks={tasksByProjectId[project.id] || []}
               onOpenModal={() => setIsModalOpen(true)}
             />
           ))
@@ -56,11 +54,10 @@ export const SpaceListView: React.FC<SpaceListViewProps> = ({ projects, listsByP
       </div>
 
       {isModalOpen && (
-        <CreateTaskModal 
-          onClose={() => setIsModalOpen(false)} 
+        <CreateTaskModal
+          onClose={() => setIsModalOpen(false)}
           projects={projects}
-          listsByProjectId={listsByProjectId}
-          onTaskCreated={() => window.location.reload()}
+          onTaskCreated={onTaskCreated}
         />
       )}
     </div>
