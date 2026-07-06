@@ -4,6 +4,7 @@ import { Project } from '@/features/projects/types';
 import { TaskItem } from '@/features/tasks/types';
 import { Filter, CheckCircle2, User, SlidersHorizontal, Plus } from 'lucide-react';
 import { CreateTaskModal } from '@/features/tasks/components/CreateTaskModal';
+import { SelectionBar } from '@/features/tasks/components/SelectionBar';
 
 interface SpaceListViewProps {
   projects: Project[];
@@ -53,6 +54,8 @@ export const SpaceListView: React.FC<SpaceListViewProps> = ({ projects, tasksByP
           </div>
         )}
       </div>
+
+      <SelectionBar allTasks={Object.values(tasksByProjectId).flat()} onChanged={onTaskCreated} />
 
       {isModalOpen && (
         <CreateTaskModal
