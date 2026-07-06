@@ -10,6 +10,7 @@ interface SpaceState {
   projects: Project[];
   tasksByProjectId: Record<number, TaskItem[]>;
   isLoading: boolean;
+  detailTaskId: number | null;
   
   fetchSpaceData: (spaceId: number) => Promise<void>;
   addTaskLocally: (task: TaskItem) => void;
@@ -18,6 +19,8 @@ interface SpaceState {
   
   setTasksForProject: (projectId: number, tasks: TaskItem[]) => void;
   setProjectLocally: (project: Project) => void;
+  
+  setDetailTaskId: (taskId: number | null) => void;
 }
 
 export const useSpaceStore = create<SpaceState>((set) => ({
@@ -25,6 +28,9 @@ export const useSpaceStore = create<SpaceState>((set) => ({
   projects: [],
   tasksByProjectId: {},
   isLoading: true,
+  detailTaskId: null,
+
+  setDetailTaskId: (taskId) => set({ detailTaskId: taskId }),
 
   setTasksForProject: (projectId: number, tasks: TaskItem[]) => {
     set((state) => ({

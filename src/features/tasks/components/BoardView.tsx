@@ -5,6 +5,7 @@ import { Plus, Flag, Calendar, MoreHorizontal, ChevronDown, ChevronRight, UserCi
 import { TaskItem, priorityMeta, TaskStatus, Priority, Tag } from '../types';
 import { InlineTaskComposer, ComposerResult } from './InlineTaskComposer';
 import { PriorityMenu, AssigneeMenu, DateMenu, TagMenu, TagPills } from './TaskFieldMenus';
+import { useSpaceStore } from '@/store/useSpaceStore';
 
 export interface TaskPatch {
   priority?: number;
@@ -87,13 +88,14 @@ const TaskCard: React.FC<{
 
   return (
     <div
-      className="board-card"
+      className={`board-card ${task.status === TaskStatus.Complete ? 'completed' : ''}`}
       ref={rootRef}
       draggable={!openField}
       onDragStart={(e) => {
         e.dataTransfer.setData('text/task-id', String(task.id));
         e.dataTransfer.effectAllowed = 'move';
       }}
+      onClick={() => useSpaceStore.getState().setDetailTaskId(task.id)}
     >
       <div className="board-card-title">{task.title}</div>
 
