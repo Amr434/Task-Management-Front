@@ -1,5 +1,5 @@
 import apiClient from '@/services/apiClient';
-import { TaskItem } from '../types';
+import { TaskItem, Tag } from '../types';
 
 
 export interface CreateTaskDTO {
@@ -10,6 +10,7 @@ export interface CreateTaskDTO {
   priority?: number;
   order?: number;
   dueDate?: string;
+  parentTaskId?: number;
 }
 
 export const createTask = async (data: CreateTaskDTO): Promise<TaskItem> => {
@@ -21,6 +22,11 @@ export const createTask = async (data: CreateTaskDTO): Promise<TaskItem> => {
 
 export const getTasksByProject = async (projectId: number): Promise<TaskItem[]> => {
   return apiClient.get<TaskItem[], TaskItem[]>(`/Tasks/project/${projectId}`);
+};
+
+
+export const deleteTask = async (id: number): Promise<void> => {
+  return apiClient.delete(`/Tasks/${id}`);
 };
 
 
@@ -53,4 +59,36 @@ export const patchTask = async (task: TaskItem, patch: Partial<UpdateTaskDTO>): 
     parentTaskId: task.parentTaskId,
     ...patch,
   });
+};
+
+
+// ---- Tags ----
+
+const TAG_COLORS = ['#e2445c', '#ffb800', '#2684ff', '#00c875', '#7b68ee', '#ff7b72', '#00b4d8'];
+const pickTagColor = () => TAG_COLORS[Math.floor(Math.random() * TAG_COLORS.length)];
+
+export const getTags = async (): Promise<Tag[]> => {
+  return apiClient.get<Tag[], Tag[]>('/Tags');
+};
+
+export const createTag = async (name: string, colorHex: string): Promise<Tag> => {
+  return apiClient.post<{ name: string; colorHex: string }, Tag>('/Tags', { name, colorHex });
+};
+
+// Attach an existing tag to a task. Backend: POST /Tasks/{taskId}/tags/{tagId}.
+export const addTagToTask = async (taskId: number, tagId: number): Promise<void> => {
+  return apiClient.post(`/Tasks/${taskId}/tags/${tagId}`, {});
+};
+
+// Detach a tag from a task. Backend: DELETE /Tasks/{taskId}/tags/{tagId}.
+export const removeTagFromTask = async (taskId: number, tagId: number): Promise<void> => {
+  return apiClient.delete(`/Tasks/${taskId}/tags/${tagId}`);
+};
+
+// Find a tag by name (case-insensitive, so names stay unique) or create it if missing.
+export const findOrCreateTag = async (name: string, existing: Tag[]): Promise<Tag> => {
+  const trimmed = name.trim();
+  const match = existing.find((t) => t.name.toLowerCase() === trimmed.toLowerCase());
+  if (match) return match;
+  return createTag(trimmed, pickTagColor());
 };

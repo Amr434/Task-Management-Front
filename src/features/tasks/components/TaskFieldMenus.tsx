@@ -1,0 +1,271 @@
+"use client";
+
+import React, { useEffect, useState } from 'react';
+import {
+  ChevronLeft, ChevronRight, Ban, Search, Settings, Plus, Flag, Tag as TagIcon, X,
+} from 'lucide-react';
+import { Priority, PRIORITY_META, Tag } from '../types';
+import { getTags, findOrCreateTag } from '../api';
+
+// --- Date helpers (shared) ---
+export const startOfDay = (d: Date) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
+export const addDays = (d: Date, n: number) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+export const sameDay = (a: Date, b: Date) =>
+  a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+export const weekday = (d: Date) => d.toLocaleDateString(undefined, { weekday: 'short' });
+export const shortDate = (d: Date) => d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+
+// Priority order to match ClickUp: Urgent, High, Normal, Low.
+const PRIORITY_ORDER: Priority[] = [Priority.Urgent, Priority.High, Priority.Medium, Priority.Low];
+
+// Pick black or white text for a coloured pill based on the background's luminance,
+// so labels stay readable on light tags (e.g. yellow) and dark ones alike.
+export const readableText = (hex: string): string => {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex);
+  if (!m) return '#fff';
+  const n = parseInt(m[1], 16);
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.6 ? '#1e1f21' : '#fff';
+};
+
+// Renders tags as compact coloured pills with a "+N" overflow.
+export const TagPills: React.FC<{ tags: Tag[]; max?: number }> = ({ tags, max = 2 }) => (
+  <span className="tag-pills">
+    {tags.slice(0, max).map((t) => (
+      <span key={t.id} className="tag-pill" style={{ backgroundColor: t.colorHex, color: readableText(t.colorHex) }}>
+        {t.name}
+      </span>
+    ))}
+    {tags.length > max && <span className="tag-pill more">+{tags.length - max}</span>}
+  </span>
+);
+
+// ---- Priority menu ----
+export const PriorityMenu: React.FC<{
+  value: Priority | null;
+  onSelect: (p: Priority) => void;
+  onClear: () => void;
+}> = ({ value, onSelect, onClear }) => (
+  <div className="composer-dropdown">
+    <div className="dd-section-title">Priority</div>
+    {PRIORITY_ORDER.map((p) => (
+      <button
+        key={p}
+        className={`dd-row ${value === p ? 'selected' : ''}`}
+        onClick={() => onSelect(p)}
+      >
+        <Flag size={17} style={{ color: PRIORITY_META[p].color }} />
+        <span>{PRIORITY_META[p].label}</span>
+      </button>
+    ))}
+    <div className="dd-divider" />
+    <button className="dd-row" onClick={onClear}>
+      <Ban size={17} /> <span>Clear</span>
+    </button>
+  </div>
+);
+
+// ---- Assignee menu (no backend field — local/visual only) ----
+export const AssigneeMenu: React.FC<{
+  assigned: boolean;
+  onAssign: () => void;
+  onClear: () => void;
+}> = ({ assigned, onAssign, onClear }) => (
+  <div className="composer-dropdown">
+    <div className="dd-search">
+      <Search size={15} />
+      <input placeholder="Search or enter email..." autoFocus />
+    </div>
+    <div className="dd-section-title">People</div>
+    <button className="dd-row" onClick={onAssign}>
+      <span className="dd-avatar">AK</span>
+      <span>Me</span>
+    </button>
+    {assigned && (
+      <button className="dd-row danger" onClick={onClear}>
+        <Ban size={16} /> <span>Clear</span>
+      </button>
+    )}
+  </div>
+);
+
+// ---- Date picker menu ----
+export const DateMenu: React.FC<{
+  value: Date | null;
+  onSelect: (d: Date) => void;
+  onClear: () => void;
+}> = ({ value, onSelect, onClear }) => {
+  const today = startOfDay(new Date());
+  const dow = today.getDay(); // 0 Sun .. 6 Sat
+  const daysUntilSat = (6 - dow + 7) % 7; // upcoming Saturday (0 if today is Sat)
+  const daysUntilMon = ((1 - dow + 7) % 7) || 7; // next Monday
+
+  const quick: { label: string; date: Date; hint: string }[] = [
+    { label: 'Today', date: today, hint: weekday(today) },
+    { label: 'Tomorrow', date: addDays(today, 1), hint: weekday(addDays(today, 1)) },
+    { label: 'This weekend', date: addDays(today, daysUntilSat), hint: 'Sat' },
+    { label: 'Next week', date: addDays(today, daysUntilMon), hint: shortDate(addDays(today, daysUntilMon)) },
+    { label: 'Next weekend', date: addDays(today, daysUntilSat + 7), hint: shortDate(addDays(today, daysUntilSat + 7)) },
+    { label: '2 weeks', date: addDays(today, 14), hint: shortDate(addDays(today, 14)) },
+    { label: '4 weeks', date: addDays(today, 28), hint: shortDate(addDays(today, 28)) },
+  ];
+
+  const [viewMonth, setViewMonth] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
+
+  const monthLabel = viewMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+  const firstDow = viewMonth.getDay();
+  const daysInMonth = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 0).getDate();
+  const cells: (Date | null)[] = [];
+  for (let i = 0; i < firstDow; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(new Date(viewMonth.getFullYear(), viewMonth.getMonth(), d));
+
+  return (
+    <div className="composer-dropdown date-dropdown">
+      <div className="date-dropdown-body">
+        <div className="date-quick-list">
+          {quick.map((q) => (
+            <button key={q.label} className="date-quick-row" onClick={() => onSelect(q.date)}>
+              <span>{q.label}</span>
+              <span className="date-quick-hint">{q.hint}</span>
+            </button>
+          ))}
+          {value && (
+            <button className="date-quick-row danger" onClick={onClear}>
+              <span>Clear</span>
+              <Ban size={15} />
+            </button>
+          )}
+        </div>
+
+        <div className="date-calendar">
+          <div className="date-cal-header">
+            <span className="date-cal-month">{monthLabel}</span>
+            <div className="date-cal-nav">
+              <button onClick={() => setViewMonth(new Date(today.getFullYear(), today.getMonth(), 1))} title="Today">
+                <span className="date-cal-today-dot" />
+              </button>
+              <button onClick={() => setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() - 1, 1))}>
+                <ChevronLeft size={16} />
+              </button>
+              <button onClick={() => setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 1))}>
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+          <div className="date-cal-grid date-cal-dow">
+            {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((d) => (
+              <span key={d} className="date-cal-dow-label">{d}</span>
+            ))}
+          </div>
+          <div className="date-cal-grid">
+            {cells.map((cell, i) =>
+              cell ? (
+                <button
+                  key={i}
+                  className={`date-cal-day ${sameDay(cell, today) ? 'today' : ''} ${value && sameDay(cell, value) ? 'selected' : ''}`}
+                  onClick={() => onSelect(cell)}
+                >
+                  {cell.getDate()}
+                </button>
+              ) : (
+                <span key={i} className="date-cal-day empty" />
+              )
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ---- Tag menu (DB-backed: searches existing tags, creates on demand, names unique) ----
+export const TagMenu: React.FC<{ selected: Tag[]; onChange: (tags: Tag[]) => void }> = ({ selected, onChange }) => {
+  const [query, setQuery] = useState('');
+  const [allTags, setAllTags] = useState<Tag[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
+
+  useEffect(() => {
+    getTags()
+      .then(setAllTags)
+      .catch((e) => console.warn('Failed to load tags', e instanceof Error ? e.message : String(e)))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const trimmed = query.trim();
+  const selectedIds = new Set(selected.map((t) => t.id));
+  const matches = allTags.filter(
+    (t) => t.name.toLowerCase().includes(trimmed.toLowerCase()) && !selectedIds.has(t.id)
+  );
+  // Only offer "create" when no tag with that exact name already exists (names are unique).
+  const exactExists = allTags.some((t) => t.name.toLowerCase() === trimmed.toLowerCase());
+  const canCreate = trimmed.length > 0 && !exactExists;
+
+  const addTag = (tag: Tag) => {
+    if (!selectedIds.has(tag.id)) onChange([...selected, tag]);
+    setQuery('');
+  };
+
+  const handleCreate = async () => {
+    if (!canCreate || creating) return;
+    setCreating(true);
+    try {
+      const tag = await findOrCreateTag(trimmed, allTags);
+      setAllTags((prev) => (prev.some((t) => t.id === tag.id) ? prev : [...prev, tag]));
+      addTag(tag);
+    } catch (e) {
+      console.warn('Failed to create tag', e instanceof Error ? e.message : String(e));
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const removeTag = (tag: Tag) => onChange(selected.filter((t) => t.id !== tag.id));
+
+  return (
+    <div className="composer-dropdown tag-dropdown">
+      <div className="dd-search">
+        <input
+          placeholder="Search or add tags..."
+          autoFocus
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') handleCreate(); }}
+        />
+      </div>
+      <div className="dd-row-between dd-section-title">
+        <span>Select an option</span>
+        <Settings size={15} />
+      </div>
+
+      {loading && <div className="dd-empty">Loading…</div>}
+
+      {!loading && canCreate && (
+        <button className="dd-row" onClick={handleCreate} disabled={creating}>
+          <Plus size={16} /> <span>{creating ? 'Creating…' : `Create “${trimmed}”`}</span>
+        </button>
+      )}
+
+      {!loading && matches.map((tag) => (
+        <button key={tag.id} className="dd-row" onClick={() => addTag(tag)}>
+          <TagIcon size={15} style={{ color: tag.colorHex }} /> <span>{tag.name}</span>
+        </button>
+      ))}
+
+      {!loading && matches.length === 0 && !canCreate && selected.length === 0 && (
+        <div className="dd-empty">No tags created</div>
+      )}
+
+      {selected.length > 0 && <div className="dd-divider" />}
+      {selected.map((tag) => (
+        <button key={tag.id} className="dd-row selected" onClick={() => removeTag(tag)} title="Remove">
+          <TagIcon size={15} style={{ color: tag.colorHex }} /> <span>{tag.name}</span>
+          <X size={14} style={{ marginLeft: 'auto' }} />
+        </button>
+      ))}
+    </div>
+  );
+};
+
+export type { Tag };
