@@ -2,13 +2,13 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { getProjectById, getProjectsBySpace } from '@/features/projects/api';
-import { getTasksByProject, patchTask } from '@/features/tasks/api';
+import { getTasksByProject, patchTask, createTask, addTagToTask, removeTagFromTask } from '@/features/tasks/api';
+import { ComposerResult } from '@/features/tasks/components/InlineTaskComposer';
 import { Project } from '@/features/projects/types';
 import { TaskItem, TaskStatus } from '@/features/tasks/types';
 import { SpaceListView } from '@/features/spaces/components/SpaceListView';
 import { BoardView } from '@/features/tasks/components/BoardView';
 import { CalendarView } from '@/features/tasks/components/CalendarView';
-import { CreateTaskModal } from '@/features/tasks/components/CreateTaskModal';
 import { LayoutGrid, List as ListIcon, Columns, Calendar, Plus, MoreHorizontal, Share2 } from 'lucide-react';
 
 type ProjectView = 'list' | 'board' | 'calendar';
@@ -18,7 +18,6 @@ export const ProjectBoard = ({ projectId, spaceId }: { projectId: number; spaceI
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeView, setActiveView] = useState<ProjectView>('list');
-  const [isAddingTask, setIsAddingTask] = useState(false);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -55,6 +54,57 @@ export const ProjectBoard = ({ projectId, spaceId }: { projectId: number; spaceI
 
   useEffect(() => {
     fetchData();
+  }, [fetchData]);
+
+  // Create a task inline from a board column. Persists title/priority/dueDate/status,
+  // then refetches so the new card appears in the right column.
+  const handleCreateTask = useCallback(async (data: ComposerResult, status: TaskStatus) => {
+    const created = await createTask({
+      title: data.title,
+      priority: data.priority,
+      dueDate: data.dueDate,
+      status,
+      projectId,
+      order: 0,
+    });
+    // Task create has no tags field — attach the selected tags after creation.
+    for (const tagId of data.tagIds) {
+      try {
+        await addTagToTask(created.id, tagId);
+      } catch (e) {
+        console.warn('Failed to attach tag', e instanceof Error ? e.message : String(e));
+      }
+    }
+    await fetchData();
+  }, [projectId, fetchData]);
+
+  // Update a task's fields (priority / due date) inline from a board card.
+  // Optimistic, with refetch on failure.
+  const handleUpdateTask = useCallback((taskId: number, patch: { priority?: number; dueDate?: string }) => {
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) return;
+
+    setTasks((prev) => prev.map(t => t.id === taskId ? { ...t, ...patch } as TaskItem : t));
+
+    patchTask(task, patch).catch((error) => {
+      console.warn("Failed to update task", error instanceof Error ? error.message : String(error));
+      fetchData(); // revert to server truth
+    });
+  }, [tasks, fetchData]);
+
+  // Attach an existing/just-created tag to a task (board card). Persists, then refetches
+  // so the card reflects the server's tag list.
+  const handleAddTag = useCallback((taskId: number, tagId: number) => {
+    addTagToTask(taskId, tagId)
+      .then(() => fetchData())
+      .catch((error) => console.warn("Failed to attach tag", error instanceof Error ? error.message : String(error)));
+  }, [fetchData]);
+
+  // Detach a tag from a task (board card). Persists, then refetches.
+  const handleRemoveTag = useCallback((taskId: number, tagId: number) => {
+    removeTagFromTask(taskId, tagId)
+      .then(() => fetchData())
+      .catch((error) => console.warn("Failed to remove tag", error instanceof Error ? error.message : String(error)));
   }, [fetchData]);
 
   // Move a task to another status (drag & drop on the board). Optimistic, with refetch on failure.
@@ -131,8 +181,12 @@ export const ProjectBoard = ({ projectId, spaceId }: { projectId: number; spaceI
         {activeView === 'board' && (
           <BoardView
             tasks={tasks}
+            projectName={project.name}
             onMoveTask={handleMoveTask}
-            onAddTask={() => setIsAddingTask(true)}
+            onCreateTask={handleCreateTask}
+            onUpdateTask={handleUpdateTask}
+            onAddTag={handleAddTag}
+            onRemoveTag={handleRemoveTag}
           />
         )}
 
@@ -140,15 +194,6 @@ export const ProjectBoard = ({ projectId, spaceId }: { projectId: number; spaceI
           <CalendarView tasks={tasks} />
         )}
       </div>
-
-      {isAddingTask && (
-          <CreateTaskModal
-            onClose={() => setIsAddingTask(false)}
-            projects={[project]}
-            defaultProjectId={project.id}
-            onTaskCreated={fetchData}
-          />
-      )}
     </div>
   );
 };

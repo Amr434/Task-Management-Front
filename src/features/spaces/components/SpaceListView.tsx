@@ -39,11 +39,12 @@ export const SpaceListView: React.FC<SpaceListViewProps> = ({ projects, tasksByP
       <div className="table-body">
         {projects.length > 0 ? (
           projects.map(project => (
-            <SpaceProjectSection 
-              key={project.id} 
-              project={project} 
+            <SpaceProjectSection
+              key={project.id}
+              project={project}
               tasks={tasksByProjectId[project.id] || []}
               onOpenModal={() => setIsModalOpen(true)}
+              onChanged={onTaskCreated}
             />
           ))
         ) : (

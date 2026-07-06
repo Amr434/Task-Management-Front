@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ChevronDown, ChevronRight, Folder, MoreHorizontal } from 'lucide-react';
 import { Project } from '@/features/projects/types';
 import { SpaceStatusSection } from './SpaceStatusSection';
@@ -8,6 +8,7 @@ interface SpaceProjectSectionProps {
   project: Project;
   tasks: TaskItem[];
   onOpenModal?: () => void;
+  onChanged?: () => void;
 }
 
 const getStatusColor = (status: TaskStatus) => {
@@ -19,8 +20,24 @@ const getStatusColor = (status: TaskStatus) => {
   }
 };
 
-export const SpaceProjectSection: React.FC<SpaceProjectSectionProps> = ({ project, tasks, onOpenModal }) => {
+export const SpaceProjectSection: React.FC<SpaceProjectSectionProps> = ({ project, tasks, onOpenModal, onChanged }) => {
   const [isExpanded, setIsExpanded] = useState(true);
+
+  // Build the subtask tree: map each parent id to its direct children, and keep
+  // only top-level tasks (no parent) for the status columns — subtasks render
+  // nested under their parent inside TaskRow.
+  const { childrenByParent, topLevelTasks } = useMemo(() => {
+    const map: Record<number, TaskItem[]> = {};
+    const top: TaskItem[] = [];
+    for (const t of tasks) {
+      if (t.parentTaskId != null) {
+        (map[t.parentTaskId] ??= []).push(t);
+      } else {
+        top.push(t);
+      }
+    }
+    return { childrenByParent: map, topLevelTasks: top };
+  }, [tasks]);
 
   return (
     <div className="space-project-section">
@@ -41,14 +58,16 @@ export const SpaceProjectSection: React.FC<SpaceProjectSectionProps> = ({ projec
       {isExpanded && (
         <div className="project-lists-container">
           {[TaskStatus.ToDo, TaskStatus.InProgress, TaskStatus.Complete].map(status => {
-            const statusTasks = tasks.filter(t => t.status === status);
+            const statusTasks = topLevelTasks.filter(t => t.status === status);
             return (
-              <SpaceStatusSection 
-                key={status} 
-                status={status} 
-                tasks={statusTasks} 
+              <SpaceStatusSection
+                key={status}
+                status={status}
+                tasks={statusTasks}
+                childrenByParent={childrenByParent}
                 color={getStatusColor(status)}
                 onOpenModal={onOpenModal}
+                onChanged={onChanged}
               />
             );
           })}
