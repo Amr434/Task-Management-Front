@@ -8,7 +8,6 @@ interface SpaceProjectSectionProps {
   project: Project;
   tasks: TaskItem[];
   onOpenModal?: () => void;
-  onChanged?: () => void;
 }
 
 const getStatusColor = (status: TaskStatus) => {
@@ -20,7 +19,7 @@ const getStatusColor = (status: TaskStatus) => {
   }
 };
 
-export const SpaceProjectSection: React.FC<SpaceProjectSectionProps> = ({ project, tasks, onOpenModal, onChanged }) => {
+export const SpaceProjectSection: React.FC<SpaceProjectSectionProps> = ({ project, tasks, onOpenModal }) => {
   const [isExpanded, setIsExpanded] = useState(true);
 
   // Build the subtask tree: map each parent id to its direct children, and keep
@@ -67,7 +66,6 @@ export const SpaceProjectSection: React.FC<SpaceProjectSectionProps> = ({ projec
                 childrenByParent={childrenByParent}
                 color={getStatusColor(status)}
                 onOpenModal={onOpenModal}
-                onChanged={onChanged}
               />
             );
           })}

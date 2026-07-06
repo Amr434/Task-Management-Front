@@ -30,8 +30,8 @@ export const readableText = (hex: string): string => {
 };
 
 // Renders tags as compact coloured pills with a "+N" overflow.
-export const TagPills: React.FC<{ tags: Tag[]; max?: number }> = ({ tags, max = 2 }) => (
-  <span className="tag-pills">
+export const TagPills: React.FC<{ tags: Tag[]; max?: number; onClick?: (e: React.MouseEvent) => void }> = ({ tags, max = 2, onClick }) => (
+  <span className="tag-pills" onClick={onClick} style={onClick ? { cursor: 'pointer' } : undefined}>
     {tags.slice(0, max).map((t) => (
       <span key={t.id} className="tag-pill" style={{ backgroundColor: t.colorHex, color: readableText(t.colorHex) }}>
         {t.name}

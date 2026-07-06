@@ -9,7 +9,6 @@ interface SpaceStatusSectionProps {
   childrenByParent: Record<number, TaskItem[]>;
   color?: string; // We can pass a color based on status, e.g. Grey for TODO, Blue for In Progress
   onOpenModal?: () => void;
-  onChanged?: () => void;
 }
 
 const getStatusName = (status: TaskStatus) => {
@@ -21,7 +20,7 @@ const getStatusName = (status: TaskStatus) => {
   }
 };
 
-export const SpaceStatusSection: React.FC<SpaceStatusSectionProps> = ({ status, tasks, childrenByParent, color = '#87909e', onOpenModal, onChanged }) => {
+export const SpaceStatusSection: React.FC<SpaceStatusSectionProps> = ({ status, tasks, childrenByParent, color = '#87909e', onOpenModal }) => {
   const [isExpanded, setIsExpanded] = useState(true);
 
   return (
@@ -59,8 +58,9 @@ export const SpaceStatusSection: React.FC<SpaceStatusSectionProps> = ({ status, 
           
           {tasks.length > 0 ? (
             tasks.map(task => (
-              <TaskRow key={task.id} task={task} childrenByParent={childrenByParent} onChanged={onChanged} />
+              <TaskRow key={task.id} task={task} childrenByParent={childrenByParent} />
             ))
+
           ) : (
             <div className="empty-tasks-row">
               <span className="empty-text">No tasks in this list</span>
