@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Calendar, Flag, Pencil, Plus, Tag as TagIcon, MoreHorizontal, Trash2,
-  ChevronRight, ChevronDown, GitBranch, CornerDownLeft,
+  ChevronRight, ChevronDown, GitBranch, CornerDownLeft, Check
 } from 'lucide-react';
 import { TaskItem, toPriority, Priority, Tag } from '../types';
+import { useTaskSelection } from '@/contexts/TaskSelectionContext';
 import { patchTask, createTask, deleteTask, addTagToTask, removeTagFromTask } from '../api';
 import { DateMenu, PriorityMenu, TagMenu, TagPills } from './TaskFieldMenus';
+import { useSpaceStore } from '@/store/useSpaceStore';
 
 const INDENT_BASE = 48;
 const INDENT_STEP = 24;
@@ -15,9 +17,6 @@ interface TaskRowProps {
   /** Map of parentTaskId -> its direct subtasks, for recursive rendering. */
   childrenByParent: Record<number, TaskItem[]>;
   depth?: number;
-  onToggleStatus?: (taskId: number) => void;
-  /** Called after any change that needs the list to refresh. */
-  onChanged?: () => void;
 }
 
 type RowField = 'dates' | 'priority' | 'tag' | 'menu' | null;
@@ -27,13 +26,21 @@ const StatusGlyph = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="4 4" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/></svg>
 );
 
-export const TaskRow: React.FC<TaskRowProps> = ({ task, childrenByParent, depth = 0, onToggleStatus, onChanged }) => {
+export const TaskRow: React.FC<TaskRowProps> = ({ task, childrenByParent, depth = 0 }) => {
+  const { updateTaskLocally, addTaskLocally, deleteTaskLocally } = useSpaceStore();
+  const { selectedTaskIds, toggleTaskSelection } = useTaskSelection();
+  const isSelected = selectedTaskIds.includes(task.id);
+
   const [openField, setOpenField] = useState<RowField>(null);
   const [renaming, setRenaming] = useState(false);
   const [titleDraft, setTitleDraft] = useState(task.title);
-  const [tags, setTags] = useState<Tag[]>(task.tags ?? []);
+  const tags = task.tags ?? [];
   const [expanded, setExpanded] = useState(false);
   const [addingSubtask, setAddingSubtask] = useState(false);
+
+  useEffect(() => {
+    setTitleDraft(task.title);
+  }, [task.title]);
 
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -51,11 +58,16 @@ export const TaskRow: React.FC<TaskRowProps> = ({ task, childrenByParent, depth 
 
   const toggle = (field: RowField) => setOpenField((cur) => (cur === field ? null : field));
 
+  const handleMarkComplete = () => {
+    if (task.status === 2) return;
+    patchTask(task, { status: 2 }).then((updated) => updateTaskLocally(task.id, updated)).catch(e => console.warn(e));
+  };
+
   const commitRename = () => {
     const next = titleDraft.trim();
     setRenaming(false);
     if (!next || next === task.title) { setTitleDraft(task.title); return; }
-    patchTask(task, { title: next }).then(() => onChanged?.()).catch((e) => {
+    patchTask(task, { title: next }).then((updated) => updateTaskLocally(task.id, updated)).catch((e) => {
       console.warn('Failed to rename task', e instanceof Error ? e.message : String(e));
       setTitleDraft(task.title);
     });
@@ -63,13 +75,13 @@ export const TaskRow: React.FC<TaskRowProps> = ({ task, childrenByParent, depth 
 
   const setPriority = (p: Priority) => {
     setOpenField(null);
-    patchTask(task, { priority: p }).then(() => onChanged?.()).catch((e) =>
+    patchTask(task, { priority: p }).then((updated) => updateTaskLocally(task.id, updated)).catch((e) =>
       console.warn('Failed to set priority', e instanceof Error ? e.message : String(e)));
   };
 
   const setDueDate = (iso: string | undefined) => {
     setOpenField(null);
-    patchTask(task, { dueDate: iso }).then(() => onChanged?.()).catch((e) =>
+    patchTask(task, { dueDate: iso }).then((updated) => updateTaskLocally(task.id, updated)).catch((e) =>
       console.warn('Failed to set due date', e instanceof Error ? e.message : String(e)));
   };
 
@@ -80,7 +92,7 @@ export const TaskRow: React.FC<TaskRowProps> = ({ task, childrenByParent, depth 
   };
 
   const createSubtask = async (title: string) => {
-    await createTask({
+    const newTask = await createTask({
       title,
       projectId: task.projectId,
       status: task.status,
@@ -90,32 +102,71 @@ export const TaskRow: React.FC<TaskRowProps> = ({ task, childrenByParent, depth 
     });
     setAddingSubtask(false);
     setExpanded(true);
-    onChanged?.();
+    addTaskLocally(newTask);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     setOpenField(null);
-    deleteTask(task.id).then(() => onChanged?.()).catch((e) =>
-      console.warn('Failed to delete task', e instanceof Error ? e.message : String(e)));
+    try {
+      const allToDelete = new Map<number, TaskItem>();
+      const stack = [task];
+      
+      while (stack.length > 0) {
+        const current = stack.pop()!;
+        if (!allToDelete.has(current.id)) {
+          allToDelete.set(current.id, current);
+          const children = childrenByParent[current.id] || [];
+          stack.push(...children);
+        }
+      }
+
+      let remaining = Array.from(allToDelete.values());
+      while (remaining.length > 0) {
+        const leaves = remaining.filter(t => {
+          const children = childrenByParent[t.id] || [];
+          return !children.some(child => remaining.some(r => r.id === child.id));
+        });
+
+        await Promise.all(leaves.map(t => deleteTask(t.id)));
+
+        const leafIds = new Set(leaves.map(l => l.id));
+        remaining = remaining.filter(t => !leafIds.has(t.id));
+      }
+
+      Array.from(allToDelete.values()).forEach(t => deleteTaskLocally(t.id));
+    } catch (e) {
+      console.warn('Failed to delete task', e instanceof Error ? e.message : String(e));
+    }
   };
 
   const handleTagsChange = (next: Tag[]) => {
     const added = next.filter((n) => !tags.some((t) => t.id === n.id));
     const removed = tags.filter((t) => !next.some((n) => n.id === t.id));
-    setTags(next);
+    updateTaskLocally(task.id, { tags: next });
     Promise.all([
       ...added.map((t) => addTagToTask(task.id, t.id)),
       ...removed.map((t) => removeTagFromTask(task.id, t.id)),
-    ]).then(() => onChanged?.()).catch((e) =>
-      console.warn('Failed to update tags', e instanceof Error ? e.message : String(e)));
+    ]).catch((e) => console.warn('Failed to update tags', e instanceof Error ? e.message : String(e)));
   };
 
   const priority = toPriority(task.priority);
 
   return (
     <>
-      <div className="task-row" ref={rootRef}>
+      <div className={`task-row ${isSelected ? 'selected' : ''}`} ref={rootRef}>
         <div className="task-cell task-name-cell" style={{ paddingLeft: INDENT_BASE + depth * INDENT_STEP }}>
+          <div 
+            className={`task-row-checkbox ${isSelected ? 'checked' : ''}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleTaskSelection(task.id);
+            }}
+          >
+            <div className="checkbox-inner">
+              {isSelected && <Check size={10} strokeWidth={3} />}
+            </div>
+          </div>
+
           <span
             className={`task-expand ${hasChildren ? 'has-children' : ''}`}
             onClick={() => hasChildren && setExpanded((v) => !v)}
@@ -123,7 +174,7 @@ export const TaskRow: React.FC<TaskRowProps> = ({ task, childrenByParent, depth 
             {hasChildren && (expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />)}
           </span>
 
-          <button className="task-status-btn" onClick={() => onToggleStatus?.(task.id)}>
+          <button className="task-status-btn" onClick={handleMarkComplete}>
             <StatusGlyph />
           </button>
 
@@ -151,7 +202,7 @@ export const TaskRow: React.FC<TaskRowProps> = ({ task, childrenByParent, depth 
             </button>
           )}
 
-          {tags.length > 0 && <TagPills tags={tags} />}
+          {tags.length > 0 && <TagPills tags={tags} onClick={(e) => { e.stopPropagation(); toggle('tag'); }} />}
 
           <div className="task-row-actions">
             <button className="row-action-btn" title="Rename" onClick={() => { setTitleDraft(task.title); setRenaming(true); }}>
@@ -235,17 +286,18 @@ export const TaskRow: React.FC<TaskRowProps> = ({ task, childrenByParent, depth 
         </div>
       </div>
 
-      {/* Nested subtasks (recursive) */}
-      {expanded && children.map((child) => (
-        <TaskRow
-          key={child.id}
-          task={child}
-          childrenByParent={childrenByParent}
-          depth={depth + 1}
-          onToggleStatus={onToggleStatus}
-          onChanged={onChanged}
-        />
-      ))}
+      {expanded && children.length > 0 && (
+        <div className="task-children">
+          {children.map((child) => (
+            <TaskRow
+              key={child.id}
+              task={child}
+              childrenByParent={childrenByParent}
+              depth={depth + 1}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Inline subtask composer */}
       {addingSubtask && (

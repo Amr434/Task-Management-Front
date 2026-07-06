@@ -4,14 +4,14 @@ import { Project } from '@/features/projects/types';
 import { TaskItem } from '@/features/tasks/types';
 import { Filter, CheckCircle2, User, SlidersHorizontal, Plus } from 'lucide-react';
 import { CreateTaskModal } from '@/features/tasks/components/CreateTaskModal';
+import { SelectionBar } from '@/features/tasks/components/SelectionBar';
 
 interface SpaceListViewProps {
   projects: Project[];
   tasksByProjectId: Record<number, TaskItem[]>;
-  onTaskCreated?: () => void;
 }
 
-export const SpaceListView: React.FC<SpaceListViewProps> = ({ projects, tasksByProjectId, onTaskCreated }) => {
+export const SpaceListView: React.FC<SpaceListViewProps> = ({ projects, tasksByProjectId }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
@@ -44,7 +44,6 @@ export const SpaceListView: React.FC<SpaceListViewProps> = ({ projects, tasksByP
               project={project}
               tasks={tasksByProjectId[project.id] || []}
               onOpenModal={() => setIsModalOpen(true)}
-              onChanged={onTaskCreated}
             />
           ))
         ) : (
@@ -54,11 +53,12 @@ export const SpaceListView: React.FC<SpaceListViewProps> = ({ projects, tasksByP
         )}
       </div>
 
+      <SelectionBar allTasks={Object.values(tasksByProjectId).flat()} />
+
       {isModalOpen && (
         <CreateTaskModal
           onClose={() => setIsModalOpen(false)}
           projects={projects}
-          onTaskCreated={onTaskCreated}
         />
       )}
     </div>

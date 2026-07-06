@@ -10,12 +10,15 @@ import { SpaceListView } from '@/features/spaces/components/SpaceListView';
 import { BoardView } from '@/features/tasks/components/BoardView';
 import { CalendarView } from '@/features/tasks/components/CalendarView';
 import { LayoutGrid, List as ListIcon, Columns, Calendar, Plus, MoreHorizontal, Share2 } from 'lucide-react';
+import { useSpaceStore } from '@/store/useSpaceStore';
 
 type ProjectView = 'list' | 'board' | 'calendar';
 
 export const ProjectBoard = ({ projectId, spaceId }: { projectId: number; spaceId?: number }) => {
-  const [project, setProject] = useState<Project | null>(null);
-  const [tasks, setTasks] = useState<TaskItem[]>([]);
+  const { projects, tasksByProjectId, setProjectLocally, setTasksForProject, addTaskLocally, updateTaskLocally } = useSpaceStore();
+  const project = projects.find((p) => p.id === projectId) || null;
+  const tasks = tasksByProjectId[projectId] || [];
+  
   const [isLoading, setIsLoading] = useState(true);
   const [activeView, setActiveView] = useState<ProjectView>('list');
 
@@ -29,28 +32,28 @@ export const ProjectBoard = ({ projectId, spaceId }: { projectId: number; spaceI
         const spaceProjects = await getProjectsBySpace(spaceId);
         const foundProject = spaceProjects.find((p) => p.id === projectId);
         if (foundProject) {
-          setProject(foundProject);
+          setProjectLocally(foundProject);
         } else {
           throw new Error(`Project ${projectId} not found in space ${spaceId}`);
         }
       } else {
         const fetchedProject = await getProjectById(projectId);
-        setProject(fetchedProject);
+        setProjectLocally(fetchedProject);
       }
     } catch (error) {
       console.warn("Could not load project details", error instanceof Error ? error.message : String(error));
-      setProject({ id: projectId, name: `Project #${projectId}`, spaceId: spaceId || 0 });
+      setProjectLocally({ id: projectId, name: `Project #${projectId}`, spaceId: spaceId || 0 });
     }
 
     try {
       const fetchedTasks = await getTasksByProject(projectId);
-      setTasks(fetchedTasks);
+      setTasksForProject(projectId, fetchedTasks);
     } catch (error) {
       console.warn("Failed to load project tasks", error instanceof Error ? error.message : String(error));
     } finally {
       setIsLoading(false);
     }
-  }, [projectId]);
+  }, [projectId, spaceId, setProjectLocally, setTasksForProject]);
 
   useEffect(() => {
     fetchData();
@@ -84,13 +87,13 @@ export const ProjectBoard = ({ projectId, spaceId }: { projectId: number; spaceI
     const task = tasks.find((t) => t.id === taskId);
     if (!task) return;
 
-    setTasks((prev) => prev.map(t => t.id === taskId ? { ...t, ...patch } as TaskItem : t));
+    updateTaskLocally(taskId, patch);
 
     patchTask(task, patch).catch((error) => {
       console.warn("Failed to update task", error instanceof Error ? error.message : String(error));
       fetchData(); // revert to server truth
     });
-  }, [tasks, fetchData]);
+  }, [tasks, fetchData, updateTaskLocally]);
 
   // Attach an existing/just-created tag to a task (board card). Persists, then refetches
   // so the card reflects the server's tag list.
@@ -112,13 +115,13 @@ export const ProjectBoard = ({ projectId, spaceId }: { projectId: number; spaceI
     const task = tasks.find((t) => t.id === taskId);
     if (!task || task.status === toStatus) return;
 
-    setTasks((prev) => prev.map(t => t.id === taskId ? { ...t, status: toStatus } : t));
+    updateTaskLocally(taskId, { status: toStatus });
 
     patchTask(task, { status: toStatus }).catch((error) => {
       console.warn("Failed to update task status", error instanceof Error ? error.message : String(error));
       fetchData(); // revert to server truth
     });
-  }, [tasks, fetchData]);
+  }, [tasks, fetchData, updateTaskLocally]);
 
   if (isLoading) {
     return <div className="space-loading" style={{ padding: '24px' }}>Loading Project...</div>;
@@ -174,7 +177,6 @@ export const ProjectBoard = ({ projectId, spaceId }: { projectId: number; spaceI
           <SpaceListView
             projects={[project]}
             tasksByProjectId={{ [project.id]: tasks }}
-            onTaskCreated={fetchData}
           />
         )}
 

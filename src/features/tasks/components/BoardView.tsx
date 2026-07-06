@@ -68,7 +68,8 @@ const TaskCard: React.FC<{
   // Assignee is visual-only (no backend field). Tags are DB-backed: additions
   // persist via onAddTag; removals are local (backend has no detach endpoint).
   const [assignedToMe, setAssignedToMe] = useState(false);
-  const [tags, setTags] = useState<Tag[]>(task.tags ?? []);
+  const [openTagMenu, setOpenTagMenu] = useState(false);
+  const tags = task.tags ?? [];
   const [openField, setOpenField] = useState<CardField>(null);
 
   const rootRef = useRef<HTMLDivElement>(null);
@@ -171,12 +172,14 @@ const TaskCard: React.FC<{
           {openField === 'tag' && (
             <TagMenu
               selected={tags}
-              onChange={(next) => {
+              onChange={(next: Tag[]) => {
                 const added = next.filter((n) => !tags.some((t) => t.id === n.id));
                 const removed = tags.filter((t) => !next.some((n) => n.id === t.id));
-                setTags(next);
-                added.forEach((t) => onAddTag(task.id, t.id));
-                removed.forEach((t) => onRemoveTag(task.id, t.id));
+    
+                // We expect the parent to optimistic update or refresh.
+                // In this codebase, the parent (ProjectBoard) has onAddTag/onRemoveTag callbacks.
+                added.forEach(t => onAddTag(task.id, t.id));
+                removed.forEach(t => onRemoveTag(task.id, t.id));
               }}
             />
           )}

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import {
-  ChevronLeft, ChevronRight, Ban, Search, Settings, Plus, Flag, Tag as TagIcon, X,
+  ChevronLeft, ChevronRight, Ban, Search, Settings, Plus, Flag, Tag as TagIcon, X, AlertTriangle
 } from 'lucide-react';
 import { Priority, PRIORITY_META, Tag } from '../types';
 import { getTags, findOrCreateTag } from '../api';
@@ -30,8 +30,8 @@ export const readableText = (hex: string): string => {
 };
 
 // Renders tags as compact coloured pills with a "+N" overflow.
-export const TagPills: React.FC<{ tags: Tag[]; max?: number }> = ({ tags, max = 2 }) => (
-  <span className="tag-pills">
+export const TagPills: React.FC<{ tags: Tag[]; max?: number; onClick?: (e: React.MouseEvent) => void }> = ({ tags, max = 2, onClick }) => (
+  <span className="tag-pills" onClick={onClick} style={onClick ? { cursor: 'pointer' } : undefined}>
     {tags.slice(0, max).map((t) => (
       <span key={t.id} className="tag-pill" style={{ backgroundColor: t.colorHex, color: readableText(t.colorHex) }}>
         {t.name}
@@ -63,6 +63,58 @@ export const PriorityMenu: React.FC<{
     <button className="dd-row" onClick={onClear}>
       <Ban size={17} /> <span>Clear</span>
     </button>
+  </div>
+);
+
+// ---- Status menu ----
+export const StatusMenu: React.FC<{
+  value?: number | null;
+  onSelect: (s: number) => void;
+}> = ({ value, onSelect }) => (
+  <div className="composer-dropdown status-dropdown" style={{ minWidth: '280px' }}>
+    <div className="dd-search">
+      <input placeholder="Search..." autoFocus />
+    </div>
+    
+    <div className="dd-section-warning" style={{ margin: '8px 12px' }}>
+      <AlertTriangle size={14} className="warning-icon" />
+      <span>Only showing statuses shared between all Tasks you selected</span>
+    </div>
+    
+    <div className="dd-section-title" style={{ marginTop: '4px' }}>Not started</div>
+    <button
+      className={`dd-row status-row ${value === 0 ? 'selected' : ''}`}
+      onClick={() => onSelect(0)}
+    >
+      <span className="status-dot todo"></span>
+      <span>TO DO</span>
+    </button>
+    
+    <div className="dd-section-title">Active</div>
+    <button
+      className={`dd-row status-row ${value === 1 ? 'selected' : ''}`}
+      onClick={() => onSelect(1)}
+    >
+      <span className="status-dot in-progress"></span>
+      <span>IN PROGRESS</span>
+    </button>
+    
+    <div className="dd-section-title">Closed</div>
+    <button
+      className={`dd-row status-row ${value === 2 ? 'selected' : ''}`}
+      onClick={() => onSelect(2)}
+    >
+      <span className="status-dot complete"></span>
+      <span>COMPLETE</span>
+    </button>
+
+    <div className="dd-divider" />
+    <div className="dd-row dd-row-between" style={{ cursor: 'default' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="toggle-switch on"><div className="toggle-knob"></div></div>
+        <span>Send notifications</span>
+      </div>
+    </div>
   </div>
 );
 
