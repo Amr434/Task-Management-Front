@@ -6,7 +6,7 @@ import {
 import { TaskItem, toPriority, Priority, Tag } from '../types';
 import { useTaskSelection } from '@/contexts/TaskSelectionContext';
 import { patchTask, createTask, deleteTask, addTagToTask, removeTagFromTask } from '../api';
-import { DateMenu, PriorityMenu, TagMenu, TagPills } from './TaskFieldMenus';
+import { DateMenu, PriorityMenu, TagMenu, TagPills, AssigneeMenu } from './TaskFieldMenus';
 import { useSpaceStore } from '@/store/useSpaceStore';
 
 const INDENT_BASE = 48;
@@ -19,7 +19,7 @@ interface TaskRowProps {
   depth?: number;
 }
 
-type RowField = 'dates' | 'priority' | 'tag' | 'menu' | null;
+type RowField = 'dates' | 'priority' | 'tag' | 'assignee' | 'menu' | null;
 
 // Dashed-circle status glyph reused by rows and the subtask composer.
 const StatusGlyph = () => (
@@ -27,7 +27,7 @@ const StatusGlyph = () => (
 );
 
 export const TaskRow: React.FC<TaskRowProps> = ({ task, childrenByParent, depth = 0 }) => {
-  const { updateTaskLocally, addTaskLocally, deleteTaskLocally } = useSpaceStore();
+  const { updateTaskLocally, addTaskLocally, deleteTaskLocally, setDetailTaskId } = useSpaceStore();
   const { selectedTaskIds, toggleTaskSelection } = useTaskSelection();
   const isSelected = selectedTaskIds.includes(task.id);
 
@@ -37,6 +37,7 @@ export const TaskRow: React.FC<TaskRowProps> = ({ task, childrenByParent, depth 
   const tags = task.tags ?? [];
   const [expanded, setExpanded] = useState(false);
   const [addingSubtask, setAddingSubtask] = useState(false);
+  const [assignedToMe, setAssignedToMe] = useState(false);
 
   useEffect(() => {
     setTitleDraft(task.title);
@@ -153,7 +154,16 @@ export const TaskRow: React.FC<TaskRowProps> = ({ task, childrenByParent, depth 
 
   return (
     <>
-      <div className={`task-row ${isSelected ? 'selected' : ''}`} ref={rootRef}>
+      <div 
+        className={`task-row ${isSelected ? 'selected' : ''}`} 
+        ref={rootRef}
+        onClick={(e) => {
+          if ((e.target as HTMLElement).closest('.row-action-wrap, .task-row-checkbox, .task-expand, .task-status-btn, .task-row-actions, .composer-dropdown, .tag-pills, .task-title-input')) {
+            return;
+          }
+          setDetailTaskId(task.id);
+        }}
+      >
         <div className="task-cell task-name-cell" style={{ paddingLeft: INDENT_BASE + depth * INDENT_STEP }}>
           <div 
             className={`task-row-checkbox ${isSelected ? 'checked' : ''}`}
@@ -221,10 +231,23 @@ export const TaskRow: React.FC<TaskRowProps> = ({ task, childrenByParent, depth 
         </div>
 
         <div className="task-cell task-assignee-cell">
-          <div className="empty-avatar" title="Assign">
-            <span className="assignee-icon-circle">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
-            </span>
+          <div className="row-action-wrap">
+            <button className="assignee-btn" onClick={() => toggle('assignee')} title="Assign">
+              {assignedToMe ? (
+                <span className="dd-avatar sm">AK</span>
+              ) : (
+                <span className="assignee-icon-circle">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
+                </span>
+              )}
+            </button>
+            {openField === 'assignee' && (
+              <AssigneeMenu
+                assigned={assignedToMe}
+                onAssign={() => { setAssignedToMe(true); setOpenField(null); }}
+                onClear={() => { setAssignedToMe(false); setOpenField(null); }}
+              />
+            )}
           </div>
         </div>
 
