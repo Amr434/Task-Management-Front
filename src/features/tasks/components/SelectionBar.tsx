@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useEffect, useRef, useState } from 'react';
 import { useTaskSelection } from '@/contexts/TaskSelectionContext';
 import { X, CheckCircle2, Users, Calendar, Settings2, Tag, Copy, Trash2, MoreHorizontal, ArrowRightCircle } from 'lucide-react';
@@ -7,15 +5,16 @@ import { TaskItem, TaskStatus, Tag as TagType } from '../types';
 import { patchTask, deleteTask, addTagToTask } from '../api';
 import { StatusMenu, AssigneeMenu, DateMenu, TagMenu } from './TaskFieldMenus';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { useSpaceStore } from '@/store/useSpaceStore';
 
 interface SelectionBarProps {
   allTasks?: TaskItem[];
-  onChanged?: () => void;
 }
 
 type MenuType = 'status' | 'assignee' | 'date' | 'tag' | 'delete' | null;
 
-export const SelectionBar: React.FC<SelectionBarProps> = ({ allTasks = [], onChanged }) => {
+export const SelectionBar: React.FC<SelectionBarProps> = ({ allTasks = [] }) => {
+  const { updateTaskLocally, deleteTaskLocally } = useSpaceStore();
   const { selectedTaskIds, clearSelection } = useTaskSelection();
   const [openMenu, setOpenMenu] = useState<MenuType>(null);
   const [loading, setLoading] = useState(false);
@@ -41,8 +40,7 @@ export const SelectionBar: React.FC<SelectionBarProps> = ({ allTasks = [], onCha
   const handleBulkUpdate = async (patch: Partial<TaskItem>) => {
     setLoading(true);
     try {
-      await Promise.all(selectedTasks.map(t => patchTask(t, patch)));
-      onChanged?.();
+      await Promise.all(selectedTasks.map(t => patchTask(t, patch).then(updated => updateTaskLocally(t.id, updated))));
       clearSelection();
     } catch (e) {
       console.warn("Bulk update failed", e);
@@ -93,7 +91,7 @@ export const SelectionBar: React.FC<SelectionBarProps> = ({ allTasks = [], onCha
         remaining = remaining.filter(t => !leafIds.has(t.id));
       }
 
-      onChanged?.();
+      Array.from(allToDelete.values()).forEach(t => deleteTaskLocally(t.id));
       clearSelection();
     } catch (e) {
       console.warn("Bulk delete failed", e);
@@ -110,8 +108,12 @@ export const SelectionBar: React.FC<SelectionBarProps> = ({ allTasks = [], onCha
         const existingIds = t.tags?.map(x => x.id) || [];
         const toAdd = newTags.filter(n => !existingIds.includes(n.id));
         await Promise.all(toAdd.map(tag => addTagToTask(t.id, tag.id)));
+        
+        if (toAdd.length > 0) {
+          const mergedTags = [...(t.tags || []), ...toAdd];
+          updateTaskLocally(t.id, { tags: mergedTags });
+        }
       }
-      onChanged?.();
       clearSelection();
     } catch (e) {
       console.warn("Bulk tag update failed", e);

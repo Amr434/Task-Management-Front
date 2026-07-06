@@ -3,20 +3,20 @@ import { X, LayoutGrid, CheckCircle2, ChevronDown, User, Calendar, Flag, Tag, Mo
 import { Project } from '@/features/projects/types';
 import { createTask } from '../api';
 import { Priority } from '../types';
+import { useSpaceStore } from '@/store/useSpaceStore';
 
 interface CreateTaskModalProps {
   onClose: () => void;
   projects?: Project[];
   defaultProjectId?: number;
-  onTaskCreated?: () => void;
 }
 
 export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ 
   onClose, 
   projects = [], 
   defaultProjectId,
-  onTaskCreated 
 }) => {
+  const { addTaskLocally } = useSpaceStore();
   const [taskName, setTaskName] = useState('');
   const [description, setDescription] = useState('');
   const [selectedProjectId, setSelectedProjectId] = useState<number | null>(defaultProjectId || (projects.length > 0 ? projects[0].id : null));
@@ -36,15 +36,16 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
 
     try {
       setIsSubmitting(true);
-      await createTask({
+      const newTask = await createTask({
         title: taskName,
-        description: description,
+        description,
         projectId: selectedProjectId,
-        status: 0, // TaskStatus.ToDo
-        priority: Priority.Low, // Backend enum: Low=0 .. Urgent=3
-        order: 0,
+        status: 0, // 0 = TO DO by default
+        priority: Priority.Low,
+        order: 0, // Let backend assign order
       });
-      if (onTaskCreated) onTaskCreated();
+      
+      addTaskLocally(newTask);
       onClose();
     } catch (error) {
       console.error("Failed to create task", error);
