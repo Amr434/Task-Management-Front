@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Calendar, Flag, Pencil, Plus, Tag as TagIcon, MoreHorizontal, Trash2,
-  ChevronRight, ChevronDown, GitBranch, CornerDownLeft,
+  ChevronRight, ChevronDown, GitBranch, CornerDownLeft, Check
 } from 'lucide-react';
 import { TaskItem, toPriority, Priority, Tag } from '../types';
+import { useTaskSelection } from '@/contexts/TaskSelectionContext';
 import { patchTask, createTask, deleteTask, addTagToTask, removeTagFromTask } from '../api';
 import { DateMenu, PriorityMenu, TagMenu, TagPills } from './TaskFieldMenus';
 
@@ -28,6 +29,9 @@ const StatusGlyph = () => (
 );
 
 export const TaskRow: React.FC<TaskRowProps> = ({ task, childrenByParent, depth = 0, onToggleStatus, onChanged }) => {
+  const { selectedTaskIds, toggleTaskSelection } = useTaskSelection();
+  const isSelected = selectedTaskIds.includes(task.id);
+
   const [openField, setOpenField] = useState<RowField>(null);
   const [renaming, setRenaming] = useState(false);
   const [titleDraft, setTitleDraft] = useState(task.title);
@@ -93,10 +97,38 @@ export const TaskRow: React.FC<TaskRowProps> = ({ task, childrenByParent, depth 
     onChanged?.();
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     setOpenField(null);
-    deleteTask(task.id).then(() => onChanged?.()).catch((e) =>
-      console.warn('Failed to delete task', e instanceof Error ? e.message : String(e)));
+    try {
+      const allToDelete = new Map<number, TaskItem>();
+      const stack = [task];
+      
+      while (stack.length > 0) {
+        const current = stack.pop()!;
+        if (!allToDelete.has(current.id)) {
+          allToDelete.set(current.id, current);
+          const children = childrenByParent[current.id] || [];
+          stack.push(...children);
+        }
+      }
+
+      let remaining = Array.from(allToDelete.values());
+      while (remaining.length > 0) {
+        const leaves = remaining.filter(t => {
+          const children = childrenByParent[t.id] || [];
+          return !children.some(child => remaining.some(r => r.id === child.id));
+        });
+
+        await Promise.all(leaves.map(t => deleteTask(t.id)));
+
+        const leafIds = new Set(leaves.map(l => l.id));
+        remaining = remaining.filter(t => !leafIds.has(t.id));
+      }
+
+      onChanged?.();
+    } catch (e) {
+      console.warn('Failed to delete task', e instanceof Error ? e.message : String(e));
+    }
   };
 
   const handleTagsChange = (next: Tag[]) => {
@@ -114,8 +146,20 @@ export const TaskRow: React.FC<TaskRowProps> = ({ task, childrenByParent, depth 
 
   return (
     <>
-      <div className="task-row" ref={rootRef}>
+      <div className={`task-row ${isSelected ? 'selected' : ''}`} ref={rootRef}>
         <div className="task-cell task-name-cell" style={{ paddingLeft: INDENT_BASE + depth * INDENT_STEP }}>
+          <div 
+            className={`task-row-checkbox ${isSelected ? 'checked' : ''}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleTaskSelection(task.id);
+            }}
+          >
+            <div className="checkbox-inner">
+              {isSelected && <Check size={10} strokeWidth={3} />}
+            </div>
+          </div>
+
           <span
             className={`task-expand ${hasChildren ? 'has-children' : ''}`}
             onClick={() => hasChildren && setExpanded((v) => !v)}
