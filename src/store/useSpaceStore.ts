@@ -5,21 +5,30 @@ import { TaskItem } from '@/features/tasks/types';
 import { getTasksByProject } from '@/features/tasks/api';
 import apiClient from '@/services/apiClient';
 
+export type GroupBy = 'status' | 'assignee' | 'priority' | 'tags' | 'dueDate' | 'none';
+export type GroupDir = 'asc' | 'desc';
+
 interface SpaceState {
   space: Space | null;
   projects: Project[];
   tasksByProjectId: Record<number, TaskItem[]>;
   isLoading: boolean;
   detailTaskId: number | null;
-  
+
+  // List-view grouping controls.
+  groupBy: GroupBy;
+  groupDir: GroupDir;
+  setGroupBy: (groupBy: GroupBy) => void;
+  setGroupDir: (dir: GroupDir) => void;
+
   fetchSpaceData: (spaceId: number) => Promise<void>;
   addTaskLocally: (task: TaskItem) => void;
   updateTaskLocally: (taskId: number, patch: Partial<TaskItem>) => void;
   deleteTaskLocally: (taskId: number) => void;
-  
+
   setTasksForProject: (projectId: number, tasks: TaskItem[]) => void;
   setProjectLocally: (project: Project) => void;
-  
+
   setDetailTaskId: (taskId: number | null) => void;
 }
 
@@ -29,6 +38,11 @@ export const useSpaceStore = create<SpaceState>((set) => ({
   tasksByProjectId: {},
   isLoading: true,
   detailTaskId: null,
+
+  groupBy: 'status',
+  groupDir: 'asc',
+  setGroupBy: (groupBy) => set({ groupBy }),
+  setGroupDir: (dir) => set({ groupDir: dir }),
 
   setDetailTaskId: (taskId) => set({ detailTaskId: taskId }),
 

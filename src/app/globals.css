@@ -902,6 +902,65 @@ body {
 }
 .assignee-btn:hover { background-color: var(--bg-hover); color: var(--text-primary); }
 
+/* ---- Group by control ---- */
+.group-control { position: relative; display: inline-flex; }
+.group-btn { display: inline-flex; align-items: center; gap: 6px; }
+.group-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 400;
+  min-width: 300px;
+  background-color: var(--bg-main);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 10px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+.group-popover-title {
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: 2px 8px 8px;
+  font-weight: 600;
+}
+.group-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 15px;
+  padding: 9px 8px;
+  border-radius: 7px;
+  cursor: pointer;
+}
+.group-option:hover { background-color: var(--bg-hover); }
+.group-option svg { color: var(--text-secondary); flex-shrink: 0; }
+.group-option .group-check { color: var(--text-primary); margin-left: auto; }
+.group-option.danger { color: #e2445c; }
+.group-option.danger svg { color: #e2445c; }
+.group-popover-divider { height: 1px; background-color: var(--border-color); margin: 8px 4px; }
+.group-dir-row { display: flex; gap: 8px; padding: 2px 4px; }
+.group-dir-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  border-radius: 7px;
+  padding: 7px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.group-dir-btn:hover { background-color: var(--bg-hover); }
+.group-dir-btn.active { border-color: var(--accent-color); color: var(--text-primary); }
+
 /* The "..." more menu, pinned to the right edge of the row on hover */
 .task-row-more {
   position: absolute;
