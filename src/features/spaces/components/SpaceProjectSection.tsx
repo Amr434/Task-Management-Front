@@ -1,8 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { ChevronDown, ChevronRight, Folder, MoreHorizontal } from 'lucide-react';
+import { ChevronDown, ChevronRight, MoreHorizontal } from 'lucide-react';
 import { Project } from '@/features/projects/types';
-import { SpaceStatusSection } from './SpaceStatusSection';
-import { TaskItem, TaskStatus } from '@/features/tasks/types';
+import { TaskGroupSection } from './TaskGroupSection';
+import { TaskItem } from '@/features/tasks/types';
+import { buildGroups } from '@/features/tasks/grouping';
+import { useSpaceStore } from '@/store/useSpaceStore';
 
 interface SpaceProjectSectionProps {
   project: Project;
@@ -10,21 +12,14 @@ interface SpaceProjectSectionProps {
   onOpenModal?: () => void;
 }
 
-const getStatusColor = (status: TaskStatus) => {
-  switch (status) {
-    case TaskStatus.ToDo: return '#87909e';
-    case TaskStatus.InProgress: return '#2684ff';
-    case TaskStatus.Complete: return '#00c875';
-    default: return '#e2445c'; // Default colorful
-  }
-};
-
 export const SpaceProjectSection: React.FC<SpaceProjectSectionProps> = ({ project, tasks, onOpenModal }) => {
   const [isExpanded, setIsExpanded] = useState(true);
+  const groupBy = useSpaceStore((s) => s.groupBy);
+  const groupDir = useSpaceStore((s) => s.groupDir);
 
   // Build the subtask tree: map each parent id to its direct children, and keep
-  // only top-level tasks (no parent) for the status columns — subtasks render
-  // nested under their parent inside TaskRow.
+  // only top-level tasks (no parent) for the groups — subtasks render nested
+  // under their parent inside TaskRow.
   const { childrenByParent, topLevelTasks } = useMemo(() => {
     const map: Record<number, TaskItem[]> = {};
     const top: TaskItem[] = [];
@@ -37,6 +32,11 @@ export const SpaceProjectSection: React.FC<SpaceProjectSectionProps> = ({ projec
     }
     return { childrenByParent: map, topLevelTasks: top };
   }, [tasks]);
+
+  const groups = useMemo(
+    () => buildGroups(topLevelTasks, groupBy, groupDir),
+    [topLevelTasks, groupBy, groupDir]
+  );
 
   return (
     <div className="space-project-section">
@@ -56,19 +56,17 @@ export const SpaceProjectSection: React.FC<SpaceProjectSectionProps> = ({ projec
       
       {isExpanded && (
         <div className="project-lists-container">
-          {[TaskStatus.ToDo, TaskStatus.InProgress, TaskStatus.Complete].map(status => {
-            const statusTasks = topLevelTasks.filter(t => t.status === status);
-            return (
-              <SpaceStatusSection
-                key={status}
-                status={status}
-                tasks={statusTasks}
-                childrenByParent={childrenByParent}
-                color={getStatusColor(status)}
-                onOpenModal={onOpenModal}
-              />
-            );
-          })}
+          {groups.map((group) => (
+            <TaskGroupSection
+              key={group.key}
+              label={group.label}
+              color={group.color}
+              outline={group.outline}
+              tasks={group.tasks}
+              childrenByParent={childrenByParent}
+              onOpenModal={onOpenModal}
+            />
+          ))}
         </div>
       )}
     </div>

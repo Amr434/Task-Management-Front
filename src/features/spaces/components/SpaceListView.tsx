@@ -5,6 +5,7 @@ import { TaskItem } from '@/features/tasks/types';
 import { Filter, CheckCircle2, User, SlidersHorizontal, Plus } from 'lucide-react';
 import { CreateTaskModal } from '@/features/tasks/components/CreateTaskModal';
 import { SelectionBar } from '@/features/tasks/components/SelectionBar';
+import { GroupByControl } from '@/features/tasks/components/GroupByControl';
 
 interface SpaceListViewProps {
   projects: Project[];
@@ -18,9 +19,7 @@ export const SpaceListView: React.FC<SpaceListViewProps> = ({ projects, tasksByP
     <div className="space-list-view">
       <div className="space-action-bar">
         <div className="action-bar-left">
-          <button className="btn-secondary group-btn">
-            <span className="group-icon">≡</span> Group: Status
-          </button>
+          <GroupByControl />
           <button className="btn-secondary subtasks-btn">
             ⚯ Subtasks
           </button>
