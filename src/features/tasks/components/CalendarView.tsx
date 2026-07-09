@@ -3,6 +3,7 @@
 import React, { useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { TaskItem, priorityMeta } from '../types';
+import { useFilteredTasks } from '../hooks/useFilteredTasks';
 
 interface CalendarViewProps {
   tasks: TaskItem[];
@@ -14,6 +15,7 @@ const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 
 const dayKey = (d: Date) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 
 export const CalendarView: React.FC<CalendarViewProps> = ({ tasks }) => {
+  const filteredTasks = useFilteredTasks(tasks);
   const [viewDate, setViewDate] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -22,7 +24,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ tasks }) => {
   // Group tasks by their due day.
   const tasksByDay = useMemo(() => {
     const map: Record<string, TaskItem[]> = {};
-    for (const task of tasks) {
+    for (const task of filteredTasks) {
       if (!task.dueDate) continue;
       const d = new Date(task.dueDate);
       if (isNaN(d.getTime())) continue;
@@ -30,9 +32,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ tasks }) => {
       (map[key] ||= []).push(task);
     }
     return map;
-  }, [tasks]);
+  }, [filteredTasks]);
 
-  const unscheduled = useMemo(() => tasks.filter((t) => !t.dueDate), [tasks]);
+  const unscheduled = useMemo(() => filteredTasks.filter((t) => !t.dueDate), [filteredTasks]);
 
   // Build a 6-week grid starting on the Sunday of the first week.
   const cells = useMemo(() => {

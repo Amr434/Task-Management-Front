@@ -4,14 +4,15 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   UserCircle2, Calendar as CalendarIcon, Flag, Tag as TagIcon, CornerDownLeft,
 } from 'lucide-react';
-import { Priority, PRIORITY_META, Tag } from '../types';
-import { PriorityMenu, AssigneeMenu, DateMenu, TagMenu, TagPills, shortDate } from './TaskFieldMenus';
+import { Priority, PRIORITY_META, Tag, User } from '../types';
+import { PriorityMenu, AssigneeMenu, DateMenu, TagMenu, TagPills, AvatarStack, shortDate } from './TaskFieldMenus';
 
 export interface ComposerResult {
   title: string;
   priority: Priority;
   dueDate?: string;
   tagIds: number[];
+  assigneeIds: number[];
 }
 
 interface InlineTaskComposerProps {
@@ -26,7 +27,7 @@ export const InlineTaskComposer: React.FC<InlineTaskComposerProps> = ({ projectN
   const [title, setTitle] = useState('');
   const [priority, setPriority] = useState<Priority | null>(null);
   const [dueDate, setDueDate] = useState<Date | null>(null);
-  const [assignedToMe, setAssignedToMe] = useState(false);
+  const [assignees, setAssignees] = useState<User[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [openField, setOpenField] = useState<Field>(null);
   const [saving, setSaving] = useState(false);
@@ -62,6 +63,7 @@ export const InlineTaskComposer: React.FC<InlineTaskComposerProps> = ({ projectN
         priority: priority ?? Priority.Low,
         dueDate: dueDate ? dueDate.toISOString() : undefined,
         tagIds: tags.map((t) => t.id),
+        assigneeIds: assignees.map((u) => u.id),
       });
     } finally {
       setSaving(false);
@@ -94,15 +96,14 @@ export const InlineTaskComposer: React.FC<InlineTaskComposerProps> = ({ projectN
       <div className="composer-fields">
         {/* Assignee */}
         <div className="composer-field-wrap">
-          <button className={`composer-field ${assignedToMe ? 'filled' : ''}`} onClick={() => toggle('assignee')}>
-            <UserCircle2 size={18} />
-            <span>{assignedToMe ? 'Me' : 'Add assignee'}</span>
+          <button className={`composer-field ${assignees.length > 0 ? 'filled' : ''}`} onClick={() => toggle('assignee')}>
+            {assignees.length > 0 ? <AvatarStack users={assignees} /> : <UserCircle2 size={18} />}
+            <span>{assignees.length > 0 ? `${assignees.length} assigned` : 'Add assignee'}</span>
           </button>
           {openField === 'assignee' && (
             <AssigneeMenu
-              assigned={assignedToMe}
-              onAssign={() => { setAssignedToMe(true); setOpenField(null); }}
-              onClear={() => { setAssignedToMe(false); setOpenField(null); }}
+              selected={assignees}
+              onToggle={(u) => setAssignees((cur) => cur.some((a) => a.id === u.id) ? cur.filter((a) => a.id !== u.id) : [...cur, u])}
             />
           )}
         </div>

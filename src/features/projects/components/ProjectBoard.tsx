@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { getProjectById, getProjectsBySpace } from '@/features/projects/api';
-import { getTasksByProject, patchTask, createTask, addTagToTask, removeTagFromTask } from '@/features/tasks/api';
+import { getTasksByProject, patchTask, createTask, addTagToTask, removeTagFromTask, assignUserToTask } from '@/features/tasks/api';
 import { ComposerResult } from '@/features/tasks/components/InlineTaskComposer';
 import { Project } from '@/features/projects/types';
 import { TaskItem, TaskStatus } from '@/features/tasks/types';
@@ -70,12 +70,19 @@ export const ProjectBoard = ({ projectId, spaceId }: { projectId: number; spaceI
       projectId,
       order: 0,
     });
-    // Task create has no tags field — attach the selected tags after creation.
+    // Task create has no tags/assignees field — attach the selected ones after creation.
     for (const tagId of data.tagIds) {
       try {
         await addTagToTask(created.id, tagId);
       } catch (e) {
         console.warn('Failed to attach tag', e instanceof Error ? e.message : String(e));
+      }
+    }
+    for (const userId of data.assigneeIds) {
+      try {
+        await assignUserToTask(created.id, userId);
+      } catch (e) {
+        console.warn('Failed to assign user', e instanceof Error ? e.message : String(e));
       }
     }
     await fetchData();

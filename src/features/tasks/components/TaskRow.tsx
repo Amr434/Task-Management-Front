@@ -3,11 +3,12 @@ import {
   Calendar, Flag, Pencil, Plus, Tag as TagIcon, MoreHorizontal, Trash2,
   ChevronRight, ChevronDown, GitBranch, CornerDownLeft, Check
 } from 'lucide-react';
-import { TaskItem, toPriority, Priority, Tag } from '../types';
+import { TaskItem, toPriority, Priority, Tag, User } from '../types';
 import { useTaskSelection } from '@/contexts/TaskSelectionContext';
-import { patchTask, createTask, deleteTask, addTagToTask, removeTagFromTask } from '../api';
-import { DateMenu, PriorityMenu, TagMenu, TagPills, AssigneeMenu } from './TaskFieldMenus';
+import { patchTask, createTask, deleteTask, addTagToTask, removeTagFromTask, assignUserToTask, removeUserFromTask } from '../api';
+import { DateMenu, PriorityMenu, TagMenu, TagPills, AssigneeMenu, AvatarStack } from './TaskFieldMenus';
 import { useSpaceStore } from '@/store/useSpaceStore';
+import { useColumnGridTemplate } from '../hooks/useColumnGridTemplate';
 
 const INDENT_BASE = 48;
 const INDENT_STEP = 24;
@@ -28,6 +29,8 @@ const StatusGlyph = () => (
 
 export const TaskRow: React.FC<TaskRowProps> = ({ task, childrenByParent, depth = 0 }) => {
   const { updateTaskLocally, addTaskLocally, deleteTaskLocally, setDetailTaskId } = useSpaceStore();
+  const visibleColumns = useSpaceStore((s) => s.visibleColumns);
+  const gridTemplateColumns = useColumnGridTemplate();
   const { selectedTaskIds, toggleTaskSelection } = useTaskSelection();
   const isSelected = selectedTaskIds.includes(task.id);
 
@@ -35,9 +38,9 @@ export const TaskRow: React.FC<TaskRowProps> = ({ task, childrenByParent, depth 
   const [renaming, setRenaming] = useState(false);
   const [titleDraft, setTitleDraft] = useState(task.title);
   const tags = task.tags ?? [];
+  const assignees = task.assignees ?? [];
   const [expanded, setExpanded] = useState(false);
   const [addingSubtask, setAddingSubtask] = useState(false);
-  const [assignedToMe, setAssignedToMe] = useState(false);
 
   useEffect(() => {
     setTitleDraft(task.title);
@@ -140,6 +143,16 @@ export const TaskRow: React.FC<TaskRowProps> = ({ task, childrenByParent, depth 
     }
   };
 
+  const toggleAssignee = (user: User) => {
+    const isAssigned = assignees.some((a) => a.id === user.id);
+    const next = isAssigned ? assignees.filter((a) => a.id !== user.id) : [...assignees, user];
+    updateTaskLocally(task.id, { assignees: next });
+    (isAssigned ? removeUserFromTask(task.id, user.id) : assignUserToTask(task.id, user.id)).catch((e) => {
+      console.warn('Failed to update assignees', e instanceof Error ? e.message : String(e));
+      updateTaskLocally(task.id, { assignees });
+    });
+  };
+
   const handleTagsChange = (next: Tag[]) => {
     const added = next.filter((n) => !tags.some((t) => t.id === n.id));
     const removed = tags.filter((t) => !next.some((n) => n.id === t.id));
@@ -155,10 +168,11 @@ export const TaskRow: React.FC<TaskRowProps> = ({ task, childrenByParent, depth 
   return (
     <>
       <div 
-        className={`task-row ${isSelected ? 'selected' : ''}`} 
+        className={`task-row ${isSelected ? 'selected' : ''} ${openField ? 'has-open-menu' : ''}`}
+        style={{ gridTemplateColumns }}
         ref={rootRef}
         onClick={(e) => {
-          if ((e.target as HTMLElement).closest('.row-action-wrap, .task-row-checkbox, .task-expand, .task-status-btn, .task-row-actions, .composer-dropdown, .tag-pills, .task-title-input')) {
+          if ((e.target as HTMLElement).closest('.row-action-wrap, .task-row-checkbox, .task-expand, .task-status-btn, .task-row-actions, .composer-dropdown, .tag-pills, .task-title-input, .task-row-more')) {
             return;
           }
           setDetailTaskId(task.id);
@@ -212,7 +226,7 @@ export const TaskRow: React.FC<TaskRowProps> = ({ task, childrenByParent, depth 
             </button>
           )}
 
-          {tags.length > 0 && <TagPills tags={tags} onClick={(e) => { e.stopPropagation(); toggle('tag'); }} />}
+          {visibleColumns.tags && tags.length > 0 && <TagPills tags={tags} onClick={(e) => { e.stopPropagation(); toggle('tag'); }} />}
 
           <div className="task-row-actions">
             <button className="row-action-btn" title="Rename" onClick={() => { setTitleDraft(task.title); setRenaming(true); }}>
@@ -230,63 +244,65 @@ export const TaskRow: React.FC<TaskRowProps> = ({ task, childrenByParent, depth 
           </div>
         </div>
 
-        <div className="task-cell task-assignee-cell">
-          <div className="row-action-wrap">
-            <button className="assignee-btn" onClick={() => toggle('assignee')} title="Assign">
-              {assignedToMe ? (
-                <span className="dd-avatar sm">AK</span>
-              ) : (
-                <span className="assignee-icon-circle">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
-                </span>
+        {visibleColumns.assignee && (
+          <div className="task-cell task-assignee-cell">
+            <div className="row-action-wrap">
+              <button className="assignee-btn" onClick={() => toggle('assignee')} title="Assign">
+                {assignees.length > 0 ? (
+                  <AvatarStack users={assignees} />
+                ) : (
+                  <span className="assignee-icon-circle">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
+                  </span>
+                )}
+              </button>
+              {openField === 'assignee' && (
+                <AssigneeMenu selected={assignees} onToggle={toggleAssignee} />
               )}
-            </button>
-            {openField === 'assignee' && (
-              <AssigneeMenu
-                assigned={assignedToMe}
-                onAssign={() => { setAssignedToMe(true); setOpenField(null); }}
-                onClear={() => { setAssignedToMe(false); setOpenField(null); }}
-              />
-            )}
+            </div>
           </div>
-        </div>
+        )}
 
-        <div className="task-cell task-date-cell">
-          <div className="row-action-wrap">
-            {task.dueDate ? (
-              <button className="date-value-btn" onClick={() => toggle('dates')}>
-                {new Date(task.dueDate).toLocaleDateString()}
-              </button>
-            ) : (
-              <button className="empty-date" onClick={() => toggle('dates')} title="Set due date">
-                <Calendar size={16} />
-                <span className="mini-plus">+</span>
-              </button>
-            )}
-            {openField === 'dates' && (
-              <DateMenu
-                value={task.dueDate ? new Date(task.dueDate) : null}
-                onSelect={(d) => setDueDate(d.toISOString())}
-                onClear={() => setDueDate(undefined)}
-              />
-            )}
+        {visibleColumns.dueDate && (
+          <div className="task-cell task-date-cell">
+            <div className="row-action-wrap">
+              {task.dueDate ? (
+                <button className="date-value-btn" onClick={() => toggle('dates')}>
+                  {new Date(task.dueDate).toLocaleDateString()}
+                </button>
+              ) : (
+                <button className="empty-date" onClick={() => toggle('dates')} title="Set due date">
+                  <Calendar size={16} />
+                  <span className="mini-plus">+</span>
+                </button>
+              )}
+              {openField === 'dates' && (
+                <DateMenu
+                  value={task.dueDate ? new Date(task.dueDate) : null}
+                  onSelect={(d) => setDueDate(d.toISOString())}
+                  onClear={() => setDueDate(undefined)}
+                />
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
-        <div className="task-cell task-priority-cell">
-          <div className="row-action-wrap">
-            <button className={`priority-flag priority-${priority}`} onClick={() => toggle('priority')} title="Set priority">
-              <Flag size={14} />
-            </button>
-            {openField === 'priority' && (
-              <PriorityMenu
-                value={priority !== Priority.Low ? priority : null}
-                onSelect={setPriority}
-                onClear={() => setPriority(Priority.Low)}
-              />
-            )}
+        {visibleColumns.priority && (
+          <div className="task-cell task-priority-cell">
+            <div className="row-action-wrap">
+              <button className={`priority-flag priority-${priority}`} onClick={() => toggle('priority')} title="Set priority">
+                <Flag size={14} />
+              </button>
+              {openField === 'priority' && (
+                <PriorityMenu
+                  value={priority !== Priority.Low ? priority : null}
+                  onSelect={setPriority}
+                  onClear={() => setPriority(Priority.Low)}
+                />
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="task-row-more">
           <button className="row-action-btn" title="More" onClick={() => toggle('menu')}>
@@ -342,6 +358,7 @@ const SubtaskComposer: React.FC<{
 }> = ({ depth, onCancel, onCreate }) => {
   const [title, setTitle] = useState('');
   const [saving, setSaving] = useState(false);
+  const gridTemplateColumns = useColumnGridTemplate();
 
   const save = async () => {
     if (!title.trim() || saving) return;
@@ -354,7 +371,7 @@ const SubtaskComposer: React.FC<{
   };
 
   return (
-    <div className="task-row subtask-composer-row">
+    <div className="task-row subtask-composer-row" style={{ gridTemplateColumns }}>
       <div className="task-cell task-name-cell" style={{ paddingLeft: INDENT_BASE + depth * INDENT_STEP }}>
         <span className="task-expand" />
         <span className="task-status-btn"><StatusGlyph /></span>

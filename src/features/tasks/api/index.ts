@@ -1,5 +1,5 @@
 import apiClient from '@/services/apiClient';
-import { TaskItem, Tag } from '../types';
+import { TaskItem, Tag, User } from '../types';
 
 
 export interface CreateTaskDTO {
@@ -91,4 +91,21 @@ export const findOrCreateTag = async (name: string, existing: Tag[]): Promise<Ta
   const match = existing.find((t) => t.name.toLowerCase() === trimmed.toLowerCase());
   if (match) return match;
   return createTag(trimmed, pickTagColor());
+};
+
+
+// ---- Users / Assignees ----
+
+export const getUsers = async (): Promise<User[]> => {
+  return apiClient.get<User[], User[]>('/Users');
+};
+
+// Assign a user to a task. Backend: POST /Tasks/{taskId}/assignees/{userId}.
+export const assignUserToTask = async (taskId: number, userId: number): Promise<void> => {
+  return apiClient.post(`/Tasks/${taskId}/assignees/${userId}`, {});
+};
+
+// Unassign a user from a task. Backend: DELETE /Tasks/{taskId}/assignees/{userId}.
+export const removeUserFromTask = async (taskId: number, userId: number): Promise<void> => {
+  return apiClient.delete(`/Tasks/${taskId}/assignees/${userId}`);
 };

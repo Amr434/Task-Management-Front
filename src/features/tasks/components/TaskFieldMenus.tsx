@@ -2,10 +2,10 @@
 
 import React, { useEffect, useState } from 'react';
 import {
-  ChevronLeft, ChevronRight, Ban, Search, Settings, Plus, Flag, Tag as TagIcon, X, AlertTriangle
+  ChevronLeft, ChevronRight, Ban, Search, Settings, Plus, Flag, Tag as TagIcon, X, AlertTriangle, Check
 } from 'lucide-react';
-import { Priority, PRIORITY_META, Tag } from '../types';
-import { getTags, findOrCreateTag } from '../api';
+import { Priority, PRIORITY_META, Tag, User, userInitials, userDisplayName, avatarColor } from '../types';
+import { getTags, findOrCreateTag, getUsers } from '../api';
 
 // --- Date helpers (shared) ---
 export const startOfDay = (d: Date) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
@@ -118,29 +118,83 @@ export const StatusMenu: React.FC<{
   </div>
 );
 
-// ---- Assignee menu (no backend field — local/visual only) ----
-export const AssigneeMenu: React.FC<{
-  assigned: boolean;
-  onAssign: () => void;
-  onClear: () => void;
-}> = ({ assigned, onAssign, onClear }) => (
-  <div className="composer-dropdown">
-    <div className="dd-search">
-      <Search size={15} />
-      <input placeholder="Search or enter email..." autoFocus />
-    </div>
-    <div className="dd-section-title">People</div>
-    <button className="dd-row" onClick={onAssign}>
-      <span className="dd-avatar">AK</span>
-      <span>Me</span>
-    </button>
-    {assigned && (
-      <button className="dd-row danger" onClick={onClear}>
-        <Ban size={16} /> <span>Clear</span>
-      </button>
-    )}
-  </div>
+// ---- Avatar helpers (DB-backed users) ----
+export const Avatar: React.FC<{ user: User; size?: 'sm' | 'md'; title?: boolean }> = ({ user, size = 'md', title = true }) => (
+  <span
+    className={`dd-avatar ${size === 'sm' ? 'sm' : ''}`}
+    style={{ backgroundColor: avatarColor(user) }}
+    title={title ? userDisplayName(user) : undefined}
+  >
+    {userInitials(user)}
+  </span>
 );
+
+// Overlapping avatar stack with a "+N" overflow chip.
+export const AvatarStack: React.FC<{ users: User[]; max?: number; size?: 'sm' | 'md' }> = ({ users, max = 3, size = 'sm' }) => {
+  if (!users || users.length === 0) return null;
+  const shown = users.slice(0, max);
+  const overflow = users.length - shown.length;
+  return (
+    <span className="avatar-stack">
+      {shown.map((u) => (
+        <Avatar key={u.id} user={u} size={size} />
+      ))}
+      {overflow > 0 && <span className={`dd-avatar ${size === 'sm' ? 'sm' : ''} more`}>+{overflow}</span>}
+    </span>
+  );
+};
+
+// ---- Assignee menu (DB-backed: lists users, multi-select toggle) ----
+export const AssigneeMenu: React.FC<{
+  selected: User[];
+  onToggle: (user: User) => void;
+}> = ({ selected, onToggle }) => {
+  const [query, setQuery] = useState('');
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getUsers()
+      .then(setUsers)
+      .catch((e) => console.warn('Failed to load users', e instanceof Error ? e.message : String(e)))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const trimmed = query.trim().toLowerCase();
+  const selectedIds = new Set(selected.map((u) => u.id));
+  const matches = users.filter(
+    (u) => userDisplayName(u).toLowerCase().includes(trimmed) || u.email.toLowerCase().includes(trimmed)
+  );
+
+  return (
+    <div className="composer-dropdown assignee-dropdown">
+      <div className="dd-search">
+        <Search size={15} />
+        <input
+          placeholder="Search people..."
+          autoFocus
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+      </div>
+      <div className="dd-section-title">People</div>
+
+      {loading && <div className="dd-empty">Loading…</div>}
+      {!loading && matches.length === 0 && <div className="dd-empty">No people found</div>}
+
+      {!loading && matches.map((u) => {
+        const isSel = selectedIds.has(u.id);
+        return (
+          <button key={u.id} className={`dd-row ${isSel ? 'selected' : ''}`} onClick={() => onToggle(u)}>
+            <Avatar user={u} size="sm" title={false} />
+            <span>{userDisplayName(u)}</span>
+            {isSel && <Check size={15} style={{ marginLeft: 'auto' }} />}
+          </button>
+        );
+      })}
+    </div>
+  );
+};
 
 // ---- Date picker menu ----
 export const DateMenu: React.FC<{
