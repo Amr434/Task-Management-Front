@@ -4,10 +4,10 @@ import { Project } from '@/features/projects/types';
 import { Space } from '@/features/spaces/types';
 import { getSpaces } from '@/features/spaces/api';
 import { getProjectsBySpace } from '@/features/projects/api';
-import { createTask, addTagToTask } from '../api';
-import { Priority, PRIORITY_META, Tag } from '../types';
+import { createTask, addTagToTask, assignUserToTask } from '../api';
+import { Priority, PRIORITY_META, Tag, User as UserType } from '../types';
 import { useSpaceStore } from '@/store/useSpaceStore';
-import { PriorityMenu, AssigneeMenu, DateMenu, TagMenu, TagPills, shortDate } from './TaskFieldMenus';
+import { PriorityMenu, AssigneeMenu, DateMenu, TagMenu, TagPills, AvatarStack, shortDate } from './TaskFieldMenus';
 
 interface CreateTaskModalProps {
   onClose: () => void;
@@ -33,7 +33,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ onClose, proje
 
   const [priority, setPriority] = useState<Priority | null>(null);
   const [dueDate, setDueDate] = useState<Date | null>(null);
-  const [assignedToMe, setAssignedToMe] = useState(false);
+  const [assignees, setAssignees] = useState<UserType[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [attachments, setAttachments] = useState<File[]>([]);
 
@@ -104,14 +104,19 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ onClose, proje
         order: 0,
       });
 
-      // Tasks are created without tags — attach the selected ones afterwards.
+      // Tasks are created without tags/assignees — attach the selected ones afterwards.
       for (const tag of tags) {
         try { await addTagToTask(created.id, tag.id); } catch (e) {
           console.warn('Failed to attach tag', e instanceof Error ? e.message : String(e));
         }
       }
+      for (const u of assignees) {
+        try { await assignUserToTask(created.id, u.id); } catch (e) {
+          console.warn('Failed to assign user', e instanceof Error ? e.message : String(e));
+        }
+      }
 
-      addTaskLocally({ ...created, tags });
+      addTaskLocally({ ...created, tags, assignees });
       onClose();
     } catch (error) {
       console.error('Failed to create task', error);
@@ -223,17 +228,16 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ onClose, proje
             <span className="status-dot"></span> TO DO
           </button>
 
-          {/* Assignee (visual — no backend field) */}
+          {/* Assignee */}
           <div className="tm-menu-wrap">
-            <button className={`toolbar-btn ${assignedToMe ? 'filled' : ''}`} onClick={() => toggle('assignee')}>
-              {assignedToMe ? <span className="dd-avatar sm">AK</span> : <User size={14} className="text-secondary" />}
-              {assignedToMe ? 'Me' : 'Assignee'}
+            <button className={`toolbar-btn ${assignees.length > 0 ? 'filled' : ''}`} onClick={() => toggle('assignee')}>
+              {assignees.length > 0 ? <AvatarStack users={assignees} /> : <User size={14} className="text-secondary" />}
+              {assignees.length > 0 ? `${assignees.length} assigned` : 'Assignee'}
             </button>
             {openMenu === 'assignee' && (
               <AssigneeMenu
-                assigned={assignedToMe}
-                onAssign={() => { setAssignedToMe(true); setOpenMenu(null); }}
-                onClear={() => { setAssignedToMe(false); setOpenMenu(null); }}
+                selected={assignees}
+                onToggle={(u) => setAssignees((cur) => cur.some((a) => a.id === u.id) ? cur.filter((a) => a.id !== u.id) : [...cur, u])}
               />
             )}
           </div>

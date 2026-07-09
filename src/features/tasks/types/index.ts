@@ -4,6 +4,30 @@ export interface Tag {
   colorHex: string;
 }
 
+// Mirrors backend Task_Management.Application.Features.Users.DTOs.UserDto
+export interface User {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
+// Two-letter initials from a user's name (falls back to the email).
+export const userInitials = (u: User): string => {
+  const f = u.firstName?.trim()?.[0] ?? '';
+  const l = u.lastName?.trim()?.[0] ?? '';
+  const initials = `${f}${l}`.trim();
+  return (initials || u.email?.trim()?.[0] || '?').toUpperCase();
+};
+
+export const userDisplayName = (u: User): string =>
+  `${u.firstName ?? ''} ${u.lastName ?? ''}`.trim() || u.email;
+
+// Deterministic avatar colour derived from the user id, so a given user
+// always renders with the same background.
+const AVATAR_COLORS = ['#e2445c', '#ff7b72', '#ffb800', '#00c875', '#2684ff', '#7b68ee', '#00b4d8', '#ff9f45'];
+export const avatarColor = (u: User): string => AVATAR_COLORS[Math.abs(u.id) % AVATAR_COLORS.length];
+
 // Mirrors backend Task_Management.Domain.Enums.PriorityLevel
 export enum Priority {
   Low = 0,
@@ -53,4 +77,5 @@ export interface TaskItem {
   parentTaskId?: number;
   status: TaskStatus;
   tags?: Tag[];
+  assignees?: User[];
 }

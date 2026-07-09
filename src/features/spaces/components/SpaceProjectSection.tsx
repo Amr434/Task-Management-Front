@@ -5,6 +5,7 @@ import { TaskGroupSection } from './TaskGroupSection';
 import { TaskItem } from '@/features/tasks/types';
 import { buildGroups } from '@/features/tasks/grouping';
 import { useSpaceStore } from '@/store/useSpaceStore';
+import { useFilteredTasks } from '@/features/tasks/hooks/useFilteredTasks';
 
 interface SpaceProjectSectionProps {
   project: Project;
@@ -16,6 +17,7 @@ export const SpaceProjectSection: React.FC<SpaceProjectSectionProps> = ({ projec
   const [isExpanded, setIsExpanded] = useState(true);
   const groupBy = useSpaceStore((s) => s.groupBy);
   const groupDir = useSpaceStore((s) => s.groupDir);
+  const filteredTasks = useFilteredTasks(tasks);
 
   // Build the subtask tree: map each parent id to its direct children, and keep
   // only top-level tasks (no parent) for the groups — subtasks render nested
@@ -23,7 +25,7 @@ export const SpaceProjectSection: React.FC<SpaceProjectSectionProps> = ({ projec
   const { childrenByParent, topLevelTasks } = useMemo(() => {
     const map: Record<number, TaskItem[]> = {};
     const top: TaskItem[] = [];
-    for (const t of tasks) {
+    for (const t of filteredTasks) {
       if (t.parentTaskId != null) {
         (map[t.parentTaskId] ??= []).push(t);
       } else {
@@ -31,7 +33,7 @@ export const SpaceProjectSection: React.FC<SpaceProjectSectionProps> = ({ projec
       }
     }
     return { childrenByParent: map, topLevelTasks: top };
-  }, [tasks]);
+  }, [filteredTasks]);
 
   const groups = useMemo(
     () => buildGroups(topLevelTasks, groupBy, groupDir),
