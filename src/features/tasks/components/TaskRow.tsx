@@ -257,7 +257,7 @@ export const TaskRow: React.FC<TaskRowProps> = ({ task, childrenByParent, depth 
                 )}
               </button>
               {openField === 'assignee' && (
-                <AssigneeMenu selected={assignees} onToggle={toggleAssignee} />
+                <AssigneeMenu projectId={task.projectId} selected={assignees} onToggle={toggleAssignee} />
               )}
             </div>
           </div>

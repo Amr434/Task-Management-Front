@@ -236,6 +236,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ onClose, proje
             </button>
             {openMenu === 'assignee' && (
               <AssigneeMenu
+                projectId={selectedProjectId}
                 selected={assignees}
                 onToggle={(u) => setAssignees((cur) => cur.some((a) => a.id === u.id) ? cur.filter((a) => a.id !== u.id) : [...cur, u])}
               />

@@ -16,6 +16,7 @@ export interface TaskPatch {
 
 interface BoardViewProps {
   tasks: TaskItem[];
+  projectId: number;
   projectName: string;
   onMoveTask: (taskId: number, toStatus: TaskStatus) => void;
   onCreateTask: (data: ComposerResult, status: TaskStatus) => Promise<void> | void;
@@ -124,7 +125,7 @@ const TaskCard: React.FC<{
             {assignees.length > 0 ? <AvatarStack users={assignees} /> : <UserCircle2 size={17} />}
           </button>
           {openField === 'assignee' && (
-            <AssigneeMenu selected={assignees} onToggle={toggleAssignee} />
+            <AssigneeMenu projectId={task.projectId} selected={assignees} onToggle={toggleAssignee} />
           )}
         </div>
 
@@ -199,7 +200,7 @@ const TaskCard: React.FC<{
   );
 };
 
-export const BoardView: React.FC<BoardViewProps> = ({ tasks, projectName, onMoveTask, onCreateTask, onUpdateTask, onAddTag, onRemoveTag }) => {
+export const BoardView: React.FC<BoardViewProps> = ({ tasks, projectId, projectName, onMoveTask, onCreateTask, onUpdateTask, onAddTag, onRemoveTag }) => {
   const [dragOverStatus, setDragOverStatus] = useState<TaskStatus | null>(null);
   const [composerStatus, setComposerStatus] = useState<TaskStatus | null>(null);
   const [collapsed, setCollapsed] = useState<Record<number, boolean>>({});
@@ -264,6 +265,7 @@ export const BoardView: React.FC<BoardViewProps> = ({ tasks, projectName, onMove
             <div className="board-column-body">
               {isComposing && (
                 <InlineTaskComposer
+                  projectId={projectId}
                   projectName={projectName}
                   onCancel={() => setComposerStatus(null)}
                   onCreate={async (data) => {

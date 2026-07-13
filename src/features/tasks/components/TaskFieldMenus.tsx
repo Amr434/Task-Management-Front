@@ -5,7 +5,8 @@ import {
   ChevronLeft, ChevronRight, Ban, Search, Settings, Plus, Flag, Tag as TagIcon, X, AlertTriangle, Check
 } from 'lucide-react';
 import { Priority, PRIORITY_META, Tag, User, userInitials, userDisplayName, avatarColor } from '../types';
-import { getTags, findOrCreateTag, getUsers } from '../api';
+import { getTags, findOrCreateTag, getProjectMembers } from '../api';
+import { useAuthStore } from '@/features/auth/store/useAuthStore';
 
 // --- Date helpers (shared) ---
 export const startOfDay = (d: Date) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
@@ -144,27 +145,39 @@ export const AvatarStack: React.FC<{ users: User[]; max?: number; size?: 'sm' | 
   );
 };
 
-// ---- Assignee menu (DB-backed: lists users, multi-select toggle) ----
+// ---- Assignee menu (project members only: owner + accepted invitees) ----
 export const AssigneeMenu: React.FC<{
+  projectId: number | null;
   selected: User[];
   onToggle: (user: User) => void;
-}> = ({ selected, onToggle }) => {
+}> = ({ projectId, selected, onToggle }) => {
   const [query, setQuery] = useState('');
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getUsers()
+    if (projectId == null) {
+      setUsers([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    getProjectMembers(projectId)
       .then(setUsers)
-      .catch((e) => console.warn('Failed to load users', e instanceof Error ? e.message : String(e)))
+      .catch((e) => console.warn('Failed to load project members', e instanceof Error ? e.message : String(e)))
       .finally(() => setLoading(false));
-  }, []);
+  }, [projectId]);
+
+  const currentUserId = useAuthStore((s) => s.user?.id);
 
   const trimmed = query.trim().toLowerCase();
   const selectedIds = new Set(selected.map((u) => u.id));
-  const matches = users.filter(
-    (u) => userDisplayName(u).toLowerCase().includes(trimmed) || u.email.toLowerCase().includes(trimmed)
-  );
+  const matches = users
+    .filter(
+      (u) => userDisplayName(u).toLowerCase().includes(trimmed) || u.email.toLowerCase().includes(trimmed)
+    )
+    // Signed-in user first, shown as "Me".
+    .sort((a, b) => Number(b.id === currentUserId) - Number(a.id === currentUserId));
 
   return (
     <div className="composer-dropdown assignee-dropdown">
@@ -187,7 +200,7 @@ export const AssigneeMenu: React.FC<{
         return (
           <button key={u.id} className={`dd-row ${isSel ? 'selected' : ''}`} onClick={() => onToggle(u)}>
             <Avatar user={u} size="sm" title={false} />
-            <span>{userDisplayName(u)}</span>
+            <span>{u.id === currentUserId ? 'Me' : userDisplayName(u)}</span>
             {isSel && <Check size={15} style={{ marginLeft: 'auto' }} />}
           </button>
         );

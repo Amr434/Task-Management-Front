@@ -178,7 +178,7 @@ export const SelectionBar: React.FC<SelectionBarProps> = ({ allTasks = [] }) => 
               <button className="selection-action-btn" onClick={() => toggle('assignee')}><Users size={14} /> Assignees</button>
               {openMenu === 'assignee' && (
                 <div className="popup-anchor top">
-                  <AssigneeMenu selected={commonAssignees} onToggle={handleBulkAssignee} />
+                  <AssigneeMenu projectId={selectedTasks[0]?.projectId ?? null} selected={commonAssignees} onToggle={handleBulkAssignee} />
                 </div>
               )}
             </div>

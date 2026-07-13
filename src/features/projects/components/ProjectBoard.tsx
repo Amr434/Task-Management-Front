@@ -11,6 +11,8 @@ import { BoardView } from '@/features/tasks/components/BoardView';
 import { CalendarView } from '@/features/tasks/components/CalendarView';
 import { LayoutGrid, List as ListIcon, Columns, Calendar, Plus, MoreHorizontal, Share2 } from 'lucide-react';
 import { useSpaceStore } from '@/store/useSpaceStore';
+import { InviteMemberModal } from '@/features/invitations/components/InviteMemberModal';
+import { InvitationTargetType } from '@/features/invitations/types';
 
 type ProjectView = 'list' | 'board' | 'calendar';
 
@@ -21,6 +23,7 @@ export const ProjectBoard = ({ projectId, spaceId }: { projectId: number; spaceI
   
   const [isLoading, setIsLoading] = useState(true);
   const [activeView, setActiveView] = useState<ProjectView>('list');
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -155,9 +158,24 @@ export const ProjectBoard = ({ projectId, spaceId }: { projectId: number; spaceI
               <div className="avatar-group" style={{marginRight: '12px'}}>
                 <div className="avatar" style={{ backgroundColor: '#ff7b72', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 500, fontSize: '12px' }}>A</div>
               </div>
-              <button className="btn-secondary share-btn" style={{display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', fontSize: '13px'}}><Share2 size={14} /> Share</button>
+              <button 
+                className="btn-secondary share-btn" 
+                onClick={() => setIsInviteModalOpen(true)}
+                style={{display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', fontSize: '13px'}}
+              >
+                <Share2 size={14} /> Share
+              </button>
             </div>
           </div>
+          
+          {isInviteModalOpen && (
+            <InviteMemberModal 
+              targetType={InvitationTargetType.Project} 
+              targetId={project.id} 
+              targetName={project.name}
+              onClose={() => setIsInviteModalOpen(false)} 
+            />
+          )}
           
           <div className="space-tabs">
             <button className={`space-tab ${activeView === 'list' ? 'active' : ''}`} onClick={() => setActiveView('list')}>
@@ -190,6 +208,7 @@ export const ProjectBoard = ({ projectId, spaceId }: { projectId: number; spaceI
         {activeView === 'board' && (
           <BoardView
             tasks={tasks}
+            projectId={project.id}
             projectName={project.name}
             onMoveTask={handleMoveTask}
             onCreateTask={handleCreateTask}

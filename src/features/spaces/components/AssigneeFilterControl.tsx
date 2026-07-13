@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { User as UserIcon, Check, Ban } from 'lucide-react';
 import { useSpaceStore } from '@/store/useSpaceStore';
-import { getUsers } from '@/features/tasks/api';
 import { User, userDisplayName } from '@/features/tasks/types';
 import { Avatar } from '@/features/tasks/components/TaskFieldMenus';
 
@@ -11,19 +10,24 @@ import { Avatar } from '@/features/tasks/components/TaskFieldMenus';
 export const AssigneeFilterControl: React.FC = () => {
   const filterAssigneeId = useSpaceStore((s) => s.filterAssigneeId);
   const setFilterAssigneeId = useSpaceStore((s) => s.setFilterAssigneeId);
+  const tasksByProjectId = useSpaceStore((s) => s.tasksByProjectId);
 
   const [open, setOpen] = useState(false);
-  const [users, setUsers] = useState<User[]>([]);
-  const [loaded, setLoaded] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!open || loaded) return;
-    getUsers()
-      .then(setUsers)
-      .catch((e) => console.warn('Failed to load users', e instanceof Error ? e.message : String(e)))
-      .finally(() => setLoaded(true));
-  }, [open, loaded]);
+  // Offer only people actually assigned to tasks in view — not the whole user
+  // directory, which members of this project may not be allowed to see.
+  const users = useMemo(() => {
+    const byId = new Map<number, User>();
+    for (const tasks of Object.values(tasksByProjectId)) {
+      for (const task of tasks) {
+        for (const assignee of task.assignees ?? []) {
+          if (!byId.has(assignee.id)) byId.set(assignee.id, assignee);
+        }
+      }
+    }
+    return [...byId.values()];
+  }, [tasksByProjectId]);
 
   useEffect(() => {
     if (!open) return;
@@ -54,9 +58,9 @@ export const AssigneeFilterControl: React.FC = () => {
         <div className="group-popover align-right">
           <div className="group-popover-title">Filter by assignee</div>
 
-          {!loaded && <div className="dd-empty">Loading…</div>}
+          {users.length === 0 && <div className="dd-empty">No assigned tasks</div>}
 
-          {loaded && users.map((u) => (
+          {users.map((u) => (
             <button
               key={u.id}
               className={`group-option ${filterAssigneeId === u.id ? 'selected' : ''}`}
