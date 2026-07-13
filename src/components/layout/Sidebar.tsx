@@ -8,6 +8,7 @@ import { getProjectsBySpace, deleteProject, duplicateProject, updateProject } fr
 import { Space } from '@/features/spaces/types';
 import { Project } from '@/features/projects/types';
 import { useI18n } from '@/contexts/I18nContext';
+import { useInvitationStore } from '@/features/invitations/store/useInvitationStore';
 import { CreateSpaceModal } from '@/features/spaces/components/CreateSpaceModal';
 import { SpaceIcon } from '@/features/spaces/components/SpaceIcon';
 import { CreateProjectModal } from '@/features/projects/components/CreateProjectModal';
@@ -57,11 +58,16 @@ export const Sidebar = () => {
     };
   }, [activeDropdown, activeProjectDropdown]);
 
+  // Refetches when sidebarVersion changes — bumped after accepting an
+  // invitation, so newly shared spaces appear without a page reload.
+  const sidebarVersion = useInvitationStore((s) => s.sidebarVersion);
   useEffect(() => {
     getSpaces().then(data => {
       setSpaces(data);
+      // Drop cached project lists so shared projects reload with fresh access.
+      setProjectsBySpace({});
     }).catch(err => console.warn("Failed to fetch spaces:", err instanceof Error ? err.message : String(err)));
-  }, []);
+  }, [sidebarVersion]);
 
   const toggleSpace = async (spaceId: number) => {
     const isExpanded = expandedSpaces[spaceId];

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { AppLayout } from "@/components/layout/AppLayout";
+import { AppShell } from "@/components/layout/AppShell";
 import { I18nProvider } from "@/contexts/I18nContext";
 import { TaskSelectionProvider } from "@/contexts/TaskSelectionContext";
 
@@ -19,9 +19,9 @@ export default function RootLayout({
       <body>
         <I18nProvider>
           <TaskSelectionProvider>
-            <AppLayout>
+            <AppShell>
               {children}
-            </AppLayout>
+            </AppShell>
           </TaskSelectionProvider>
         </I18nProvider>
       </body>

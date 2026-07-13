@@ -155,7 +155,7 @@ export const TaskDetailSidebar: React.FC = () => {
                 </button>
                 {openField === 'assignee' && (
                   <div className="popup-anchor bottom-left">
-                    <AssigneeMenu selected={task.assignees ?? []} onToggle={toggleAssignee} />
+                    <AssigneeMenu projectId={task.projectId} selected={task.assignees ?? []} onToggle={toggleAssignee} />
                   </div>
                 )}
               </div>

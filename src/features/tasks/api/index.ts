@@ -96,8 +96,10 @@ export const findOrCreateTag = async (name: string, existing: Tag[]): Promise<Ta
 
 // ---- Users / Assignees ----
 
-export const getUsers = async (): Promise<User[]> => {
-  return apiClient.get<User[], User[]>('/Users');
+// Users who can be assigned in a project: the space owner plus everyone who
+// accepted a space- or project-level invitation. Backend: GET /Projects/{id}/members.
+export const getProjectMembers = async (projectId: number): Promise<User[]> => {
+  return apiClient.get<User[], User[]>(`/Projects/${projectId}/members`);
 };
 
 // Assign a user to a task. Backend: POST /Tasks/{taskId}/assignees/{userId}.

@@ -16,6 +16,7 @@ export interface ComposerResult {
 }
 
 interface InlineTaskComposerProps {
+  projectId: number;
   projectName: string;
   onCreate: (data: ComposerResult) => Promise<void> | void;
   onCancel: () => void;
@@ -23,7 +24,7 @@ interface InlineTaskComposerProps {
 
 type Field = 'assignee' | 'dates' | 'priority' | 'tag' | null;
 
-export const InlineTaskComposer: React.FC<InlineTaskComposerProps> = ({ projectName, onCreate, onCancel }) => {
+export const InlineTaskComposer: React.FC<InlineTaskComposerProps> = ({ projectId, projectName, onCreate, onCancel }) => {
   const [title, setTitle] = useState('');
   const [priority, setPriority] = useState<Priority | null>(null);
   const [dueDate, setDueDate] = useState<Date | null>(null);
@@ -102,6 +103,7 @@ export const InlineTaskComposer: React.FC<InlineTaskComposerProps> = ({ projectN
           </button>
           {openField === 'assignee' && (
             <AssigneeMenu
+              projectId={projectId}
               selected={assignees}
               onToggle={(u) => setAssignees((cur) => cur.some((a) => a.id === u.id) ? cur.filter((a) => a.id !== u.id) : [...cur, u])}
             />
