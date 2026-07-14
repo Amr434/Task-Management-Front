@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AppShell } from "@/components/layout/AppShell";
+import { ThemeProvider } from "@/features/theme/components/ThemeProvider";
 import { I18nProvider } from "@/contexts/I18nContext";
 import { TaskSelectionProvider } from "@/contexts/TaskSelectionContext";
 
@@ -15,15 +16,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body>
-        <I18nProvider>
-          <TaskSelectionProvider>
-            <AppShell>
-              {children}
-            </AppShell>
-          </TaskSelectionProvider>
-        </I18nProvider>
+        <ThemeProvider>
+          <I18nProvider>
+            <TaskSelectionProvider>
+              <AppShell>
+                {children}
+              </AppShell>
+            </TaskSelectionProvider>
+          </I18nProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
