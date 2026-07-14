@@ -2,7 +2,8 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, Settings, LogOut } from 'lucide-react';
+import { Search, Settings, LogOut, Palette } from 'lucide-react';
+import { ThemeModal } from '@/features/theme/components/ThemeModal';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { useInvitationStore } from '@/features/invitations/store/useInvitationStore';
 import { InvitationBell } from './InvitationBell';
@@ -13,6 +14,7 @@ export const Topbar = () => {
   const logout = useAuthStore((s) => s.logout);
 
   const [menuOpen, setMenuOpen] = useState(false);
+  const [themeOpen, setThemeOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -61,6 +63,15 @@ export const Topbar = () => {
                   <span className="user-menu-email">{user?.email}</span>
                 </div>
               </div>
+              <button
+                className="user-menu-item"
+                onClick={() => {
+                  setMenuOpen(false);
+                  setThemeOpen(true);
+                }}
+              >
+                <Palette size={14} /> Theme
+              </button>
               <button className="user-menu-item danger" onClick={handleLogout}>
                 <LogOut size={14} /> Log out
               </button>
@@ -68,6 +79,7 @@ export const Topbar = () => {
           )}
         </div>
       </div>
+      {themeOpen && <ThemeModal onClose={() => setThemeOpen(false)} />}
     </header>
   );
 };
