@@ -55,10 +55,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ initialSummary }) 
           <div className="dashboard-detail-meta">
             <SpaceIcon icon={summary.spaceIcon} color={summary.spaceColor} size={24} />
             <span>{summary.spaceName}</span>
+            {/* <span className="dashboard-meta-sep">·</span>
+            <span>Space ID: {dashboard.spaceId}</span> */}
             <span className="dashboard-meta-sep">·</span>
-            <span>Space ID: {dashboard.spaceId}</span>
-            <span className="dashboard-meta-sep">·</span>
-            <span>Owner ID: {dashboard.ownerId}</span>
+            <span>Owner Name: {dashboard.ownerName}</span>
           </div>
           <div className="dashboard-detail-dates">
             <span>Created: {new Date(dashboard.createdAt).toLocaleString()}</span>
