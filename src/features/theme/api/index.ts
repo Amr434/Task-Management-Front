@@ -1,19 +1,14 @@
-import { DEFAULT_THEME_COLOR, DEFAULT_THEME_MODE } from '../constants';
 import { UserThemePreferences } from '../types';
 
-const STORAGE_KEY = 'user-theme-prefs';
+// Theme preferences "API". The backend has no theme endpoints yet, so this
+// persists locally with the same async contract the store expects — swap the
+// bodies for apiClient calls when a /Users/me/theme endpoint exists.
+const STORAGE_KEY = 'theme-preferences';
 
 export const themeApi = {
   async getMyTheme(): Promise<UserThemePreferences> {
-    if (typeof window === 'undefined') {
-      return { mode: DEFAULT_THEME_MODE, color: DEFAULT_THEME_COLOR };
-    }
-
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      throw new Error('No theme preferences stored');
-    }
-
+    const raw = typeof window !== 'undefined' ? window.localStorage.getItem(STORAGE_KEY) : null;
+    if (!raw) throw new Error('No saved theme');
     return JSON.parse(raw) as UserThemePreferences;
   },
 

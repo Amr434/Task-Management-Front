@@ -4,6 +4,7 @@ import { themeApi } from '../api';
 import { DEFAULT_THEME_COLOR, DEFAULT_THEME_MODE } from '../constants';
 import { ThemeColorId, ThemeMode, ThemesByUser, UserThemePreferences } from '../types';
 import { applyTheme } from '../utils/applyTheme';
+import { themeApi } from '../api';
 
 interface ThemeStoreState {
   mode: ThemeMode;
