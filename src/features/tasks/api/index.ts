@@ -24,6 +24,10 @@ export const getTasksByProject = async (projectId: number): Promise<TaskItem[]> 
   return apiClient.get<TaskItem[], TaskItem[]>(`/Tasks/project/${projectId}`);
 };
 
+export const getAssignedTasks = async (): Promise<TaskItem[]> => {
+  return apiClient.get<TaskItem[], TaskItem[]>('/Tasks/assigned');
+};
+
 
 export const deleteTask = async (id: number): Promise<void> => {
   return apiClient.delete(`/Tasks/${id}`);

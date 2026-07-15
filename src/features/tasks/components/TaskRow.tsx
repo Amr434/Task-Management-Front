@@ -62,31 +62,50 @@ export const TaskRow: React.FC<TaskRowProps> = ({ task, childrenByParent, depth 
 
   const toggle = (field: RowField) => setOpenField((cur) => (cur === field ? null : field));
 
+  // Optimistically apply the change locally and revert on failure. The PUT
+  // response is intentionally NOT written to the store: the backend maps it
+  // without loading tags/assignees, so spreading it would wipe those fields.
   const handleMarkComplete = () => {
     if (task.status === 2) return;
-    patchTask(task, { status: 2 }).then((updated) => updateTaskLocally(task.id, updated)).catch(e => console.warn(e));
+    const prev = task.status;
+    updateTaskLocally(task.id, { status: 2 });
+    patchTask(task, { status: 2 }).catch((e) => {
+      console.warn(e);
+      updateTaskLocally(task.id, { status: prev });
+    });
   };
 
   const commitRename = () => {
     const next = titleDraft.trim();
     setRenaming(false);
     if (!next || next === task.title) { setTitleDraft(task.title); return; }
-    patchTask(task, { title: next }).then((updated) => updateTaskLocally(task.id, updated)).catch((e) => {
+    const prev = task.title;
+    updateTaskLocally(task.id, { title: next });
+    patchTask(task, { title: next }).catch((e) => {
       console.warn('Failed to rename task', e instanceof Error ? e.message : String(e));
-      setTitleDraft(task.title);
+      updateTaskLocally(task.id, { title: prev });
+      setTitleDraft(prev);
     });
   };
 
   const setPriority = (p: Priority) => {
     setOpenField(null);
-    patchTask(task, { priority: p }).then((updated) => updateTaskLocally(task.id, updated)).catch((e) =>
-      console.warn('Failed to set priority', e instanceof Error ? e.message : String(e)));
+    const prev = task.priority;
+    updateTaskLocally(task.id, { priority: p });
+    patchTask(task, { priority: p }).catch((e) => {
+      console.warn('Failed to set priority', e instanceof Error ? e.message : String(e));
+      updateTaskLocally(task.id, { priority: prev });
+    });
   };
 
   const setDueDate = (iso: string | undefined) => {
     setOpenField(null);
-    patchTask(task, { dueDate: iso }).then((updated) => updateTaskLocally(task.id, updated)).catch((e) =>
-      console.warn('Failed to set due date', e instanceof Error ? e.message : String(e)));
+    const prev = task.dueDate;
+    updateTaskLocally(task.id, { dueDate: iso });
+    patchTask(task, { dueDate: iso }).catch((e) => {
+      console.warn('Failed to set due date', e instanceof Error ? e.message : String(e));
+      updateTaskLocally(task.id, { dueDate: prev });
+    });
   };
 
   const startAddSubtask = () => {
