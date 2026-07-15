@@ -6,6 +6,7 @@ import { X, Calendar, Flag, Tag as TagIcon, Users, FileText, CheckCircle, Chevro
 import { StatusMenu, PriorityMenu, DateMenu, TagMenu, AssigneeMenu, Avatar } from './TaskFieldMenus';
 import { PRIORITY_META, Priority, TaskItem, TaskStatus, User, userDisplayName } from '../types';
 import { patchTask, addTagToTask, removeTagFromTask, assignUserToTask, removeUserFromTask } from '../api';
+import { TaskComments } from '@/features/comments/components/TaskComments';
 
 export const TaskDetailSidebar: React.FC = () => {
   const { detailTaskId, setDetailTaskId, tasksByProjectId, projects, updateTaskLocally, addTaskLocally } = useSpaceStore();
@@ -267,6 +268,10 @@ export const TaskDetailSidebar: React.FC = () => {
               <input type="file" className="tds-file-input" title="Upload attachment" />
             </div>
           </div>
+          <div className="tds-divider" />
+
+          {/* Comments Section */}
+          <TaskComments taskId={task.id} projectId={task.projectId} />
 
         </div>
       </div>

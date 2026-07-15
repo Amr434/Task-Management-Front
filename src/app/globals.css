@@ -3664,3 +3664,364 @@ body {
   color: var(--text-primary);
   font-weight: 500;
 }
+
+/* Comments Section */
+.task-comments-section {
+  padding: 16px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: var(--bg-main);
+}
+
+.task-comments-section h3 {
+  font-size: 14px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.no-comments {
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-style: italic;
+  padding: 12px 0;
+}
+
+.comment-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--bg-hover);
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.comment-item:hover {
+  background: var(--bg-sidebar);
+}
+
+.comment-item.assigned-comment {
+  border-color: var(--accent-border);
+  background: var(--accent-muted);
+}
+
+.comment-item.assigned-comment.resolved-comment {
+  opacity: 0.7;
+  border-color: var(--border-color);
+  background: var(--bg-hover);
+}
+
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.comment-author-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.author-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.comment-time {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.comment-body {
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  margin-left: 32px; /* align with text after avatar */
+}
+
+/* Comment Actions */
+.comment-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.resolve-btn {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.resolve-btn:hover {
+  border-color: #00c875;
+  color: #00c875;
+}
+
+.resolve-btn.is-resolved {
+  background: #00c875;
+  border-color: #00c875;
+  color: white;
+}
+
+/* Hover Actions */
+.comment-hover-actions {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  display: flex;
+  gap: 4px;
+}
+
+.comment-item:hover .comment-hover-actions {
+  opacity: 1;
+}
+
+.hover-action-btn {
+  background: var(--bg-main);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 4px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hover-action-btn:hover {
+  color: var(--accent-color);
+  border-color: var(--accent-border);
+}
+
+/* Assignment Banner */
+.comment-assignment-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  margin-left: 32px;
+  padding: 6px 10px;
+  background: rgba(255,255,255,0.5);
+  border-radius: 6px;
+  border: 1px solid var(--accent-border);
+  font-size: 12px;
+}
+
+.resolved-comment .comment-assignment-banner {
+  border-color: var(--border-color);
+  background: transparent;
+}
+
+.assignment-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+}
+
+.assignment-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.assigned-user-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-main);
+  padding: 2px 6px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.assigned-user-badge:hover {
+  border-color: var(--accent-color);
+}
+
+.resolution-status {
+  color: #00c875;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Composer */
+.new-comment-composer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--bg-main);
+  transition: border-color 0.2s;
+}
+
+.new-comment-composer:focus-within {
+  border-color: var(--accent-color);
+}
+
+.new-comment-composer textarea {
+  width: 100%;
+  border: none;
+  background: transparent;
+  resize: none;
+  min-height: 60px;
+  font-size: 14px;
+  color: var(--text-primary);
+  font-family: inherit;
+  outline: none;
+}
+
+.composer-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-color);
+}
+
+.assign-new-container {
+  position: relative;
+}
+
+.assign-new-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.assign-new-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.assign-new-btn.active {
+  background: var(--accent-muted);
+  color: var(--accent-color);
+}
+
+.post-comment-btn {
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.post-comment-btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.post-comment-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.assignment-menu-popup {
+  z-index: 100;
+}
+
+/* Shared popup menu used by the comment assign dropdowns. */
+.popup-menu {
+  background: var(--bg-main);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  min-width: 200px;
+  overflow: hidden;
+  font-size: 13px;
+}
+
+.popup-header {
+  padding: 8px 12px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.popup-items {
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.popup-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: left;
+}
+
+.popup-item:hover {
+  background: var(--bg-hover);
+}
+
+.popup-divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 4px 0;
+}
+
+.icon-mr {
+  margin-right: 4px;
+}
+
+.hover-action-btn.danger:hover {
+  color: #e2445c;
+  border-color: #e2445c;
+}
