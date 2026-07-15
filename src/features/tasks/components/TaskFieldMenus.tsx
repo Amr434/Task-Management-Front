@@ -10,6 +10,9 @@ import { useAuthStore } from '@/features/auth/store/useAuthStore';
 
 // --- Date helpers (shared) ---
 export const startOfDay = (d: Date) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
+// Due dates are date-only: anchor them at local noon so the UTC conversion in
+// toISOString() (max ±12h shift) can never move them to another calendar day.
+export const atNoon = (d: Date) => { const x = new Date(d); x.setHours(12, 0, 0, 0); return x; };
 export const addDays = (d: Date, n: number) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
 export const sameDay = (a: Date, b: Date) =>
   a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
@@ -244,7 +247,7 @@ export const DateMenu: React.FC<{
       <div className="date-dropdown-body">
         <div className="date-quick-list">
           {quick.map((q) => (
-            <button key={q.label} className="date-quick-row" onClick={() => onSelect(q.date)}>
+            <button key={q.label} className="date-quick-row" onClick={() => onSelect(atNoon(q.date))}>
               <span>{q.label}</span>
               <span className="date-quick-hint">{q.hint}</span>
             </button>
@@ -283,7 +286,7 @@ export const DateMenu: React.FC<{
                 <button
                   key={i}
                   className={`date-cal-day ${sameDay(cell, today) ? 'today' : ''} ${value && sameDay(cell, value) ? 'selected' : ''}`}
-                  onClick={() => onSelect(cell)}
+                  onClick={() => onSelect(atNoon(cell))}
                 >
                   {cell.getDate()}
                 </button>

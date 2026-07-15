@@ -17,6 +17,7 @@ interface SpaceState {
   tasksByProjectId: Record<number, TaskItem[]>;
   isLoading: boolean;
   detailTaskId: number | null;
+  assignedTasks: TaskItem[];
 
   // List-view grouping controls.
   groupBy: GroupBy;
@@ -52,6 +53,7 @@ interface SpaceState {
   setProjectLocally: (project: Project) => void;
 
   setDetailTaskId: (taskId: number | null) => void;
+  setAssignedTasks: (tasks: TaskItem[]) => void;
 }
 
 export const useSpaceStore = create<SpaceState>((set) => ({
@@ -60,6 +62,7 @@ export const useSpaceStore = create<SpaceState>((set) => ({
   tasksByProjectId: {},
   isLoading: true,
   detailTaskId: null,
+  assignedTasks: [],
 
   groupBy: 'status',
   groupDir: 'asc',
@@ -88,6 +91,7 @@ export const useSpaceStore = create<SpaceState>((set) => ({
   })),
 
   setDetailTaskId: (taskId) => set({ detailTaskId: taskId }),
+  setAssignedTasks: (tasks) => set({ assignedTasks: tasks }),
 
   setTasksForProject: (projectId: number, tasks: TaskItem[]) => {
     set((state) => ({
@@ -145,7 +149,8 @@ export const useSpaceStore = create<SpaceState>((set) => ({
         tasksByProjectId: {
           ...state.tasksByProjectId,
           [pid]: [...tasks, task],
-        }
+        },
+        assignedTasks: [...state.assignedTasks, task]
       };
     });
   },
@@ -173,7 +178,18 @@ export const useSpaceStore = create<SpaceState>((set) => ({
         }
       }
       
-      return found ? { tasksByProjectId: newTasksByProject } : state;
+      let nextAssignedTasks = state.assignedTasks;
+      const assignedIdx = state.assignedTasks.findIndex(t => t.id === taskId);
+      if (assignedIdx !== -1) {
+        nextAssignedTasks = [...state.assignedTasks];
+        nextAssignedTasks[assignedIdx] = { ...nextAssignedTasks[assignedIdx], ...patch };
+        found = true;
+      }
+      
+      return found ? { 
+        tasksByProjectId: newTasksByProject,
+        assignedTasks: nextAssignedTasks
+      } : state;
     });
   },
 
@@ -193,7 +209,16 @@ export const useSpaceStore = create<SpaceState>((set) => ({
         }
       }
       
-      return found ? { tasksByProjectId: newTasksByProject } : state;
+      let nextAssignedTasks = state.assignedTasks;
+      if (state.assignedTasks.some(t => t.id === taskId)) {
+        nextAssignedTasks = state.assignedTasks.filter(t => t.id !== taskId);
+        found = true;
+      }
+      
+      return found ? { 
+        tasksByProjectId: newTasksByProject,
+        assignedTasks: nextAssignedTasks
+      } : state;
     });
   }
 }));

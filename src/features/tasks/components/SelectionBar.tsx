@@ -40,7 +40,9 @@ export const SelectionBar: React.FC<SelectionBarProps> = ({ allTasks = [] }) => 
   const handleBulkUpdate = async (patch: Partial<TaskItem>) => {
     setLoading(true);
     try {
-      await Promise.all(selectedTasks.map(t => patchTask(t, patch).then(updated => updateTaskLocally(t.id, updated))));
+      // Apply the patch locally instead of the PUT response — the response
+      // comes back without tags/assignees and would wipe them from the store.
+      await Promise.all(selectedTasks.map(t => patchTask(t, patch).then(() => updateTaskLocally(t.id, patch))));
       clearSelection();
     } catch (e) {
       console.warn("Bulk update failed", e);

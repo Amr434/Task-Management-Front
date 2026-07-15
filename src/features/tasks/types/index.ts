@@ -78,4 +78,6 @@ export interface TaskItem {
   status: TaskStatus;
   tags?: Tag[];
   assignees?: User[];
+  projectName?: string;
+  spaceName?: string;
 }
