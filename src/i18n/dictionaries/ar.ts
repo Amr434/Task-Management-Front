@@ -5,6 +5,7 @@ export const ar: Dictionary = {
   selectWorkspace: 'اختر مساحة العمل',
   favorites: 'المفضلة',
   everything: 'كل شيء',
+  dashboards: 'لوحة التحكم',
   spaces: 'المساحات',
   noLists: 'لا توجد قوائم',
   createSpace: 'إنشاء مساحة',

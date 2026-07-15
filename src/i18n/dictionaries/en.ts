@@ -3,6 +3,7 @@ export const en = {
   selectWorkspace: 'Select Workspace',
   favorites: 'Favorites',
   everything: 'Everything',
+  dashboards: 'Dashboard',
   spaces: 'Spaces',
   noLists: 'No lists',
   createSpace: 'Create Space',
