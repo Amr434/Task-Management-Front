@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { ChevronDown, ChevronRight, Plus, CheckSquare, Network, MoreHorizontal, Pencil, Link2, Copy, Trash2, FolderInput, UserCircle, CalendarClock, User, Inbox, MessageSquareReply, MessageSquare } from 'lucide-react';
+import { ChevronDown, ChevronRight, Plus, CheckSquare, Network, MoreHorizontal, Pencil, Link2, Copy, Trash2, FolderInput, BarChart3, UserCircle, CalendarClock, User, Inbox, MessageSquareReply, MessageSquare } from 'lucide-react';
 import { getSpaces, deleteSpace, duplicateSpace } from '@/features/spaces/api';
 import { getProjectsBySpace, deleteProject, duplicateProject, updateProject } from '@/features/projects/api';
 import { Space } from '@/features/spaces/types';
@@ -328,6 +328,9 @@ export const Sidebar = () => {
                 </div>
               </div>
             )}
+          </div>
+          <div className={`nav-item ${pathname.startsWith('/dashboards') ? 'active' : ''}`} onClick={() => router.push('/dashboards')}>
+            <BarChart3 size={16} /> <span className="item-name">{t.dashboards || 'Dashboard'}</span>
           </div>
         </div>
 
