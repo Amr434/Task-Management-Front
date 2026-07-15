@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { ChevronDown, ChevronRight, Plus, CheckSquare, Network, MoreHorizontal, Pencil, Link2, Copy, Trash2, FolderInput } from 'lucide-react';
+import { ChevronDown, ChevronRight, Plus, CheckSquare, Network, MoreHorizontal, Pencil, Link2, Copy, Trash2, FolderInput, BarChart3 } from 'lucide-react';
 import { getSpaces, deleteSpace, duplicateSpace } from '@/features/spaces/api';
 import { getProjectsBySpace, deleteProject, duplicateProject, updateProject } from '@/features/projects/api';
 import { Space } from '@/features/spaces/types';
@@ -276,8 +276,11 @@ export const Sidebar = () => {
       <nav className="sidebar-nav">
         <div className="nav-section">
           <span className="section-title">{t.favorites}</span>
-          <div className="nav-item" onClick={() => router.push('/')}>
+          <div className={`nav-item ${pathname === '/' ? 'active' : ''}`} onClick={() => router.push('/')}>
             <Network size={16} style={{ transform: 'rotate(90deg)' }} /> <span className="item-name">{t.everything || 'All Tasks'}</span>
+          </div>
+          <div className={`nav-item ${pathname.startsWith('/dashboards') ? 'active' : ''}`} onClick={() => router.push('/dashboards')}>
+            <BarChart3 size={16} /> <span className="item-name">{t.dashboards || 'Dashboard'}</span>
           </div>
         </div>
 
