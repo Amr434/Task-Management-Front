@@ -714,6 +714,11 @@ body {
   background: rgba(255,255,255,0.03);
 }
 
+/* Compact rows on the Today & Overdue page. */
+.today-task-row:hover {
+  background: rgba(255,255,255,0.05);
+}
+
 .task-cell {
   padding: 8px 16px;
   display: flex;
