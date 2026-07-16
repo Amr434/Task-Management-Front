@@ -6,8 +6,10 @@ import { Bell, Check, X, FolderKanban, LayoutGrid } from 'lucide-react';
 import { useInvitationStore } from '@/features/invitations/store/useInvitationStore';
 import { Invitation, InvitationTargetType } from '@/features/invitations/types';
 import { invitationsApi } from '@/features/invitations/api';
+import { useI18n } from '@/contexts/I18nContext';
 
 export const InvitationBell = () => {
+  const { t } = useI18n();
   const router = useRouter();
   const {
     pendingInvitations,
@@ -73,10 +75,10 @@ export const InvitationBell = () => {
 
       {open && (
         <div className="invitation-popover">
-          <div className="invitation-popover-title">Invitations</div>
+          <div className="invitation-popover-title">{t.invitations}</div>
           <div className="invitation-popover-list">
             {pendingInvitations.length === 0 ? (
-              <div className="invitation-empty">No pending invitations</div>
+              <div className="invitation-empty">{t.noPendingInvitations}</div>
             ) : (
               pendingInvitations.map(inv => (
                 <div key={inv.id} className="invitation-item">

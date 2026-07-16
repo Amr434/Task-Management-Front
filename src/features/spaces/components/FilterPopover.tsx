@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Trash2, Info, ChevronDown, X } from 'lucide-react';
 import { useSpaceStore } from '@/store/useSpaceStore';
 import { Priority, TaskStatus, Tag } from '@/features/tasks/types';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface FilterPopoverProps {
   onClose: () => void;
@@ -11,6 +12,7 @@ interface FilterPopoverProps {
 type FilterType = 'status' | 'priority' | 'tags' | 'name';
 
 export const FilterPopover: React.FC<FilterPopoverProps> = ({ onClose, anchorRef }) => {
+  const { t } = useI18n();
   const popoverRef = useRef<HTMLDivElement>(null);
   const tasksByProjectId = useSpaceStore((s) => s.tasksByProjectId);
 
@@ -42,10 +44,10 @@ export const FilterPopover: React.FC<FilterPopoverProps> = ({ onClose, anchorRef
   // Determine active rows in the filter builder
   const activeFilters = useMemo(() => {
     const list: { type: FilterType; label: string }[] = [];
-    if (filterStatus !== null) list.push({ type: 'status', label: 'Status' });
-    if (filterPriority !== null) list.push({ type: 'priority', label: 'Priority' });
-    if (filterTagId !== null) list.push({ type: 'tags', label: 'Tags' });
-    if (filterQuery !== '') list.push({ type: 'name', label: 'Name' });
+    if (filterStatus !== null) list.push({ type: 'status', label: t.statusLabel });
+    if (filterPriority !== null) list.push({ type: 'priority', label: t.colPriority });
+    if (filterTagId !== null) list.push({ type: 'tags', label: t.colTags });
+    if (filterQuery !== '') list.push({ type: 'name', label: t.colName });
     return list;
   }, [filterStatus, filterPriority, filterTagId, filterQuery]);
 
@@ -100,10 +102,10 @@ export const FilterPopover: React.FC<FilterPopoverProps> = ({ onClose, anchorRef
   const addableTypes = useMemo(() => {
     const activeTypes = activeFilters.map((f) => f.type);
     const all: { type: FilterType; label: string }[] = [
-      { type: 'status', label: 'Status' },
-      { type: 'tags', label: 'Tags' },
-      { type: 'priority', label: 'Priority' },
-      { type: 'name', label: 'Name' },
+      { type: 'status', label: t.statusLabel },
+      { type: 'tags', label: t.colTags },
+      { type: 'priority', label: t.colPriority },
+      { type: 'name', label: t.colName },
     ];
     return all.filter((item) => !activeTypes.includes(item.type));
   }, [activeFilters]);
@@ -112,7 +114,7 @@ export const FilterPopover: React.FC<FilterPopoverProps> = ({ onClose, anchorRef
     <div ref={popoverRef} className="clickup-filter-popover" style={style}>
       <div className="filter-popover-header">
         <div className="header-left">
-          <span className="title">Filters</span>
+          <span className="title">{t.filters}</span>
           <Info size={14} className="info-icon" />
         </div>
         <button className="close-btn" onClick={onClose}>
@@ -149,10 +151,10 @@ export const FilterPopover: React.FC<FilterPopoverProps> = ({ onClose, anchorRef
                       onChange={(e) => setFilterPriority(Number(e.target.value))}
                       className="rule-select"
                     >
-                      <option value={Priority.Low}>Low</option>
-                      <option value={Priority.Medium}>Normal</option>
-                      <option value={Priority.High}>High</option>
-                      <option value={Priority.Urgent}>Urgent</option>
+                      <option value={Priority.Low}>{t.priorityLow}</option>
+                      <option value={Priority.Medium}>{t.priorityNormal}</option>
+                      <option value={Priority.High}>{t.priorityHigh}</option>
+                      <option value={Priority.Urgent}>{t.priorityUrgent}</option>
                     </select>
                   )}
 
@@ -163,7 +165,7 @@ export const FilterPopover: React.FC<FilterPopoverProps> = ({ onClose, anchorRef
                       className="rule-select"
                     >
                       {availableTags.length === 0 ? (
-                        <option value="">No tags found</option>
+                        <option value="">{t.noTagsFound}</option>
                       ) : (
                         availableTags.map((tag) => (
                           <option key={tag.id} value={tag.id}>
@@ -178,7 +180,7 @@ export const FilterPopover: React.FC<FilterPopoverProps> = ({ onClose, anchorRef
                     <input
                       type="text"
                       value={filterQuery.trim()}
-                      placeholder="Search query..."
+                      placeholder={t.searchQuery}
                       onChange={(e) => setFilterQuery(e.target.value)}
                       className="rule-input"
                       autoFocus
@@ -206,7 +208,7 @@ export const FilterPopover: React.FC<FilterPopoverProps> = ({ onClose, anchorRef
             onClick={() => setShowAddMenu(!showAddMenu)}
             disabled={addableTypes.length === 0}
           >
-            <span>{addableTypes.length === 0 ? 'All filters added' : 'Select filter'}</span>
+            <span>{addableTypes.length === 0 ? t.allFiltersAdded : t.selectFilter}</span>
             <ChevronDown size={14} />
           </button>
           

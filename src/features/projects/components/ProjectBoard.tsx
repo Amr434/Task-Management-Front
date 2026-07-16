@@ -13,10 +13,12 @@ import { LayoutGrid, List as ListIcon, Columns, Calendar, Plus, MoreHorizontal, 
 import { useSpaceStore } from '@/store/useSpaceStore';
 import { InviteMemberModal } from '@/features/invitations/components/InviteMemberModal';
 import { InvitationTargetType } from '@/features/invitations/types';
+import { useI18n } from '@/contexts/I18nContext';
 
 type ProjectView = 'list' | 'board' | 'calendar';
 
 export const ProjectBoard = ({ projectId, spaceId }: { projectId: number; spaceId?: number }) => {
+  const { t } = useI18n();
   const { projects, tasksByProjectId, setProjectLocally, setTasksForProject, addTaskLocally, updateTaskLocally } = useSpaceStore();
   const project = projects.find((p) => p.id === projectId) || null;
   const tasks = tasksByProjectId[projectId] || [];
@@ -167,7 +169,7 @@ export const ProjectBoard = ({ projectId, spaceId }: { projectId: number; spaceI
                 onClick={() => setIsInviteModalOpen(true)}
                 style={{display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', fontSize: '13px'}}
               >
-                <Share2 size={14} /> Share
+                <Share2 size={14} /> {t.share}
               </button>
             </div>
           </div>
@@ -184,20 +186,20 @@ export const ProjectBoard = ({ projectId, spaceId }: { projectId: number; spaceI
           <div className="space-tabs">
             <button className={`space-tab ${activeView === 'list' ? 'active' : ''}`} onClick={() => setActiveView('list')}>
               <ListIcon size={14} />
-              List
+              {t.list}
             </button>
             <button className={`space-tab ${activeView === 'board' ? 'active' : ''}`} onClick={() => setActiveView('board')}>
               <Columns size={14} />
-              Board
+              {t.board}
             </button>
             <button className={`space-tab ${activeView === 'calendar' ? 'active' : ''}`} onClick={() => setActiveView('calendar')}>
               <Calendar size={14} />
-              Calendar
+              {t.calendar}
             </button>
             <div style={{width: '1px', height: '16px', backgroundColor: 'var(--border-color)', margin: '0 8px'}} />
             <button className="space-tab add-tab" style={{color: 'var(--text-secondary)'}}>
               <Plus size={14} />
-              View
+              {t.view}
             </button>
           </div>
         </div>

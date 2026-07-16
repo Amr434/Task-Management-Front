@@ -6,6 +6,7 @@ import { getProjectMembers } from '@/features/tasks/api';
 import { User, userDisplayName } from '@/features/tasks/types';
 import { Avatar } from '@/features/tasks/components/TaskFieldMenus';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface TaskCommentsProps {
   taskId: number;
@@ -14,6 +15,7 @@ interface TaskCommentsProps {
 
 export const TaskComments: React.FC<TaskCommentsProps> = ({ taskId, projectId }) => {
   const currentUser = useAuthStore((s) => s.user);
+  const { t } = useI18n();
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [members, setMembers] = useState<User[]>([]);
   const [newCommentText, setNewCommentText] = useState('');
@@ -114,11 +116,11 @@ export const TaskComments: React.FC<TaskCommentsProps> = ({ taskId, projectId })
 
   return (
     <div className="task-comments-section" ref={rootRef}>
-      <h3>Activity & Comments</h3>
+      <h3>{t.activityComments}</h3>
       
       <div className="comments-list">
         {comments.length === 0 ? (
-          <div className="no-comments">No activity yet.</div>
+          <div className="no-comments">{t.noActivity}</div>
         ) : (
           comments.map(comment => {
             const isAssigned = !!comment.assignedTo;
@@ -138,7 +140,7 @@ export const TaskComments: React.FC<TaskCommentsProps> = ({ taskId, projectId })
                       <button 
                         className={`resolve-btn ${isResolved ? 'is-resolved' : ''}`}
                         onClick={() => handleToggleResolve(comment)}
-                        title={isResolved ? "Reopen comment" : "Resolve comment"}
+                        title={isResolved ? t.reopenComment : t.resolveComment}
                       >
                         <Check size={14} strokeWidth={isResolved ? 3 : 2} />
                       </button>
@@ -153,7 +155,7 @@ export const TaskComments: React.FC<TaskCommentsProps> = ({ taskId, projectId })
                 {isAssigned && (
                   <div className="comment-assignment-banner">
                     <div className="assignment-status">
-                      <span className="assignment-label">Assigned to:</span>
+                      <span className="assignment-label">{t.assignedToLabel}</span>
                       <div className="assigned-user-badge" onClick={() => setAssignMenuForComment(comment.id)}>
                         <Avatar user={comment.assignedTo!} size="sm" />
                         <span>{userDisplayName(comment.assignedTo!)}</span>
@@ -162,10 +164,10 @@ export const TaskComments: React.FC<TaskCommentsProps> = ({ taskId, projectId })
                       {assignMenuForComment === comment.id && (
                         <div className="popup-anchor bottom-left assignment-menu-popup">
                           <div className="popup-menu">
-                            <div className="popup-header">Assign to...</div>
+                            <div className="popup-header">{t.assignTo}</div>
                             <div className="popup-items">
                               <button className="popup-item" onClick={() => handleUnassignExisting(comment.id)}>
-                                <X size={14} className="icon-mr" /> Unassign
+                                <X size={14} className="icon-mr" /> {t.unassign}
                               </button>
                               <div className="popup-divider" />
                               {members.map(m => (
@@ -181,7 +183,7 @@ export const TaskComments: React.FC<TaskCommentsProps> = ({ taskId, projectId })
                     </div>
                     {isResolved && comment.resolvedBy && (
                       <div className="resolution-status">
-                        Resolved by {userDisplayName(comment.resolvedBy)}
+                        {t.resolvedBy} {userDisplayName(comment.resolvedBy)}
                       </div>
                     )}
                   </div>
@@ -191,19 +193,19 @@ export const TaskComments: React.FC<TaskCommentsProps> = ({ taskId, projectId })
                 {(!isAssigned || comment.author?.id === currentUser?.id) && (
                   <div className="comment-hover-actions">
                     {!isAssigned && (
-                      <button className="hover-action-btn" onClick={() => setAssignMenuForComment(comment.id)} title="Assign this comment">
+                      <button className="hover-action-btn" onClick={() => setAssignMenuForComment(comment.id)} title={t.assignThisComment}>
                         <UserPlus size={14} />
                       </button>
                     )}
                     {comment.author?.id === currentUser?.id && (
-                      <button className="hover-action-btn danger" onClick={() => handleDelete(comment.id)} title="Delete comment">
+                      <button className="hover-action-btn danger" onClick={() => handleDelete(comment.id)} title={t.deleteComment}>
                         <Trash2 size={14} />
                       </button>
                     )}
                     {!isAssigned && assignMenuForComment === comment.id && (
                       <div className="popup-anchor bottom-left assignment-menu-popup">
                         <div className="popup-menu">
-                          <div className="popup-header">Assign to...</div>
+                          <div className="popup-header">{t.assignTo}</div>
                           <div className="popup-items">
                             {members.map(m => (
                               <button key={m.id} className="popup-item" onClick={() => handleAssignExisting(comment.id, m.id)}>
@@ -227,7 +229,7 @@ export const TaskComments: React.FC<TaskCommentsProps> = ({ taskId, projectId })
         <textarea
           value={newCommentText}
           onChange={e => setNewCommentText(e.target.value)}
-          placeholder="Write a comment..."
+          placeholder={t.writeComment}
           onKeyDown={e => {
             if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
               handlePost();
@@ -239,27 +241,27 @@ export const TaskComments: React.FC<TaskCommentsProps> = ({ taskId, projectId })
             <button 
               className={`assign-new-btn ${assignNewTo ? 'active' : ''}`} 
               onClick={() => setShowAssignMenuForNew(!showAssignMenuForNew)}
-              title="Assign this comment"
+              title={t.assignThisComment}
             >
               {assignNewTo && members.some(m => m.id === assignNewTo) ? (
                 <>
                   <CheckCircle size={14} className="icon-mr" />
-                  Assigned to {userDisplayName(members.find(m => m.id === assignNewTo)!)}
+                  {t.assignedToWord} {userDisplayName(members.find(m => m.id === assignNewTo)!)}
                 </>
               ) : (
                 <>
-                  <UserPlus size={14} className="icon-mr" /> Assign
+                  <UserPlus size={14} className="icon-mr" /> {t.assign}
                 </>
               )}
             </button>
             {showAssignMenuForNew && (
               <div className="popup-anchor bottom-left">
                 <div className="popup-menu">
-                  <div className="popup-header">Assign to...</div>
+                  <div className="popup-header">{t.assignTo}</div>
                   <div className="popup-items">
                     {assignNewTo && (
                       <button className="popup-item" onClick={() => { setAssignNewTo(null); setShowAssignMenuForNew(false); }}>
-                        <X size={14} className="icon-mr" /> Clear Assignment
+                        <X size={14} className="icon-mr" /> {t.clearAssignment}
                       </button>
                     )}
                     {assignNewTo && <div className="popup-divider" />}
@@ -275,7 +277,7 @@ export const TaskComments: React.FC<TaskCommentsProps> = ({ taskId, projectId })
             )}
           </div>
           <button className="post-comment-btn" onClick={handlePost} disabled={!newCommentText.trim()}>
-            Comment
+            {t.commentBtn}
           </button>
         </div>
       </div>

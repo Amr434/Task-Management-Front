@@ -65,7 +65,7 @@ export const CreateSpaceModal: React.FC<CreateSpaceModalProps> = ({ onClose, onS
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="e.g., Marketing, Engineering..."
+                placeholder={t.spaceNamePlaceholder}
                 autoFocus
                 required
               />
@@ -73,18 +73,18 @@ export const CreateSpaceModal: React.FC<CreateSpaceModalProps> = ({ onClose, onS
           </div>
 
           <div className="form-group">
-            <label htmlFor="description">Description (optional)</label>
+            <label htmlFor="description">{t.descriptionOptional}</label>
             <textarea
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="What is this space for?"
+              placeholder={t.spaceAbout}
               rows={2}
             />
           </div>
 
           <div className="form-group">
-            <label>Icon</label>
+            <label>{t.icon}</label>
             <div className="icon-picker">
               {SPACE_ICONS.map((emoji) => (
                 <button
@@ -100,7 +100,7 @@ export const CreateSpaceModal: React.FC<CreateSpaceModalProps> = ({ onClose, onS
           </div>
 
           <div className="form-group">
-            <label>Color</label>
+            <label>{t.color}</label>
             <div className="color-picker">
               {SPACE_COLORS.map((c) => (
                 <div

@@ -6,8 +6,10 @@ import { TaskItem } from '@/features/tasks/types';
 import { TaskRow } from '@/features/tasks/components/TaskRow';
 import { useColumnGridTemplate } from '@/features/tasks/hooks/useColumnGridTemplate';
 import { useSpaceStore } from '@/store/useSpaceStore';
+import { useI18n } from '@/contexts/I18nContext';
 
 export default function AssignedToMePage() {
+  const { t } = useI18n();
   const tasks = useSpaceStore((s) => s.assignedTasks);
   const setAssignedTasks = useSpaceStore((s) => s.setAssignedTasks);
   const [loading, setLoading] = useState(true);
@@ -46,23 +48,23 @@ export default function AssignedToMePage() {
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)' }}>
-        <h1 style={{ margin: 0, fontSize: '20px' }}>Assigned to me</h1>
+        <h1 style={{ margin: 0, fontSize: '20px' }}>{t.assignedToMe}</h1>
       </div>
       
       <div style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
         {loading ? (
-          <div style={{ color: 'var(--text-secondary)' }}>Loading tasks...</div>
+          <div style={{ color: 'var(--text-secondary)' }}>{t.loadingTasks}</div>
         ) : tasks.length === 0 ? (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-secondary)' }}>
-            <p>Tasks assigned to you will appear here.</p>
+            <p>{t.assignedEmpty}</p>
           </div>
         ) : (
           <div className="list-tasks-container">
             <div className="table-header" style={{ gridTemplateColumns }}>
-              <div className="th-cell th-name">Name</div>
-              {visibleColumns.assignee && <div className="th-cell th-assignee">Assignee</div>}
-              {visibleColumns.dueDate && <div className="th-cell th-due">Due date</div>}
-              {visibleColumns.priority && <div className="th-cell th-priority">Priority</div>}
+              <div className="th-cell th-name">{t.colName}</div>
+              {visibleColumns.assignee && <div className="th-cell th-assignee">{t.colAssignee}</div>}
+              {visibleColumns.dueDate && <div className="th-cell th-due">{t.colDueDate}</div>}
+              {visibleColumns.priority && <div className="th-cell th-priority">{t.colPriority}</div>}
             </div>
 
             {rootTasks.map((task) => (

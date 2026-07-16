@@ -6,26 +6,22 @@ import { ChevronDown, ChevronRight, Flag } from 'lucide-react';
 import { getAssignedTasks, patchTask } from '@/features/tasks/api';
 import { TaskItem, TaskStatus, priorityMeta } from '@/features/tasks/types';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
+import { useI18n } from '@/contexts/I18nContext';
 
 type Bucket = 'overdue' | 'today' | 'next' | 'unscheduled';
 
-const BUCKET_LABELS: Record<Bucket, string> = {
-  overdue: 'Overdue',
-  today: 'Today',
-  next: 'Next',
-  unscheduled: 'Unscheduled',
-};
-
-const EMPTY_HINTS: Record<Bucket, string> = {
-  overdue: 'No overdue tasks — nice.',
-  today: 'Nothing due today.',
-  next: 'No upcoming tasks scheduled.',
-  unscheduled: 'No unscheduled tasks assigned to you.',
-};
 
 export default function TodayAndOverduePage() {
   const router = useRouter();
+  const { t } = useI18n();
   const currentUser = useAuthStore((s) => s.user);
+
+  const BUCKET_LABELS: Record<Bucket, string> = {
+    overdue: t.overdue, today: t.today, next: t.next, unscheduled: t.unscheduled,
+  };
+  const EMPTY_HINTS: Record<Bucket, string> = {
+    overdue: t.noOverdueTasks, today: t.noDueToday, next: t.noUpcoming, unscheduled: t.noUnscheduledTasks,
+  };
 
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -153,30 +149,30 @@ export default function TodayAndOverduePage() {
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)' }}>
         <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
-          My Tasks / <span style={{ color: 'var(--text-primary)' }}>Today &amp; Overdue</span>
+          {t.myTasks} / <span style={{ color: 'var(--text-primary)' }}>{t.todayOverdue}</span>
         </div>
       </div>
 
       <div style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
         <div style={{ backgroundColor: '#212224', borderRadius: '8px', padding: '20px' }}>
-          <h2 style={{ fontSize: '18px', margin: '0 0 16px 0' }}>My Work</h2>
+          <h2 style={{ fontSize: '18px', margin: '0 0 16px 0' }}>{t.myWork}</h2>
 
           <div style={{ display: 'flex', gap: '16px', borderBottom: '1px solid var(--border-color)', marginBottom: '24px' }}>
-            {(['todo', 'done'] as const).map((t) => (
+            {(['todo', 'done'] as const).map((tabKey) => (
               <span
-                key={t}
-                onClick={() => setTab(t)}
-                style={tab === t
+                key={tabKey}
+                onClick={() => setTab(tabKey)}
+                style={tab === tabKey
                   ? { fontWeight: 'bold', color: 'var(--text-primary)', borderBottom: '2px solid var(--text-primary)', paddingBottom: '8px', marginBottom: '-1px', cursor: 'pointer' }
                   : { color: 'var(--text-secondary)', paddingBottom: '8px', cursor: 'pointer' }}
               >
-                {t === 'todo' ? 'To Do' : 'Done'}
+                {tabKey === 'todo' ? t.toDo : t.done}
               </span>
             ))}
           </div>
 
           {loading ? (
-            <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>Loading tasks...</div>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>{t.loadingTasks}</div>
           ) : (
             (['overdue', 'today', 'next', 'unscheduled'] as Bucket[]).map(renderBucket)
           )}

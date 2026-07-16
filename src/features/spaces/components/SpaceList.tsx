@@ -29,7 +29,7 @@ export const SpaceList = () => {
     setIsModalOpen(false);
   };
 
-  if (loading) return <div className="space-loading">Loading spaces...</div>;
+  if (loading) return <div className="space-loading">{t.loadingSpaces}</div>;
   if (error) return <div className="empty-state">{error}</div>;
 
   return (

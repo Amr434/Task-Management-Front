@@ -55,29 +55,29 @@ export const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ spaceId,
         <form onSubmit={handleSubmit} className="modal-form">
           {error && <div className="error-message">{error}</div>}
           <div className="form-group">
-            <label>Project Name *</label>
+            <label>{t.projectNameLabel}</label>
             <input 
               type="text" 
               value={name} 
               onChange={e => setName(e.target.value)} 
               required 
-              placeholder="e.g. Website Redesign"
+              placeholder={t.projectNamePlaceholder}
               autoFocus
             />
           </div>
           <div className="form-group">
-            <label>Description (Optional)</label>
+            <label>{t.descriptionOptional}</label>
             <textarea 
               value={description} 
               onChange={e => setDescription(e.target.value)} 
-              placeholder="What is this project about?"
+              placeholder={t.projectAbout}
               rows={3}
             />
           </div>
           <div className="modal-actions">
-            <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>
+            <button type="button" className="btn-secondary" onClick={onClose}>{t.cancel}</button>
             <button type="submit" className="btn-primary" disabled={loading || !name.trim()}>
-              {loading ? 'Saving...' : isEdit ? 'Save' : 'Create Project'}
+              {loading ? t.saving : isEdit ? t.save : t.createProject}
             </button>
           </div>
         </form>

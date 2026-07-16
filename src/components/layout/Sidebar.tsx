@@ -276,15 +276,15 @@ export const Sidebar = () => {
 
       <nav className="sidebar-nav">
         <div className="nav-section">
-          <span className="section-title">Home</span>
+          <span className="section-title">{t.home}</span>
           <div className="nav-item" onClick={() => router.push('/inbox')}>
-            <Inbox size={16} /> <span className="item-name">Inbox</span>
+            <Inbox size={16} /> <span className="item-name">{t.inbox}</span>
           </div>
           <div className="nav-item" onClick={() => router.push('/replies')}>
-            <MessageSquareReply size={16} /> <span className="item-name">Replies</span>
+            <MessageSquareReply size={16} /> <span className="item-name">{t.replies}</span>
           </div>
           <div className="nav-item" onClick={() => router.push('/assigned-comments')}>
-            <MessageSquare size={16} /> <span className="item-name">Assigned Comments</span>
+            <MessageSquare size={16} /> <span className="item-name">{t.assignedComments}</span>
           </div>
 
           {/* My Tasks Section */}
@@ -296,7 +296,7 @@ export const Sidebar = () => {
                   {myTasksExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                 </span>
               </span>
-              <span className="item-name space-name" style={{ fontWeight: 500 }}>My Tasks</span>
+              <span className="item-name space-name" style={{ fontWeight: 500 }}>{t.myTasks}</span>
             </div>
             
             {myTasksExpanded && (
@@ -308,7 +308,7 @@ export const Sidebar = () => {
                   <span className="nav-leading-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '16px', height: '16px', borderRadius: '50%', backgroundColor: '#5b5b5b', fontSize: '10px', color: '#fff', fontWeight: 'bold' }}>
                     A
                   </span>
-                  <span className="item-name">Assigned to me</span>
+                  <span className="item-name">{t.assignedToMe}</span>
                 </div>
                 
                 <div 
@@ -316,7 +316,7 @@ export const Sidebar = () => {
                   onClick={() => router.push('/my-tasks/today')}
                 >
                   <CalendarClock size={16} className="text-secondary" style={{ minWidth: '16px' }} />
-                  <span className="item-name">Today & Overdue</span>
+                  <span className="item-name">{t.todayOverdue}</span>
                 </div>
                 
                 <div 
@@ -324,7 +324,7 @@ export const Sidebar = () => {
                   onClick={() => router.push('/my-tasks/personal')}
                 >
                   <UserCircle size={16} className="text-secondary" style={{ minWidth: '16px' }} />
-                  <span className="item-name">Personal List</span>
+                  <span className="item-name">{t.personalList}</span>
                 </div>
               </div>
             )}
@@ -366,7 +366,7 @@ export const Sidebar = () => {
                     </span>
                     <span className="item-name space-name">{space.name}</span>
                     <div className="space-actions">
-                      <button className="action-btn" onClick={(e) => openCreateProject(space, e)} title="Add project">
+                      <button className="action-btn" onClick={(e) => openCreateProject(space, e)} title={t.addProject}>
                         <Plus size={15} />
                       </button>
                       <div className="dropdown-container" style={{ position: 'relative' }}>
@@ -387,13 +387,13 @@ export const Sidebar = () => {
                               <Pencil size={14} /> {t.editSpace}
                             </button>
                             <button className="context-menu-item" onClick={() => { setActiveDropdown(null); openCreateProject(space); }}>
-                              <Plus size={14} /> Add Project
+                              <Plus size={14} /> {t.addProject}
                             </button>
                             <button className="context-menu-item" onClick={() => handleCopyLink(space.id)}>
-                              <Link2 size={14} /> Copy link
+                              <Link2 size={14} /> {t.copyLink}
                             </button>
                             <button className="context-menu-item" onClick={() => handleDuplicateSpace(space)} disabled={duplicatingId === space.id}>
-                              <Copy size={14} /> {duplicatingId === space.id ? 'Duplicating...' : 'Duplicate'}
+                              <Copy size={14} /> {duplicatingId === space.id ? t.duplicating : t.duplicate}
                             </button>
                             <div className="context-menu-divider" />
                             <button className="context-menu-item danger" onClick={() => handleDeleteSpace(space)}>
@@ -410,7 +410,7 @@ export const Sidebar = () => {
                     <div className="lists-container" style={{ paddingLeft: '8px' }}>
                       {spaceProjects.length === 0 ? (
                         <div className="nav-item add-project-row" onClick={(e) => openCreateProject(space, e)}>
-                          <Plus size={14} /> <span>Add project</span>
+                          <Plus size={14} /> <span>{t.addProject}</span>
                         </div>
                       ) : (
                         spaceProjects.map(project => {
@@ -446,16 +446,16 @@ export const Sidebar = () => {
                                     {activeProjectDropdown === project.id && (
                                       <div className="context-menu" onClick={(e) => e.stopPropagation()}>
                                         <button className="context-menu-item" onClick={() => handleEditProject(project)}>
-                                          <Pencil size={14} /> Edit Project
+                                          <Pencil size={14} /> {t.editProject}
                                         </button>
                                         <button className="context-menu-item" onClick={() => openCreateTask(project)}>
-                                          <Plus size={14} /> Add Task
+                                          <Plus size={14} /> {t.addTask}
                                         </button>
                                         <button className="context-menu-item" onClick={() => handleCopyProjectLink(project.id, space.id)}>
-                                          <Link2 size={14} /> Copy link
+                                          <Link2 size={14} /> {t.copyLink}
                                         </button>
                                         <button className="context-menu-item" onClick={() => handleDuplicateProject(project)} disabled={duplicatingProjectId === project.id}>
-                                          <Copy size={14} /> {duplicatingProjectId === project.id ? 'Duplicating...' : 'Duplicate'}
+                                          <Copy size={14} /> {duplicatingProjectId === project.id ? t.duplicating : t.duplicate}
                                         </button>
                                         <div className="context-submenu-container" style={{ position: 'relative' }}>
                                           <button
@@ -465,13 +465,13 @@ export const Sidebar = () => {
                                               setMoveSubmenuProject(moveSubmenuProject === project.id ? null : project.id);
                                             }}
                                           >
-                                            <FolderInput size={14} /> Move
+                                            <FolderInput size={14} /> {t.move}
                                             <ChevronRight size={14} style={{ marginLeft: 'auto' }} />
                                           </button>
                                           {moveSubmenuProject === project.id && (
                                             <div className="context-menu context-submenu">
                                               {spaces.filter(s => s.id !== project.spaceId).length === 0 ? (
-                                                <div className="context-menu-empty">No other spaces</div>
+                                                <div className="context-menu-empty">{t.noOtherSpaces}</div>
                                               ) : (
                                                 spaces
                                                   .filter(s => s.id !== project.spaceId)
@@ -491,7 +491,7 @@ export const Sidebar = () => {
                                         </div>
                                         <div className="context-menu-divider" />
                                         <button className="context-menu-item danger" onClick={() => handleDeleteProject(project)}>
-                                          <Trash2 size={14} /> Delete Project
+                                          <Trash2 size={14} /> {t.deleteProject}
                                         </button>
                                       </div>
                                     )}
@@ -510,7 +510,7 @@ export const Sidebar = () => {
           </div>
           <div className="nav-item new-space-btn" onClick={() => setIsModalOpen(true)}>
             <Plus size={16} className="text-secondary" style={{ marginRight: '8px' }} />
-            <span>New Space</span>
+            <span>{t.newSpace}</span>
           </div>
         </div>
       </nav>
@@ -577,9 +577,9 @@ export const Sidebar = () => {
 
       {pendingDeleteProject && (
         <ConfirmDialog
-          title="Delete Project"
-          message={`Are you sure you want to delete "${pendingDeleteProject.name}"? This action cannot be undone.`}
-          confirmLabel="Delete Project"
+          title={t.deleteProject}
+          message={t.deleteProjectConfirm.replace('{name}', pendingDeleteProject.name)}
+          confirmLabel={t.deleteProject}
           danger
           loading={isDeleting}
           onConfirm={confirmDeleteProject}

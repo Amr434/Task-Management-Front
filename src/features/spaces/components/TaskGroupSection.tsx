@@ -4,6 +4,7 @@ import { TaskItem } from '@/features/tasks/types';
 import { TaskRow } from '@/features/tasks/components/TaskRow';
 import { useColumnGridTemplate } from '@/features/tasks/hooks/useColumnGridTemplate';
 import { useSpaceStore } from '@/store/useSpaceStore';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface TaskGroupSectionProps {
   label: string;
@@ -15,6 +16,7 @@ interface TaskGroupSectionProps {
 }
 
 export const TaskGroupSection: React.FC<TaskGroupSectionProps> = ({ label, color, outline, tasks, childrenByParent, onOpenModal }) => {
+  const { t } = useI18n();
   const [isExpanded, setIsExpanded] = useState(true);
   const visibleColumns = useSpaceStore((s) => s.visibleColumns);
   const gridTemplateColumns = useColumnGridTemplate();
@@ -28,7 +30,7 @@ export const TaskGroupSection: React.FC<TaskGroupSectionProps> = ({ label, color
 
         <div className={`list-badge ${outline ? 'outline' : ''}`} style={{ backgroundColor: color }}>
           <span className="list-badge-icon"></span>
-          {label}
+          {t.groupLabels[label] ?? label}
         </div>
 
         <span className="task-count">{tasks.length}</span>
@@ -43,10 +45,10 @@ export const TaskGroupSection: React.FC<TaskGroupSectionProps> = ({ label, color
       {isExpanded && (
         <div className="list-tasks-container">
           <div className="table-header" style={{ gridTemplateColumns }}>
-            <div className="th-cell th-name">Name</div>
-            {visibleColumns.assignee && <div className="th-cell th-assignee">Assignee</div>}
-            {visibleColumns.dueDate && <div className="th-cell th-due">Due date</div>}
-            {visibleColumns.priority && <div className="th-cell th-priority">Priority</div>}
+            <div className="th-cell th-name">{t.colName}</div>
+            {visibleColumns.assignee && <div className="th-cell th-assignee">{t.colAssignee}</div>}
+            {visibleColumns.dueDate && <div className="th-cell th-due">{t.colDueDate}</div>}
+            {visibleColumns.priority && <div className="th-cell th-priority">{t.colPriority}</div>}
           </div>
 
           {tasks.length > 0 ? (
@@ -55,12 +57,12 @@ export const TaskGroupSection: React.FC<TaskGroupSectionProps> = ({ label, color
             ))
           ) : (
             <div className="empty-tasks-row">
-              <span className="empty-text">No tasks</span>
+              <span className="empty-text">{t.noTasks}</span>
             </div>
           )}
           <div className="add-task-row" onClick={() => onOpenModal?.()}>
             <Plus size={14} className="add-icon" />
-            <span className="add-text">Add Task</span>
+            <span className="add-text">{t.addTask}</span>
           </div>
         </div>
       )}

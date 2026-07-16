@@ -7,9 +7,15 @@ import { StatusMenu, PriorityMenu, DateMenu, TagMenu, AssigneeMenu, Avatar } fro
 import { PRIORITY_META, Priority, TaskItem, TaskStatus, User, userDisplayName } from '../types';
 import { patchTask, addTagToTask, removeTagFromTask, assignUserToTask, removeUserFromTask } from '../api';
 import { TaskComments } from '@/features/comments/components/TaskComments';
+import { useI18n } from '@/contexts/I18nContext';
+import { TaskAttachments } from '@/features/attachments/components/TaskAttachments';
 
 export const TaskDetailSidebar: React.FC = () => {
   const { detailTaskId, setDetailTaskId, tasksByProjectId, assignedTasks, projects, updateTaskLocally, addTaskLocally } = useSpaceStore();
+  const { t } = useI18n();
+  const priorityLabels: Record<number, string> = {
+    3: t.priorityUrgent, 2: t.priorityHigh, 1: t.priorityNormal, 0: t.priorityLow,
+  };
   
   const [openField, setOpenField] = useState<'status' | 'assignee' | 'dates' | 'priority' | 'tags' | null>(null);
   
@@ -69,9 +75,9 @@ export const TaskDetailSidebar: React.FC = () => {
 
   // Status mapping
   const statusLabels: Record<TaskStatus, { label: string; color: string; bg: string }> = {
-    0: { label: 'TO DO', color: '#b2b2b2', bg: 'transparent' },
-    1: { label: 'IN PROGRESS', color: '#2684ff', bg: 'rgba(38, 132, 255, 0.1)' },
-    2: { label: 'COMPLETE', color: '#00c875', bg: 'rgba(0, 200, 117, 0.1)' },
+    0: { label: t.statusToDo, color: '#b2b2b2', bg: 'transparent' },
+    1: { label: t.statusInProgress, color: '#2684ff', bg: 'rgba(38, 132, 255, 0.1)' },
+    2: { label: t.statusComplete, color: '#00c875', bg: 'rgba(0, 200, 117, 0.1)' },
   };
   const st = statusLabels[task.status];
 
@@ -106,7 +112,7 @@ export const TaskDetailSidebar: React.FC = () => {
         
         <div className="tds-header">
           <div className="tds-breadcrumb">
-            <LayoutGrid size={14} /> {projectName} <ChevronRight size={14} /> Task {task.id}
+            <LayoutGrid size={14} /> {projectName} <ChevronRight size={14} /> {t.taskWord} {task.id}
           </div>
           <button className="tds-close-btn" onClick={() => setDetailTaskId(null)}>
             <X size={20} />
@@ -121,7 +127,7 @@ export const TaskDetailSidebar: React.FC = () => {
           <div className="tds-fields-grid">
             {/* Status (duplicate for the grid view like clickup) */}
             <div className="tds-field-row">
-              <div className="tds-field-label"><CheckCircle size={14} /> Status</div>
+              <div className="tds-field-label"><CheckCircle size={14} /> {t.statusLabel}</div>
               <div className="tds-field-value">
                 <div className="tds-status-group">
                   <div className="tds-status-picker" onClick={() => toggle('status')} style={{ borderColor: st.color }}>
@@ -133,7 +139,7 @@ export const TaskDetailSidebar: React.FC = () => {
                     </div>
                   </div>
                   {task.status !== 2 && (
-                    <button className="tds-complete-btn" onClick={() => handleUpdate({ status: 2 })} title="Mark Complete">
+                    <button className="tds-complete-btn" onClick={() => handleUpdate({ status: 2 })} title={t.markComplete}>
                       <Check size={16} strokeWidth={3} />
                     </button>
                   )}
@@ -151,7 +157,7 @@ export const TaskDetailSidebar: React.FC = () => {
 
             {/* Assignee */}
             <div className="tds-field-row">
-              <div className="tds-field-label"><Users size={14} /> Assignees</div>
+              <div className="tds-field-label"><Users size={14} /> {t.assigneesLabel}</div>
               <div className="tds-field-value">
                 <button className="tds-field-btn" onClick={() => toggle('assignee')}>
                   {task.assignees && task.assignees.length > 0 ? (
@@ -162,7 +168,7 @@ export const TaskDetailSidebar: React.FC = () => {
                         </span>
                       ))}
                     </div>
-                  ) : 'Empty'}
+                  ) : t.emptyValue}
                 </button>
                 {openField === 'assignee' && (
                   <div className="popup-anchor bottom-left">
@@ -174,10 +180,10 @@ export const TaskDetailSidebar: React.FC = () => {
 
             {/* Dates */}
             <div className="tds-field-row">
-              <div className="tds-field-label"><Calendar size={14} /> Dates</div>
+              <div className="tds-field-label"><Calendar size={14} /> {t.datesLabel}</div>
               <div className="tds-field-value">
                 <button className="tds-field-btn" onClick={() => toggle('dates')}>
-                  {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'Empty'}
+                  {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : t.emptyValue}
                 </button>
                 {openField === 'dates' && (
                   <div className="popup-anchor bottom-left">
@@ -193,15 +199,15 @@ export const TaskDetailSidebar: React.FC = () => {
 
             {/* Priority */}
             <div className="tds-field-row">
-              <div className="tds-field-label"><Flag size={14} /> Priority</div>
+              <div className="tds-field-label"><Flag size={14} /> {t.priorityLabel}</div>
               <div className="tds-field-value">
                 <button className="tds-field-btn" onClick={() => toggle('priority')}>
                   {task.priority !== Priority.Low ? (
                     <span style={{ color: PRIORITY_META[task.priority].color }}>
                       <Flag size={14} style={{ marginRight: 4, display: 'inline-block', verticalAlign: 'middle' }} />
-                      {PRIORITY_META[task.priority].label}
+                      {priorityLabels[task.priority]}
                     </span>
-                  ) : 'Empty'}
+                  ) : t.emptyValue}
                 </button>
                 {openField === 'priority' && (
                   <div className="popup-anchor bottom-left">
@@ -217,7 +223,7 @@ export const TaskDetailSidebar: React.FC = () => {
 
             {/* Tags */}
             <div className="tds-field-row">
-              <div className="tds-field-label"><TagIcon size={14} /> Tags</div>
+              <div className="tds-field-label"><TagIcon size={14} /> {t.tagsLabel}</div>
               <div className="tds-field-value">
                 <button className="tds-field-btn" onClick={() => toggle('tags')}>
                   {task.tags && task.tags.length > 0 ? (
@@ -226,7 +232,7 @@ export const TaskDetailSidebar: React.FC = () => {
                         <span key={t.id} className="tds-tag-pill" style={{ backgroundColor: t.colorHex }}>{t.name}</span>
                       ))}
                     </div>
-                  ) : 'Empty'}
+                  ) : t.emptyValue}
                 </button>
                 {openField === 'tags' && (
                   <div className="popup-anchor bottom-left">
@@ -258,7 +264,7 @@ export const TaskDetailSidebar: React.FC = () => {
           <div className="tds-description-section">
             <textarea
               className="tds-desc-textarea"
-              placeholder="Add description..."
+              placeholder={t.addDescription}
               value={descDraft}
               onChange={(e) => setDescDraft(e.target.value)}
               onBlur={handleDescBlur}
@@ -268,16 +274,7 @@ export const TaskDetailSidebar: React.FC = () => {
           <div className="tds-divider" />
 
           {/* Attachments Section */}
-          <div className="tds-attachments-section">
-            <h3>Attachments</h3>
-            <div className="tds-attachments-empty">
-              <div className="tds-attachments-icon"><Paperclip size={20} /></div>
-              <div className="tds-attachments-text">
-                <span className="bold">Click to browse</span> or drag and drop files here
-              </div>
-              <input type="file" className="tds-file-input" title="Upload attachment" />
-            </div>
-          </div>
+          <TaskAttachments taskId={task.id} />
           <div className="tds-divider" />
 
           {/* Comments Section */}

@@ -7,6 +7,7 @@ import { AuthUser } from '@/features/auth/types';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { invitationsApi } from '../api';
 import { InvitationTargetType } from '../types';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface InviteMemberModalProps {
   targetType: InvitationTargetType;
@@ -25,6 +26,7 @@ const initialsOf = (u: AuthUser) =>
 // ClickUp-style share dialog: type a name/email, matching people appear,
 // invite each with one click. Invitees get access after they accept.
 export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ targetType, targetId, targetName, onClose }) => {
+  const { t } = useI18n();
   const currentUserId = useAuthStore((s) => s.user?.id);
   const [users, setUsers] = useState<AuthUser[]>([]);
   const [query, setQuery] = useState('');
@@ -73,7 +75,7 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ targetType
           <Search size={15} className="share-search-icon" />
           <input
             autoFocus
-            placeholder="Invite by name or email"
+            placeholder={t.inviteByNameOrEmail}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
@@ -105,7 +107,7 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ targetType
                       disabled={row.status === 'sending'}
                       onClick={() => invite(u)}
                     >
-                      {row.status === 'sending' ? 'Sending…' : 'Invite'}
+                      {row.status === 'sending' ? 'Sending…' : t.invite}
                     </button>
                   )}
                 </div>

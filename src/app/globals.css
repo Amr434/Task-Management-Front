@@ -179,6 +179,13 @@ body {
   display: block;
 }
 
+/* Inside a section header the wrapper already provides the 16px inset —
+   don't double it, so SPACES aligns with HOME. */
+.section-header .section-title {
+  padding: 0;
+  margin-bottom: 0;
+}
+
 .add-btn {
   background: transparent;
   border: none;
@@ -4456,3 +4463,73 @@ body {
   color: var(--text-primary);
 }
 
+
+/* Attachment rows in the task detail sidebar. */
+.tds-attachment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.tds-attachment-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.tds-attachment-row:hover {
+  background: var(--bg-hover);
+}
+
+.tds-attachment-clip {
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.tds-attachment-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.tds-attachment-meta {
+  margin-inline-start: auto;
+  color: var(--text-secondary);
+  font-size: 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.tds-attachment-action {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.tds-attachment-action:hover {
+  color: var(--accent-color);
+  background: var(--bg-hover);
+}
+
+.tds-attachment-action.danger:hover {
+  color: #e2445c;
+}
+
+.tds-attachments-empty.uploading {
+  opacity: 0.6;
+  pointer-events: none;
+}

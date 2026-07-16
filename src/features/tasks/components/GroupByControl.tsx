@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { CircleDot, User, Flag, Tag as TagIcon, Calendar, Check, ArrowUp, ArrowDown, Trash2, ListFilter } from 'lucide-react';
 import { useSpaceStore, GroupBy } from '@/store/useSpaceStore';
+import { useI18n } from '@/contexts/I18nContext';
 
 const FIELDS: { key: GroupBy; label: string; icon: React.ElementType }[] = [
   { key: 'status', label: 'Status', icon: CircleDot },
@@ -14,6 +15,10 @@ const FIELDS: { key: GroupBy; label: string; icon: React.ElementType }[] = [
 
 export const GroupByControl: React.FC = () => {
   const { groupBy, groupDir, setGroupBy, setGroupDir } = useSpaceStore();
+  const { t } = useI18n();
+  const fieldLabels: Record<string, string> = {
+    status: t.statusLabel, assignee: t.colAssignee, priority: t.colPriority, tags: t.colTags, dueDate: t.colDueDate,
+  };
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -26,18 +31,17 @@ export const GroupByControl: React.FC = () => {
     return () => document.removeEventListener('mousedown', onDown);
   }, [open]);
 
-  const current = FIELDS.find((f) => f.key === groupBy);
-  const triggerLabel = groupBy === 'none' ? 'None' : current?.label ?? 'Status';
+  const triggerLabel = groupBy === 'none' ? t.noneLabel : fieldLabels[groupBy] ?? t.statusLabel;
 
   return (
     <div className="group-control" ref={rootRef}>
       <button className="btn-secondary group-btn" onClick={() => setOpen((v) => !v)}>
-        <ListFilter size={14} /> Group: {triggerLabel}
+        <ListFilter size={14} /> {t.group}: {triggerLabel}
       </button>
 
       {open && (
         <div className="group-popover">
-          <div className="group-popover-title">Group by</div>
+          <div className="group-popover-title">{t.groupByTitle}</div>
 
           {FIELDS.map((f) => {
             const Icon = f.icon;
@@ -48,7 +52,7 @@ export const GroupByControl: React.FC = () => {
                 onClick={() => setGroupBy(f.key)}
               >
                 <Icon size={16} />
-                <span>{f.label}</span>
+                <span>{fieldLabels[f.key]}</span>
                 {groupBy === f.key && <Check size={16} className="group-check" />}
               </button>
             );
@@ -61,13 +65,13 @@ export const GroupByControl: React.FC = () => {
               className={`group-dir-btn ${groupDir === 'asc' ? 'active' : ''}`}
               onClick={() => setGroupDir('asc')}
             >
-              <ArrowUp size={14} /> Ascending
+              <ArrowUp size={14} /> {t.ascending}
             </button>
             <button
               className={`group-dir-btn ${groupDir === 'desc' ? 'active' : ''}`}
               onClick={() => setGroupDir('desc')}
             >
-              <ArrowDown size={14} /> Descending
+              <ArrowDown size={14} /> {t.descending}
             </button>
           </div>
 
@@ -76,7 +80,7 @@ export const GroupByControl: React.FC = () => {
               <div className="group-popover-divider" />
               <button className="group-option danger" onClick={() => { setGroupBy('none'); setOpen(false); }}>
                 <Trash2 size={16} />
-                <span>Remove grouping</span>
+                <span>{t.removeGrouping}</span>
               </button>
             </>
           )}

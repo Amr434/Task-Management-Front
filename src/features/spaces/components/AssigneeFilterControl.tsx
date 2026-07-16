@@ -5,9 +5,11 @@ import { User as UserIcon, Check, Ban } from 'lucide-react';
 import { useSpaceStore } from '@/store/useSpaceStore';
 import { User, userDisplayName } from '@/features/tasks/types';
 import { Avatar } from '@/features/tasks/components/TaskFieldMenus';
+import { useI18n } from '@/contexts/I18nContext';
 
 // Toolbar control that filters the list to tasks assigned to a chosen user.
 export const AssigneeFilterControl: React.FC = () => {
+  const { t } = useI18n();
   const filterAssigneeId = useSpaceStore((s) => s.filterAssigneeId);
   const setFilterAssigneeId = useSpaceStore((s) => s.setFilterAssigneeId);
   const tasksByProjectId = useSpaceStore((s) => s.tasksByProjectId);
@@ -51,14 +53,14 @@ export const AssigneeFilterControl: React.FC = () => {
         className={`icon-text-btn ${filterAssigneeId !== null ? 'active' : ''}`}
         onClick={() => setOpen((v) => !v)}
       >
-        <UserIcon size={14} /> {selected ? userDisplayName(selected) : 'Assignee'}
+        <UserIcon size={14} /> {selected ? userDisplayName(selected) : t.colAssignee}
       </button>
 
       {open && (
         <div className="group-popover align-right">
-          <div className="group-popover-title">Filter by assignee</div>
+          <div className="group-popover-title">{t.filterByAssignee}</div>
 
-          {users.length === 0 && <div className="dd-empty">No assigned tasks</div>}
+          {users.length === 0 && <div className="dd-empty">{t.noAssignedTasks}</div>}
 
           {users.map((u) => (
             <button
@@ -77,7 +79,7 @@ export const AssigneeFilterControl: React.FC = () => {
               <div className="group-popover-divider" />
               <button className="group-option danger" onClick={() => pick(null)}>
                 <Ban size={16} />
-                <span>Clear filter</span>
+                <span>{t.clearFilter}</span>
               </button>
             </>
           )}

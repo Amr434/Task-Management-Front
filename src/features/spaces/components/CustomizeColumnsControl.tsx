@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { SlidersHorizontal, User, Calendar, Flag, Tag as TagIcon } from 'lucide-react';
 import { useSpaceStore, TaskColumn } from '@/store/useSpaceStore';
+import { useI18n } from '@/contexts/I18nContext';
 
 const COLUMNS: { key: TaskColumn; label: string; icon: React.ElementType }[] = [
   { key: 'assignee', label: 'Assignee', icon: User },
@@ -13,6 +14,10 @@ const COLUMNS: { key: TaskColumn; label: string; icon: React.ElementType }[] = [
 
 // Toolbar control to show/hide list columns.
 export const CustomizeColumnsControl: React.FC = () => {
+  const { t } = useI18n();
+  const colLabels: Record<string, string> = {
+    assignee: t.colAssignee, dueDate: t.colDueDate, priority: t.colPriority, tags: t.colTags,
+  };
   const visibleColumns = useSpaceStore((s) => s.visibleColumns);
   const toggleColumn = useSpaceStore((s) => s.toggleColumn);
 
@@ -36,12 +41,12 @@ export const CustomizeColumnsControl: React.FC = () => {
         className={`icon-text-btn ${hiddenCount > 0 ? 'active' : ''}`}
         onClick={() => setOpen((v) => !v)}
       >
-        <SlidersHorizontal size={14} /> Customize
+        <SlidersHorizontal size={14} /> {t.customize}
       </button>
 
       {open && (
         <div className="group-popover align-right">
-          <div className="group-popover-title">Show columns</div>
+          <div className="group-popover-title">{t.showColumns}</div>
 
           {COLUMNS.map((c) => {
             const Icon = c.icon;
@@ -53,7 +58,7 @@ export const CustomizeColumnsControl: React.FC = () => {
                 onClick={() => toggleColumn(c.key)}
               >
                 <Icon size={16} />
-                <span>{c.label}</span>
+                <span>{colLabels[c.key]}</span>
                 <span className={`toggle-switch ${on ? 'on' : ''}`}>
                   <span className="toggle-knob" />
                 </span>

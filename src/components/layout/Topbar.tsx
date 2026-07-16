@@ -5,11 +5,13 @@ import { useRouter } from 'next/navigation';
 import { Search, Settings, LogOut, Palette } from 'lucide-react';
 import { ThemeModal } from '@/features/theme/components/ThemeModal';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
+import { useI18n } from '@/contexts/I18nContext';
 import { useInvitationStore } from '@/features/invitations/store/useInvitationStore';
 import { InvitationBell } from './InvitationBell';
 
 export const Topbar = () => {
   const router = useRouter();
+  const { t } = useI18n();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
 
@@ -41,12 +43,12 @@ export const Topbar = () => {
     <header className="topbar">
       <div className="topbar-left">
         {/* Placeholder for breadcrumbs or context */}
-        <span className="breadcrumbs">Task Management / Home</span>
+        <span className="breadcrumbs">{t.breadcrumbHome}</span>
       </div>
       <div className="topbar-right">
         <div className="search-bar">
           <Search size={18} className="search-icon" />
-          <input type="text" placeholder="Search..." />
+          <input type="text" placeholder={t.searchPlaceholder} />
         </div>
         <InvitationBell />
         <button className="icon-btn"><Settings size={20} /></button>
@@ -70,10 +72,10 @@ export const Topbar = () => {
                   setThemeOpen(true);
                 }}
               >
-                <Palette size={14} /> Theme
+                <Palette size={14} /> {t.theme}
               </button>
               <button className="user-menu-item danger" onClick={handleLogout}>
-                <LogOut size={14} /> Log out
+                <LogOut size={14} /> {t.logout}
               </button>
             </div>
           )}

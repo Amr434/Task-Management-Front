@@ -4,6 +4,7 @@ import { TaskItem, TaskStatus } from '@/features/tasks/types';
 import { TaskRow } from '@/features/tasks/components/TaskRow';
 import { useColumnGridTemplate } from '@/features/tasks/hooks/useColumnGridTemplate';
 import { useSpaceStore } from '@/store/useSpaceStore';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface SpaceStatusSectionProps {
   status: TaskStatus;
@@ -23,6 +24,7 @@ const getStatusName = (status: TaskStatus) => {
 };
 
 export const SpaceStatusSection: React.FC<SpaceStatusSectionProps> = ({ status, tasks, childrenByParent, color = '#87909e', onOpenModal }) => {
+  const { t } = useI18n();
   const [isExpanded, setIsExpanded] = useState(true);
   const visibleColumns = useSpaceStore((s) => s.visibleColumns);
   const gridTemplateColumns = useColumnGridTemplate();
@@ -39,7 +41,7 @@ export const SpaceStatusSection: React.FC<SpaceStatusSectionProps> = ({ status, 
         
         <div className={`list-badge ${status === TaskStatus.ToDo ? 'outline' : ''}`} style={{ backgroundColor: color }}>
           <span className="list-badge-icon"></span>
-          {getStatusName(status)}
+          {t.groupLabels[getStatusName(status)] ?? getStatusName(status)}
         </div>
         
         <span className="task-count">{tasks.length}</span>
@@ -54,10 +56,10 @@ export const SpaceStatusSection: React.FC<SpaceStatusSectionProps> = ({ status, 
       {isExpanded && (
         <div className="list-tasks-container">
           <div className="table-header" style={{ gridTemplateColumns }}>
-            <div className="th-cell th-name">Name</div>
-            {visibleColumns.assignee && <div className="th-cell th-assignee">Assignee</div>}
-            {visibleColumns.dueDate && <div className="th-cell th-due">Due date</div>}
-            {visibleColumns.priority && <div className="th-cell th-priority">Priority</div>}
+            <div className="th-cell th-name">{t.colName}</div>
+            {visibleColumns.assignee && <div className="th-cell th-assignee">{t.colAssignee}</div>}
+            {visibleColumns.dueDate && <div className="th-cell th-due">{t.colDueDate}</div>}
+            {visibleColumns.priority && <div className="th-cell th-priority">{t.colPriority}</div>}
           </div>
           
           {tasks.length > 0 ? (
@@ -67,12 +69,12 @@ export const SpaceStatusSection: React.FC<SpaceStatusSectionProps> = ({ status, 
 
           ) : (
             <div className="empty-tasks-row">
-              <span className="empty-text">No tasks in this list</span>
+              <span className="empty-text">{t.noTasks}</span>
             </div>
           )}
           <div className="add-task-row" onClick={() => onOpenModal?.()}>
             <Plus size={14} className="add-icon" />
-            <span className="add-text">Add Task</span>
+            <span className="add-text">{t.addTask}</span>
           </div>
         </div>
       )}

@@ -11,6 +11,7 @@ import { InlineTaskComposer, ComposerResult } from '@/features/tasks/components/
 import { useColumnGridTemplate } from '@/features/tasks/hooks/useColumnGridTemplate';
 import { useSpaceStore } from '@/store/useSpaceStore';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
+import { useI18n } from '@/contexts/I18nContext';
 
 const EMPTY_TASKS: TaskItem[] = [];
 
@@ -19,6 +20,7 @@ export default function PersonalListPage() {
   const [loading, setLoading] = useState(true);
   const [composing, setComposing] = useState(false);
 
+  const { t } = useI18n();
   const currentUser = useAuthStore((s) => s.user);
   const setTasksForProject = useSpaceStore((s) => s.setTasksForProject);
   const setProjectLocally = useSpaceStore((s) => s.setProjectLocally);
@@ -81,25 +83,25 @@ export default function PersonalListPage() {
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <h1 style={{ margin: 0, fontSize: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          Personal List <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }} title="Only you can see this list">🔒</span>
+          {t.personalList} <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }} title={t.personalOnlyYou}>🔒</span>
         </h1>
         <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => setComposing(true)}>
-          <Plus size={15} /> Add Task
+          <Plus size={15} /> {t.addTask}
         </button>
       </div>
 
       <div style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
         {loading ? (
-          <div style={{ color: 'var(--text-secondary)' }}>Loading tasks...</div>
+          <div style={{ color: 'var(--text-secondary)' }}>{t.loadingTasks}</div>
         ) : !project ? (
-          <div style={{ color: 'var(--text-secondary)' }}>Could not load your personal list.</div>
+          <div style={{ color: 'var(--text-secondary)' }}>{t.personalLoadFailed}</div>
         ) : (
           <div className="list-tasks-container">
             <div className="table-header" style={{ gridTemplateColumns }}>
-              <div className="th-cell th-name">Name</div>
-              {visibleColumns.assignee && <div className="th-cell th-assignee">Assignee</div>}
-              {visibleColumns.dueDate && <div className="th-cell th-due">Due date</div>}
-              {visibleColumns.priority && <div className="th-cell th-priority">Priority</div>}
+              <div className="th-cell th-name">{t.colName}</div>
+              {visibleColumns.assignee && <div className="th-cell th-assignee">{t.colAssignee}</div>}
+              {visibleColumns.dueDate && <div className="th-cell th-due">{t.colDueDate}</div>}
+              {visibleColumns.priority && <div className="th-cell th-priority">{t.colPriority}</div>}
             </div>
 
             {rootTasks.map((task) => (
@@ -108,7 +110,7 @@ export default function PersonalListPage() {
 
             {rootTasks.length === 0 && !composing && (
               <div style={{ padding: '24px 8px', color: 'var(--text-secondary)', fontSize: '14px' }}>
-                Your private tasks live here — only you can see them.
+                {t.personalEmpty}
               </div>
             )}
 
@@ -121,7 +123,7 @@ export default function PersonalListPage() {
               />
             ) : (
               <div className="nav-item add-project-row" style={{ marginTop: '4px' }} onClick={() => setComposing(true)}>
-                <Plus size={14} /> <span>Add Task</span>
+                <Plus size={14} /> <span>{t.addTask}</span>
               </div>
             )}
           </div>

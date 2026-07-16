@@ -11,6 +11,7 @@ import { AssigneeFilterControl } from './AssigneeFilterControl';
 import { CustomizeColumnsControl } from './CustomizeColumnsControl';
 
 import { useSpaceStore } from '@/store/useSpaceStore';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface SpaceListViewProps {
   projects: Project[];
@@ -18,6 +19,7 @@ interface SpaceListViewProps {
 }
 
 export const SpaceListView: React.FC<SpaceListViewProps> = ({ projects, tasksByProjectId }) => {
+  const { t } = useI18n();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showFilterBar, setShowFilterBar] = useState(false);
   const filterButtonRef = useRef<HTMLButtonElement>(null);
@@ -44,7 +46,7 @@ export const SpaceListView: React.FC<SpaceListViewProps> = ({ projects, tasksByP
         <div className="action-bar-left">
           <GroupByControl />
           <button className="btn-secondary subtasks-btn">
-            ⚯ Subtasks
+            ⚯ {t.subtasksLabel}
           </button>
         </div>
         <div className="action-bar-right">
@@ -53,18 +55,18 @@ export const SpaceListView: React.FC<SpaceListViewProps> = ({ projects, tasksByP
             className={`icon-text-btn ${showFilterBar || filterCount > 0 ? 'active' : ''}`}
             onClick={() => setShowFilterBar(!showFilterBar)}
           >
-            <Filter size={14} /> Filter {filterCount > 0 && <span className="filter-count-badge">{filterCount}</span>}
+            <Filter size={14} /> {t.filter} {filterCount > 0 && <span className="filter-count-badge">{filterCount}</span>}
           </button>
           <button
             className={`icon-text-btn ${showClosed ? 'active' : ''}`}
             onClick={() => setShowClosed(!showClosed)}
-            title={showClosed ? 'Show all tasks' : 'Show only completed tasks'}
+            title={showClosed ? t.showAllTasks : t.showOnlyCompleted}
           >
-            <CheckCircle2 size={14} /> Closed
+            <CheckCircle2 size={14} /> {t.closed}
           </button>
           <AssigneeFilterControl />
           <CustomizeColumnsControl />
-          <button className="btn-primary add-task-btn" onClick={() => setIsModalOpen(true)}>Add Task <ChevronDownIcon /></button>
+          <button className="btn-primary add-task-btn" onClick={() => setIsModalOpen(true)}>{t.addTask} <ChevronDownIcon /></button>
         </div>
       </div>
       
@@ -89,7 +91,7 @@ export const SpaceListView: React.FC<SpaceListViewProps> = ({ projects, tasksByP
           ))
         ) : (
           <div className="empty-state">
-            No projects in this space. Create a project to get started.
+            {t.noProjects}
           </div>
         )}
       </div>

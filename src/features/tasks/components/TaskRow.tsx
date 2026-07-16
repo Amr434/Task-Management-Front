@@ -9,6 +9,7 @@ import { patchTask, createTask, deleteTask, addTagToTask, removeTagFromTask, ass
 import { DateMenu, PriorityMenu, TagMenu, TagPills, AssigneeMenu, AvatarStack } from './TaskFieldMenus';
 import { useSpaceStore } from '@/store/useSpaceStore';
 import { useColumnGridTemplate } from '../hooks/useColumnGridTemplate';
+import { useI18n } from '@/contexts/I18nContext';
 
 const INDENT_BASE = 48;
 const INDENT_STEP = 24;
@@ -32,6 +33,7 @@ export const TaskRow: React.FC<TaskRowProps> = ({ task, childrenByParent, depth 
   const visibleColumns = useSpaceStore((s) => s.visibleColumns);
   const gridTemplateColumns = useColumnGridTemplate();
   const { selectedTaskIds, toggleTaskSelection } = useTaskSelection();
+  const { t } = useI18n();
   const isSelected = selectedTaskIds.includes(task.id);
 
   const [openField, setOpenField] = useState<RowField>(null);
@@ -248,16 +250,16 @@ export const TaskRow: React.FC<TaskRowProps> = ({ task, childrenByParent, depth 
           {visibleColumns.tags && tags.length > 0 && <TagPills tags={tags} onClick={(e) => { e.stopPropagation(); toggle('tag'); }} />}
 
           <div className="task-row-actions">
-            <button className="row-action-btn" title="Rename" onClick={() => { setTitleDraft(task.title); setRenaming(true); }}>
+            <button className="row-action-btn" title={t.rename} onClick={() => { setTitleDraft(task.title); setRenaming(true); }}>
               <Pencil size={14} />
             </button>
             <div className="row-action-wrap">
-              <button className="row-action-btn" title="Add tag" onClick={() => toggle('tag')}>
+              <button className="row-action-btn" title={t.addTag} onClick={() => toggle('tag')}>
                 <TagIcon size={14} />
               </button>
               {openField === 'tag' && <TagMenu selected={tags} onChange={handleTagsChange} />}
             </div>
-            <button className="row-action-btn" title="Add subtask" onClick={startAddSubtask}>
+            <button className="row-action-btn" title={t.addSubtask} onClick={startAddSubtask}>
               <Plus size={15} />
             </button>
           </div>
@@ -266,7 +268,7 @@ export const TaskRow: React.FC<TaskRowProps> = ({ task, childrenByParent, depth 
         {visibleColumns.assignee && (
           <div className="task-cell task-assignee-cell">
             <div className="row-action-wrap">
-              <button className="assignee-btn" onClick={() => toggle('assignee')} title="Assign">
+              <button className="assignee-btn" onClick={() => toggle('assignee')} title={t.colAssignee}>
                 {assignees.length > 0 ? (
                   <AvatarStack users={assignees} />
                 ) : (
@@ -290,7 +292,7 @@ export const TaskRow: React.FC<TaskRowProps> = ({ task, childrenByParent, depth 
                   {new Date(task.dueDate).toLocaleDateString()}
                 </button>
               ) : (
-                <button className="empty-date" onClick={() => toggle('dates')} title="Set due date">
+                <button className="empty-date" onClick={() => toggle('dates')} title={t.setDueDate}>
                   <Calendar size={16} />
                   <span className="mini-plus">+</span>
                 </button>
@@ -309,7 +311,7 @@ export const TaskRow: React.FC<TaskRowProps> = ({ task, childrenByParent, depth 
         {visibleColumns.priority && (
           <div className="task-cell task-priority-cell">
             <div className="row-action-wrap">
-              <button className={`priority-flag priority-${priority}`} onClick={() => toggle('priority')} title="Set priority">
+              <button className={`priority-flag priority-${priority}`} onClick={() => toggle('priority')} title={t.setPriority}>
                 <Flag size={14} />
               </button>
               {openField === 'priority' && (
@@ -324,20 +326,20 @@ export const TaskRow: React.FC<TaskRowProps> = ({ task, childrenByParent, depth 
         )}
 
         <div className="task-row-more">
-          <button className="row-action-btn" title="More" onClick={() => toggle('menu')}>
+          <button className="row-action-btn" title={t.more} onClick={() => toggle('menu')}>
             <MoreHorizontal size={16} />
           </button>
           {openField === 'menu' && (
             <div className="composer-dropdown">
               <button className="dd-row" onClick={() => { setOpenField(null); setTitleDraft(task.title); setRenaming(true); }}>
-                <Pencil size={15} /> <span>Rename</span>
+                <Pencil size={15} /> <span>{t.rename}</span>
               </button>
               <button className="dd-row" onClick={startAddSubtask}>
-                <Plus size={15} /> <span>Add subtask</span>
+                <Plus size={15} /> <span>{t.addSubtask}</span>
               </button>
               <div className="dd-divider" />
               <button className="dd-row danger" onClick={handleDelete}>
-                <Trash2 size={15} /> <span>Delete</span>
+                <Trash2 size={15} /> <span>{t.deleteLabel}</span>
               </button>
             </div>
           )}
@@ -375,6 +377,7 @@ const SubtaskComposer: React.FC<{
   onCancel: () => void;
   onCreate: (title: string) => Promise<void> | void;
 }> = ({ depth, onCancel, onCreate }) => {
+  const { t } = useI18n();
   const [title, setTitle] = useState('');
   const [saving, setSaving] = useState(false);
   const gridTemplateColumns = useColumnGridTemplate();
@@ -396,7 +399,7 @@ const SubtaskComposer: React.FC<{
         <span className="task-status-btn"><StatusGlyph /></span>
         <input
           className="subtask-composer-input"
-          placeholder="Task Name or type '/' for commands"
+          placeholder={t.taskNamePlaceholder}
           autoFocus
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -406,9 +409,9 @@ const SubtaskComposer: React.FC<{
           }}
         />
         <div className="subtask-composer-actions">
-          <button className="btn-secondary" onClick={onCancel}>Cancel</button>
+          <button className="btn-secondary" onClick={onCancel}>{t.cancel}</button>
           <button className="btn-primary composer-save" onClick={save} disabled={!title.trim() || saving}>
-            {saving ? 'Saving' : 'Save'} <CornerDownLeft size={13} />
+            {saving ? t.saving : t.save} <CornerDownLeft size={13} />
           </button>
         </div>
       </div>

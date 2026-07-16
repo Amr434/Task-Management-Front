@@ -6,6 +6,7 @@ import { patchTask, deleteTask, addTagToTask, assignUserToTask, removeUserFromTa
 import { StatusMenu, AssigneeMenu, DateMenu, TagMenu } from './TaskFieldMenus';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useSpaceStore } from '@/store/useSpaceStore';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface SelectionBarProps {
   allTasks?: TaskItem[];
@@ -14,6 +15,7 @@ interface SelectionBarProps {
 type MenuType = 'status' | 'assignee' | 'date' | 'tag' | 'delete' | null;
 
 export const SelectionBar: React.FC<SelectionBarProps> = ({ allTasks = [] }) => {
+  const { t } = useI18n();
   const { updateTaskLocally, deleteTaskLocally } = useSpaceStore();
   const { selectedTaskIds, clearSelection } = useTaskSelection();
   const [openMenu, setOpenMenu] = useState<MenuType>(null);
@@ -160,7 +162,7 @@ export const SelectionBar: React.FC<SelectionBarProps> = ({ allTasks = [] }) => 
       <div className="selection-bar-wrapper">
         <div className="selection-bar" ref={barRef}>
           <div className="selection-count-pill">
-            <span>{selectedTaskIds.length} Task{selectedTaskIds.length > 1 ? 's' : ''} selected</span>
+            <span>{t.selectedCount.replace('{n}', String(selectedTaskIds.length))}</span>
             <button className="clear-selection-btn" onClick={clearSelection}>
               <X size={14} />
             </button>
@@ -168,7 +170,7 @@ export const SelectionBar: React.FC<SelectionBarProps> = ({ allTasks = [] }) => 
           
           <div className="selection-actions">
             <div className="row-action-wrap">
-              <button className="selection-action-btn" onClick={() => toggle('status')}><CheckCircle2 size={14} /> Status</button>
+              <button className="selection-action-btn" onClick={() => toggle('status')}><CheckCircle2 size={14} /> {t.statusLabel}</button>
               {openMenu === 'status' && (
                 <div className="popup-anchor top">
                   <StatusMenu value={commonStatus} onSelect={(s) => handleBulkUpdate({ status: s })} />
@@ -177,7 +179,7 @@ export const SelectionBar: React.FC<SelectionBarProps> = ({ allTasks = [] }) => 
             </div>
 
             <div className="row-action-wrap">
-              <button className="selection-action-btn" onClick={() => toggle('assignee')}><Users size={14} /> Assignees</button>
+              <button className="selection-action-btn" onClick={() => toggle('assignee')}><Users size={14} /> {t.assigneesLabel}</button>
               {openMenu === 'assignee' && (
                 <div className="popup-anchor top">
                   <AssigneeMenu projectId={selectedTasks[0]?.projectId ?? null} selected={commonAssignees} onToggle={handleBulkAssignee} />
@@ -186,7 +188,7 @@ export const SelectionBar: React.FC<SelectionBarProps> = ({ allTasks = [] }) => 
             </div>
 
             <div className="row-action-wrap">
-              <button className="selection-action-btn" onClick={() => toggle('date')}><Calendar size={14} /> Dates</button>
+              <button className="selection-action-btn" onClick={() => toggle('date')}><Calendar size={14} /> {t.datesLabel}</button>
               {openMenu === 'date' && (
                 <div className="popup-anchor top">
                   <DateMenu value={null} onSelect={(d) => handleBulkUpdate({ dueDate: d.toISOString() })} onClear={() => handleBulkUpdate({ dueDate: undefined })} />
@@ -195,7 +197,7 @@ export const SelectionBar: React.FC<SelectionBarProps> = ({ allTasks = [] }) => 
             </div>
 
             <div className="row-action-wrap">
-              <button className="selection-action-btn" onClick={() => toggle('tag')}><Tag size={14} /> Tags</button>
+              <button className="selection-action-btn" onClick={() => toggle('tag')}><Tag size={14} /> {t.tagsLabel}</button>
               {openMenu === 'tag' && (
                 <div className="popup-anchor top">
                   <TagMenu selected={[]} onChange={(tags) => handleBulkTags(tags)} />
@@ -212,10 +214,10 @@ export const SelectionBar: React.FC<SelectionBarProps> = ({ allTasks = [] }) => 
 
       {openMenu === 'delete' && (
         <ConfirmDialog
-          title={`Delete ${selectedTaskIds.length} Task${selectedTaskIds.length > 1 ? 's' : ''}?`}
-          message="Are you sure you want to delete the selected tasks? This action cannot be undone."
+          title={t.deleteSelectedTitle}
+          message={t.deleteSelectedConfirm}
           danger
-          confirmLabel="Delete"
+          confirmLabel={t.deleteLabel}
           loading={loading}
           onConfirm={handleBulkDelete}
           onClose={() => setOpenMenu(null)}

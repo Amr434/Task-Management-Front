@@ -5,9 +5,11 @@ import { useRouter } from 'next/navigation';
 import { KeyRound, Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { changePassword } from '@/features/auth/api';
+import { useI18n } from '@/contexts/I18nContext';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { t } = useI18n();
   const login = useAuthStore((s) => s.login);
   const accessToken = useAuthStore((s) => s.accessToken);
   const mustChangePassword = useAuthStore((s) => s.mustChangePassword);
@@ -78,9 +80,9 @@ export default function LoginPage() {
 
         {!showChangeStep ? (
           <form onSubmit={handleLogin} className="login-form">
-            <h2>Sign in</h2>
-            <p className="login-subtitle">Use your team account</p>
-            <label className="login-label" htmlFor="email">Email</label>
+            <h2>{t.signIn}</h2>
+            <p className="login-subtitle">{t.useTeamAccount}</p>
+            <label className="login-label" htmlFor="email">{t.email}</label>
             <input
               id="email"
               type="email"
@@ -91,12 +93,12 @@ export default function LoginPage() {
               autoComplete="username"
               onChange={(e) => setEmail(e.target.value)}
             />
-            <label className="login-label" htmlFor="password">Password</label>
+            <label className="login-label" htmlFor="password">{t.password}</label>
             <input
               id="password"
               type="password"
               className="login-input"
-              placeholder="Your password"
+              placeholder={t.yourPassword}
               value={password}
               autoComplete="current-password"
               onChange={(e) => setPassword(e.target.value)}
@@ -108,25 +110,25 @@ export default function LoginPage() {
           </form>
         ) : (
           <form onSubmit={handleChangePassword} className="login-form">
-            <h2>Set a new password</h2>
+            <h2>{t.setNewPassword}</h2>
             <p className="login-subtitle">Your password was set by an admin — choose your own before continuing.</p>
-            <label className="login-label" htmlFor="new-password">New password</label>
+            <label className="login-label" htmlFor="new-password">{t.newPassword}</label>
             <input
               id="new-password"
               type="password"
               className="login-input"
-              placeholder="At least 8 characters"
+              placeholder={t.atLeast8}
               value={newPassword}
               autoFocus
               autoComplete="new-password"
               onChange={(e) => setNewPassword(e.target.value)}
             />
-            <label className="login-label" htmlFor="confirm-password">Confirm new password</label>
+            <label className="login-label" htmlFor="confirm-password">{t.confirmNewPassword}</label>
             <input
               id="confirm-password"
               type="password"
               className="login-input"
-              placeholder="Repeat the new password"
+              placeholder={t.repeatNewPassword}
               value={confirmPassword}
               autoComplete="new-password"
               onChange={(e) => setConfirmPassword(e.target.value)}

@@ -7,6 +7,7 @@ import {
 import { Priority, PRIORITY_META, Tag, User, userInitials, userDisplayName, avatarColor } from '../types';
 import { getTags, findOrCreateTag, getProjectMembers } from '../api';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
+import { useI18n } from '@/contexts/I18nContext';
 
 // --- Date helpers (shared) ---
 export const startOfDay = (d: Date) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
@@ -50,9 +51,17 @@ export const PriorityMenu: React.FC<{
   value: Priority | null;
   onSelect: (p: Priority) => void;
   onClear: () => void;
-}> = ({ value, onSelect, onClear }) => (
+}> = ({ value, onSelect, onClear }) => {
+  const { t } = useI18n();
+  const priorityLabels: Record<Priority, string> = {
+    [Priority.Urgent]: t.priorityUrgent,
+    [Priority.High]: t.priorityHigh,
+    [Priority.Medium]: t.priorityNormal,
+    [Priority.Low]: t.priorityLow,
+  };
+  return (
   <div className="composer-dropdown">
-    <div className="dd-section-title">Priority</div>
+    <div className="dd-section-title">{t.priorityLabel}</div>
     {PRIORITY_ORDER.map((p) => (
       <button
         key={p}
@@ -60,56 +69,59 @@ export const PriorityMenu: React.FC<{
         onClick={() => onSelect(p)}
       >
         <Flag size={17} style={{ color: PRIORITY_META[p].color }} />
-        <span>{PRIORITY_META[p].label}</span>
+        <span>{priorityLabels[p]}</span>
       </button>
     ))}
     <div className="dd-divider" />
     <button className="dd-row" onClick={onClear}>
-      <Ban size={17} /> <span>Clear</span>
+      <Ban size={17} /> <span>{t.clear}</span>
     </button>
   </div>
-);
+  );
+};
 
 // ---- Status menu ----
 export const StatusMenu: React.FC<{
   value?: number | null;
   onSelect: (s: number) => void;
-}> = ({ value, onSelect }) => (
+}> = ({ value, onSelect }) => {
+  const { t } = useI18n();
+  return (
   <div className="composer-dropdown status-dropdown" style={{ minWidth: '280px' }}>
     <div className="dd-search">
-      <input placeholder="Search..." autoFocus />
+      <input placeholder={t.searchPlaceholder} autoFocus />
     </div>
     
     <div className="dd-section-warning" style={{ margin: '8px 12px' }}>
       <AlertTriangle size={14} className="warning-icon" />
-      <span>Only showing statuses shared between all Tasks you selected</span>
+      <span>{t.statusMenuWarning}</span>
     </div>
     
-    <div className="dd-section-title" style={{ marginTop: '4px' }}>Not started</div>
+    <div className="dd-section-title" style={{ marginTop: '4px' }}>{t.notStarted}</div>
     <button
       className={`dd-row status-row ${value === 0 ? 'selected' : ''}`}
       onClick={() => onSelect(0)}
     >
       <span className="status-dot todo"></span>
-      <span>TO DO</span>
+      <span>{t.statusToDo}</span>
     </button>
     
-    <div className="dd-section-title">Active</div>
+    <div className="dd-section-title">{t.activeGroup}</div>
     <button
       className={`dd-row status-row ${value === 1 ? 'selected' : ''}`}
       onClick={() => onSelect(1)}
     >
       <span className="status-dot in-progress"></span>
-      <span>IN PROGRESS</span>
+      <span>{t.statusInProgress}</span>
     </button>
     
-    <div className="dd-section-title">Closed</div>
+    <div className="dd-section-title">{t.closedGroupTitle}</div>
     <button
       className={`dd-row status-row ${value === 2 ? 'selected' : ''}`}
       onClick={() => onSelect(2)}
     >
       <span className="status-dot complete"></span>
-      <span>COMPLETE</span>
+      <span>{t.statusComplete}</span>
     </button>
 
     <div className="dd-divider" />
@@ -120,7 +132,8 @@ export const StatusMenu: React.FC<{
       </div>
     </div>
   </div>
-);
+  );
+};
 
 // ---- Avatar helpers (DB-backed users) ----
 export const Avatar: React.FC<{ user: User; size?: 'sm' | 'md'; title?: boolean }> = ({ user, size = 'md', title = true }) => (
@@ -154,6 +167,7 @@ export const AssigneeMenu: React.FC<{
   selected: User[];
   onToggle: (user: User) => void;
 }> = ({ projectId, selected, onToggle }) => {
+  const { t } = useI18n();
   const [query, setQuery] = useState('');
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -187,7 +201,7 @@ export const AssigneeMenu: React.FC<{
       <div className="dd-search">
         <Search size={15} />
         <input
-          placeholder="Search people..."
+          placeholder={t.searchPeople}
           autoFocus
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -196,7 +210,7 @@ export const AssigneeMenu: React.FC<{
       <div className="dd-section-title">People</div>
 
       {loading && <div className="dd-empty">Loading…</div>}
-      {!loading && matches.length === 0 && <div className="dd-empty">No people found</div>}
+      {!loading && matches.length === 0 && <div className="dd-empty">{t.noPeopleFound}</div>}
 
       {!loading && matches.map((u) => {
         const isSel = selectedIds.has(u.id);
@@ -218,19 +232,20 @@ export const DateMenu: React.FC<{
   onSelect: (d: Date) => void;
   onClear: () => void;
 }> = ({ value, onSelect, onClear }) => {
+  const { t } = useI18n();
   const today = startOfDay(new Date());
   const dow = today.getDay(); // 0 Sun .. 6 Sat
   const daysUntilSat = (6 - dow + 7) % 7; // upcoming Saturday (0 if today is Sat)
   const daysUntilMon = ((1 - dow + 7) % 7) || 7; // next Monday
 
   const quick: { label: string; date: Date; hint: string }[] = [
-    { label: 'Today', date: today, hint: weekday(today) },
-    { label: 'Tomorrow', date: addDays(today, 1), hint: weekday(addDays(today, 1)) },
-    { label: 'This weekend', date: addDays(today, daysUntilSat), hint: 'Sat' },
-    { label: 'Next week', date: addDays(today, daysUntilMon), hint: shortDate(addDays(today, daysUntilMon)) },
-    { label: 'Next weekend', date: addDays(today, daysUntilSat + 7), hint: shortDate(addDays(today, daysUntilSat + 7)) },
-    { label: '2 weeks', date: addDays(today, 14), hint: shortDate(addDays(today, 14)) },
-    { label: '4 weeks', date: addDays(today, 28), hint: shortDate(addDays(today, 28)) },
+    { label: t.today, date: today, hint: weekday(today) },
+    { label: t.tomorrow, date: addDays(today, 1), hint: weekday(addDays(today, 1)) },
+    { label: t.thisWeekend, date: addDays(today, daysUntilSat), hint: 'Sat' },
+    { label: t.nextWeek, date: addDays(today, daysUntilMon), hint: shortDate(addDays(today, daysUntilMon)) },
+    { label: t.nextWeekend, date: addDays(today, daysUntilSat + 7), hint: shortDate(addDays(today, daysUntilSat + 7)) },
+    { label: t.twoWeeks, date: addDays(today, 14), hint: shortDate(addDays(today, 14)) },
+    { label: t.fourWeeks, date: addDays(today, 28), hint: shortDate(addDays(today, 28)) },
   ];
 
   const [viewMonth, setViewMonth] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
@@ -254,7 +269,7 @@ export const DateMenu: React.FC<{
           ))}
           {value && (
             <button className="date-quick-row danger" onClick={onClear}>
-              <span>Clear</span>
+              <span>{t.clear}</span>
               <Ban size={15} />
             </button>
           )}
@@ -303,6 +318,7 @@ export const DateMenu: React.FC<{
 
 // ---- Tag menu (DB-backed: searches existing tags, creates on demand, names unique) ----
 export const TagMenu: React.FC<{ selected: Tag[]; onChange: (tags: Tag[]) => void }> = ({ selected, onChange }) => {
+  const { t } = useI18n();
   const [query, setQuery] = useState('');
   const [allTags, setAllTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
@@ -349,7 +365,7 @@ export const TagMenu: React.FC<{ selected: Tag[]; onChange: (tags: Tag[]) => voi
     <div className="composer-dropdown tag-dropdown">
       <div className="dd-search">
         <input
-          placeholder="Search or add tags..."
+          placeholder={t.searchOrAddTags}
           autoFocus
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -365,7 +381,7 @@ export const TagMenu: React.FC<{ selected: Tag[]; onChange: (tags: Tag[]) => voi
 
       {!loading && canCreate && (
         <button className="dd-row" onClick={handleCreate} disabled={creating}>
-          <Plus size={16} /> <span>{creating ? 'Creating…' : `Create “${trimmed}”`}</span>
+          <Plus size={16} /> <span>{creating ? t.creating : t.createTagBtn.replace('{name}', trimmed)}</span>
         </button>
       )}
 

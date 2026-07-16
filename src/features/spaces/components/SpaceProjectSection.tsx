@@ -6,6 +6,7 @@ import { TaskItem } from '@/features/tasks/types';
 import { buildGroups } from '@/features/tasks/grouping';
 import { useSpaceStore } from '@/store/useSpaceStore';
 import { useFilteredTasks } from '@/features/tasks/hooks/useFilteredTasks';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface SpaceProjectSectionProps {
   project: Project;
@@ -14,6 +15,7 @@ interface SpaceProjectSectionProps {
 }
 
 export const SpaceProjectSection: React.FC<SpaceProjectSectionProps> = ({ project, tasks, onOpenModal }) => {
+  const { t } = useI18n();
   const [isExpanded, setIsExpanded] = useState(true);
   const groupBy = useSpaceStore((s) => s.groupBy);
   const groupDir = useSpaceStore((s) => s.groupDir);
@@ -42,7 +44,7 @@ export const SpaceProjectSection: React.FC<SpaceProjectSectionProps> = ({ projec
 
   return (
     <div className="space-project-section">
-      <div className="team-space-title">Team Space</div>
+      <div className="team-space-title">{t.teamSpace}</div>
       <div 
         className="project-section-header"
         onClick={() => setIsExpanded(!isExpanded)}

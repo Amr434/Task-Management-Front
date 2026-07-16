@@ -3,12 +3,14 @@ import { LayoutGrid, MoreHorizontal, Share2 } from 'lucide-react';
 import { Space } from '../types';
 import { InviteMemberModal } from '@/features/invitations/components/InviteMemberModal';
 import { InvitationTargetType } from '@/features/invitations/types';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface SpaceHeaderProps {
   space: Space | null;
 }
 
 export const SpaceHeader: React.FC<SpaceHeaderProps> = ({ space }) => {
+  const { t } = useI18n();
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
   if (!space) return null;
@@ -36,7 +38,7 @@ export const SpaceHeader: React.FC<SpaceHeaderProps> = ({ space }) => {
             className="btn-secondary share-btn" 
             style={{display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', fontSize: '13px'}}
           >
-            <Share2 size={14} /> Share
+            <Share2 size={14} /> {t.share}
           </button>
         </div>
       </div>

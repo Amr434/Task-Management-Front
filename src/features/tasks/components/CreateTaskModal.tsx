@@ -8,6 +8,8 @@ import { createTask, addTagToTask, assignUserToTask } from '../api';
 import { Priority, PRIORITY_META, Tag, User as UserType } from '../types';
 import { useSpaceStore } from '@/store/useSpaceStore';
 import { PriorityMenu, AssigneeMenu, DateMenu, TagMenu, TagPills, AvatarStack, shortDate } from './TaskFieldMenus';
+import { useI18n } from '@/contexts/I18nContext';
+import { uploadAttachment } from '@/features/attachments/api';
 
 interface CreateTaskModalProps {
   onClose: () => void;
@@ -23,6 +25,7 @@ interface SpaceGroup {
 }
 
 export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ onClose, projects = [], defaultProjectId }) => {
+  const { t } = useI18n();
   const { addTaskLocally } = useSpaceStore();
 
   const [taskName, setTaskName] = useState('');
@@ -89,8 +92,8 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ onClose, proje
   const toggle = (menu: Menu) => setOpenMenu((cur) => (cur === menu ? null : menu));
 
   const handleCreateTask = async () => {
-    if (!taskName.trim()) { alert('Task name is required'); return; }
-    if (!selectedProjectId) { alert('Please select a project to add the task to.'); return; }
+    if (!taskName.trim()) { alert(t.taskNameRequired); return; }
+    if (!selectedProjectId) { alert(t.selectProjectRequired); return; }
 
     try {
       setIsSubmitting(true);
@@ -115,12 +118,17 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ onClose, proje
           console.warn('Failed to assign user', e instanceof Error ? e.message : String(e));
         }
       }
+      for (const file of attachments) {
+        try { await uploadAttachment(created.id, file); } catch (e) {
+          console.warn('Failed to upload attachment', e instanceof Error ? e.message : String(e));
+        }
+      }
 
       addTaskLocally({ ...created, tags, assignees });
       onClose();
     } catch (error) {
       console.error('Failed to create task', error);
-      alert('Failed to create task');
+      alert(t.createTaskFailed);
     } finally {
       setIsSubmitting(false);
     }
@@ -132,10 +140,10 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ onClose, proje
         {/* Header — single "Task" type */}
         <div className="task-modal-header">
           <div className="task-modal-tabs">
-            <button className="task-tab active">Task</button>
+            <button className="task-tab active">{t.taskTab}</button>
           </div>
           <div className="task-modal-header-actions">
-            <button className="icon-btn" onClick={onClose} title="Close"><X size={16} /></button>
+            <button className="icon-btn" onClick={onClose} title={t.close}><X size={16} /></button>
           </div>
         </div>
 
@@ -144,7 +152,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ onClose, proje
           <div className="tm-menu-wrap" style={{ position: 'relative' }}>
             <button className="location-btn project-selector" onClick={() => toggle('project')}>
               <LayoutGrid size={14} className="text-secondary" />
-              <span>{selectedProject ? selectedProject.name : 'Select Project'}</span>
+              <span>{selectedProject ? selectedProject.name : t.selectProject}</span>
               <ChevronDown size={14} className="text-secondary" />
             </button>
 
@@ -155,7 +163,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ onClose, proje
                   <input
                     type="text"
                     className="dropdown-search-input"
-                    placeholder="Search..."
+                    placeholder={t.searchPlaceholder}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     autoFocus
@@ -203,7 +211,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ onClose, proje
           <input
             type="text"
             className="task-name-input"
-            placeholder="Task Name"
+            placeholder={t.taskName}
             value={taskName}
             onChange={(e) => setTaskName(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') handleCreateTask(); }}
@@ -215,7 +223,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ onClose, proje
         <div className="task-desc-input-wrapper">
           <textarea
             className="task-desc-input"
-            placeholder="Add description"
+            placeholder={t.addDescriptionShort}
             rows={3}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -225,14 +233,14 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ onClose, proje
         {/* Action toolbar — interactive */}
         <div className="task-action-toolbar">
           <button className="toolbar-btn status-btn">
-            <span className="status-dot"></span> TO DO
+            <span className="status-dot"></span> {t.statusToDo}
           </button>
 
           {/* Assignee */}
           <div className="tm-menu-wrap">
             <button className={`toolbar-btn ${assignees.length > 0 ? 'filled' : ''}`} onClick={() => toggle('assignee')}>
               {assignees.length > 0 ? <AvatarStack users={assignees} /> : <User size={14} className="text-secondary" />}
-              {assignees.length > 0 ? `${assignees.length} assigned` : 'Assignee'}
+              {assignees.length > 0 ? t.assignedCount.replace('{n}', String(assignees.length)) : t.colAssignee}
             </button>
             {openMenu === 'assignee' && (
               <AssigneeMenu
@@ -261,7 +269,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ onClose, proje
           <div className="tm-menu-wrap">
             <button className={`toolbar-btn ${priority !== null ? 'filled' : ''}`} onClick={() => toggle('priority')}>
               <Flag size={14} style={{ color: priority !== null ? PRIORITY_META[priority].color : undefined }} />
-              {priority !== null ? PRIORITY_META[priority].label : 'Priority'}
+              {priority !== null ? ({3: t.priorityUrgent, 2: t.priorityHigh, 1: t.priorityNormal, 0: t.priorityLow} as Record<number, string>)[priority] : t.colPriority}
             </button>
             {openMenu === 'priority' && (
               <PriorityMenu
@@ -276,7 +284,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ onClose, proje
           <div className="tm-menu-wrap">
             <button className={`toolbar-btn ${tags.length ? 'filled' : ''}`} onClick={() => toggle('tags')}>
               <TagIcon size={14} className="text-secondary" />
-              {tags.length ? <TagPills tags={tags} max={3} /> : 'Tags'}
+              {tags.length ? <TagPills tags={tags} max={3} /> : t.colTags}
             </button>
             {openMenu === 'tags' && <TagMenu selected={tags} onChange={setTags} />}
           </div>
@@ -308,11 +316,11 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ onClose, proje
                 e.target.value = '';
               }}
             />
-            <button className="icon-btn attachment-btn" title="Add attachment" onClick={() => fileInputRef.current?.click()}>
+            <button className="icon-btn attachment-btn" title={t.addAttachment} onClick={() => fileInputRef.current?.click()}>
               <Paperclip size={16} />
             </button>
             <button className="btn-primary create-btn-main" onClick={handleCreateTask} disabled={isSubmitting}>
-              {isSubmitting ? 'Creating...' : <>Create Task <CornerDownLeft size={13} /></>}
+              {isSubmitting ? t.creatingTask : <>{t.createTask} <CornerDownLeft size={13} /></>}
             </button>
           </div>
         </div>
