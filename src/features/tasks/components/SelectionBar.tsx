@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTaskSelection } from '@/contexts/TaskSelectionContext';
 import { X, CheckCircle2, Users, Calendar, Settings2, Tag, Copy, Trash2, MoreHorizontal, ArrowRightCircle } from 'lucide-react';
-import { TaskItem, TaskStatus, Tag as TagType } from '../types';
-import { patchTask, deleteTask, addTagToTask } from '../api';
+import { TaskItem, TaskStatus, Tag as TagType, User } from '../types';
+import { patchTask, deleteTask, addTagToTask, assignUserToTask, removeUserFromTask } from '../api';
 import { StatusMenu, AssigneeMenu, DateMenu, TagMenu } from './TaskFieldMenus';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { useSpaceStore } from '@/store/useSpaceStore';
@@ -40,7 +40,9 @@ export const SelectionBar: React.FC<SelectionBarProps> = ({ allTasks = [] }) => 
   const handleBulkUpdate = async (patch: Partial<TaskItem>) => {
     setLoading(true);
     try {
-      await Promise.all(selectedTasks.map(t => patchTask(t, patch).then(updated => updateTaskLocally(t.id, updated))));
+      // Apply the patch locally instead of the PUT response — the response
+      // comes back without tags/assignees and would wipe them from the store.
+      await Promise.all(selectedTasks.map(t => patchTask(t, patch).then(() => updateTaskLocally(t.id, patch))));
       clearSelection();
     } catch (e) {
       console.warn("Bulk update failed", e);
@@ -123,6 +125,34 @@ export const SelectionBar: React.FC<SelectionBarProps> = ({ allTasks = [] }) => 
     }
   };
 
+  // Users assigned to *every* selected task — reflected as "checked" in the menu.
+  const commonAssignees: User[] = selectedTasks.length > 0
+    ? (selectedTasks[0].assignees ?? []).filter(u =>
+        selectedTasks.every(t => (t.assignees ?? []).some(a => a.id === u.id)))
+    : [];
+
+  const handleBulkAssignee = async (user: User) => {
+    const onAll = selectedTasks.every(t => (t.assignees ?? []).some(a => a.id === user.id));
+    setLoading(true);
+    try {
+      for (const t of selectedTasks) {
+        const current = t.assignees ?? [];
+        const has = current.some(a => a.id === user.id);
+        if (onAll && has) {
+          await removeUserFromTask(t.id, user.id);
+          updateTaskLocally(t.id, { assignees: current.filter(a => a.id !== user.id) });
+        } else if (!onAll && !has) {
+          await assignUserToTask(t.id, user.id);
+          updateTaskLocally(t.id, { assignees: [...current, user] });
+        }
+      }
+    } catch (e) {
+      console.warn("Bulk assignee update failed", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const toggle = (menu: MenuType) => setOpenMenu(cur => cur === menu ? null : menu);
 
   return (
@@ -150,7 +180,7 @@ export const SelectionBar: React.FC<SelectionBarProps> = ({ allTasks = [] }) => 
               <button className="selection-action-btn" onClick={() => toggle('assignee')}><Users size={14} /> Assignees</button>
               {openMenu === 'assignee' && (
                 <div className="popup-anchor top">
-                  <AssigneeMenu assigned={false} onAssign={() => setOpenMenu(null)} onClear={() => setOpenMenu(null)} />
+                  <AssigneeMenu projectId={selectedTasks[0]?.projectId ?? null} selected={commonAssignees} onToggle={handleBulkAssignee} />
                 </div>
               )}
             </div>

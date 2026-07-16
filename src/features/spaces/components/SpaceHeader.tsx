@@ -1,12 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { LayoutGrid, MoreHorizontal, Share2 } from 'lucide-react';
 import { Space } from '../types';
+import { InviteMemberModal } from '@/features/invitations/components/InviteMemberModal';
+import { InvitationTargetType } from '@/features/invitations/types';
 
 interface SpaceHeaderProps {
   space: Space | null;
 }
 
 export const SpaceHeader: React.FC<SpaceHeaderProps> = ({ space }) => {
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+
   if (!space) return null;
 
   return (
@@ -20,12 +24,31 @@ export const SpaceHeader: React.FC<SpaceHeaderProps> = ({ space }) => {
           <button className="icon-btn" style={{marginLeft: '8px'}}><MoreHorizontal size={18} /></button>
         </div>
         <div className="space-header-actions">
-          <div className="avatar-group" style={{marginRight: '12px'}}>
-            <div className="avatar" style={{ backgroundColor: '#ff7b72', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 500, fontSize: '12px' }}>A</div>
-          </div>
-          <button className="btn-secondary share-btn" style={{display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', fontSize: '13px'}}><Share2 size={14} /> Share</button>
+          {space.members && space.members.length > 0 && (
+            <div className="avatar-group" style={{ display: 'flex', flexDirection: 'row', marginRight: '12px' }}>
+              {space.members.slice(0, 4).map((m, i) => (
+                <div key={m.id} className="avatar" title={m.name} style={{ backgroundColor: `hsl(${(m.name.length * 50) % 360}, 70%, 60%)`, width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 500, fontSize: '12px', border: '2px solid var(--bg-color)', marginLeft: i > 0 ? '-8px' : '0' }}>{m.initials}</div>
+              ))}
+            </div>
+          )}
+          <button 
+            onClick={() => setIsInviteModalOpen(true)}
+            className="btn-secondary share-btn" 
+            style={{display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', fontSize: '13px'}}
+          >
+            <Share2 size={14} /> Share
+          </button>
         </div>
       </div>
+
+      {isInviteModalOpen && (
+        <InviteMemberModal 
+          targetType={InvitationTargetType.Space} 
+          targetId={space.id} 
+          targetName={space.name}
+          onClose={() => setIsInviteModalOpen(false)} 
+        />
+      )}
     </div>
   );
 };

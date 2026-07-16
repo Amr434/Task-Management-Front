@@ -2,10 +2,12 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Plus, Flag, Calendar, MoreHorizontal, ChevronDown, ChevronRight, UserCircle2, Tag as TagIcon, AlignLeft } from 'lucide-react';
-import { TaskItem, priorityMeta, TaskStatus, Priority, Tag } from '../types';
+import { TaskItem, priorityMeta, TaskStatus, Priority, Tag, User } from '../types';
 import { InlineTaskComposer, ComposerResult } from './InlineTaskComposer';
-import { PriorityMenu, AssigneeMenu, DateMenu, TagMenu, TagPills } from './TaskFieldMenus';
+import { PriorityMenu, AssigneeMenu, DateMenu, TagMenu, TagPills, AvatarStack } from './TaskFieldMenus';
+import { assignUserToTask, removeUserFromTask } from '../api';
 import { useSpaceStore } from '@/store/useSpaceStore';
+import { useFilteredTasks } from '../hooks/useFilteredTasks';
 
 export interface TaskPatch {
   priority?: number;
@@ -14,6 +16,7 @@ export interface TaskPatch {
 
 interface BoardViewProps {
   tasks: TaskItem[];
+  projectId: number;
   projectName: string;
   onMoveTask: (taskId: number, toStatus: TaskStatus) => void;
   onCreateTask: (data: ComposerResult, status: TaskStatus) => Promise<void> | void;
@@ -66,12 +69,22 @@ const TaskCard: React.FC<{
   const priority = priorityMeta(task.priority);
   const due = task.dueDate ? formatDue(task.dueDate) : null;
 
-  // Assignee is visual-only (no backend field). Tags are DB-backed: additions
-  // persist via onAddTag; removals are local (backend has no detach endpoint).
-  const [assignedToMe, setAssignedToMe] = useState(false);
+  // Tags are DB-backed: additions persist via onAddTag; removals are local
+  // (backend has no detach endpoint). Assignees persist via assign/unassign endpoints.
+  const assignees = task.assignees ?? [];
   const [openTagMenu, setOpenTagMenu] = useState(false);
   const tags = task.tags ?? [];
   const [openField, setOpenField] = useState<CardField>(null);
+
+  const toggleAssignee = (user: User) => {
+    const isAssigned = assignees.some((a) => a.id === user.id);
+    const next = isAssigned ? assignees.filter((a) => a.id !== user.id) : [...assignees, user];
+    useSpaceStore.getState().updateTaskLocally(task.id, { assignees: next });
+    (isAssigned ? removeUserFromTask(task.id, user.id) : assignUserToTask(task.id, user.id)).catch((e) => {
+      console.warn('Failed to update assignees', e instanceof Error ? e.message : String(e));
+      useSpaceStore.getState().updateTaskLocally(task.id, { assignees });
+    });
+  };
 
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -106,17 +119,13 @@ const TaskCard: React.FC<{
       )}
 
       <div className="board-card-chips">
-        {/* Assignee (local/visual only) */}
+        {/* Assignee */}
         <div className="board-chip-wrap">
-          <button className={`board-chip ${assignedToMe ? '' : 'icon-only'}`} title="Assign" onClick={() => toggle('assignee')}>
-            {assignedToMe ? <><span className="chip-avatar">AK</span> Me</> : <UserCircle2 size={17} />}
+          <button className={`board-chip ${assignees.length > 0 ? '' : 'icon-only'}`} title="Assign" onClick={() => toggle('assignee')}>
+            {assignees.length > 0 ? <AvatarStack users={assignees} /> : <UserCircle2 size={17} />}
           </button>
           {openField === 'assignee' && (
-            <AssigneeMenu
-              assigned={assignedToMe}
-              onAssign={() => { setAssignedToMe(true); setOpenField(null); }}
-              onClear={() => { setAssignedToMe(false); setOpenField(null); }}
-            />
+            <AssigneeMenu projectId={task.projectId} selected={assignees} onToggle={toggleAssignee} />
           )}
         </div>
 
@@ -191,17 +200,18 @@ const TaskCard: React.FC<{
   );
 };
 
-export const BoardView: React.FC<BoardViewProps> = ({ tasks, projectName, onMoveTask, onCreateTask, onUpdateTask, onAddTag, onRemoveTag }) => {
+export const BoardView: React.FC<BoardViewProps> = ({ tasks, projectId, projectName, onMoveTask, onCreateTask, onUpdateTask, onAddTag, onRemoveTag }) => {
   const [dragOverStatus, setDragOverStatus] = useState<TaskStatus | null>(null);
   const [composerStatus, setComposerStatus] = useState<TaskStatus | null>(null);
   const [collapsed, setCollapsed] = useState<Record<number, boolean>>({});
+  const filteredTasks = useFilteredTasks(tasks);
 
   const statuses = [TaskStatus.ToDo, TaskStatus.InProgress, TaskStatus.Complete];
 
   return (
     <div className="board-view">
       {statuses.map((status) => {
-        const columnTasks = tasks.filter(t => t.status === status);
+        const columnTasks = filteredTasks.filter(t => t.status === status);
         const color = getStatusColor(status);
         const name = getStatusName(status);
         const isCollapsed = !!collapsed[status];
@@ -255,6 +265,7 @@ export const BoardView: React.FC<BoardViewProps> = ({ tasks, projectName, onMove
             <div className="board-column-body">
               {isComposing && (
                 <InlineTaskComposer
+                  projectId={projectId}
                   projectName={projectName}
                   onCancel={() => setComposerStatus(null)}
                   onCreate={async (data) => {

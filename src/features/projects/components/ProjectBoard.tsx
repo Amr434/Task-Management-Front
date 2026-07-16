@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { getProjectById, getProjectsBySpace } from '@/features/projects/api';
-import { getTasksByProject, patchTask, createTask, addTagToTask, removeTagFromTask } from '@/features/tasks/api';
+import { getTasksByProject, patchTask, createTask, addTagToTask, removeTagFromTask, assignUserToTask } from '@/features/tasks/api';
 import { ComposerResult } from '@/features/tasks/components/InlineTaskComposer';
 import { Project } from '@/features/projects/types';
 import { TaskItem, TaskStatus } from '@/features/tasks/types';
@@ -11,6 +11,8 @@ import { BoardView } from '@/features/tasks/components/BoardView';
 import { CalendarView } from '@/features/tasks/components/CalendarView';
 import { LayoutGrid, List as ListIcon, Columns, Calendar, Plus, MoreHorizontal, Share2 } from 'lucide-react';
 import { useSpaceStore } from '@/store/useSpaceStore';
+import { InviteMemberModal } from '@/features/invitations/components/InviteMemberModal';
+import { InvitationTargetType } from '@/features/invitations/types';
 
 type ProjectView = 'list' | 'board' | 'calendar';
 
@@ -21,6 +23,7 @@ export const ProjectBoard = ({ projectId, spaceId }: { projectId: number; spaceI
   
   const [isLoading, setIsLoading] = useState(true);
   const [activeView, setActiveView] = useState<ProjectView>('list');
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
@@ -70,12 +73,19 @@ export const ProjectBoard = ({ projectId, spaceId }: { projectId: number; spaceI
       projectId,
       order: 0,
     });
-    // Task create has no tags field — attach the selected tags after creation.
+    // Task create has no tags/assignees field — attach the selected ones after creation.
     for (const tagId of data.tagIds) {
       try {
         await addTagToTask(created.id, tagId);
       } catch (e) {
         console.warn('Failed to attach tag', e instanceof Error ? e.message : String(e));
+      }
+    }
+    for (const userId of data.assigneeIds) {
+      try {
+        await assignUserToTask(created.id, userId);
+      } catch (e) {
+        console.warn('Failed to assign user', e instanceof Error ? e.message : String(e));
       }
     }
     await fetchData();
@@ -145,12 +155,31 @@ export const ProjectBoard = ({ projectId, spaceId }: { projectId: number; spaceI
               <button className="icon-btn" style={{marginLeft: '8px'}}><MoreHorizontal size={18} /></button>
             </div>
             <div className="space-header-actions">
-              <div className="avatar-group" style={{marginRight: '12px'}}>
-                <div className="avatar" style={{ backgroundColor: '#ff7b72', width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 500, fontSize: '12px' }}>A</div>
-              </div>
-              <button className="btn-secondary share-btn" style={{display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', fontSize: '13px'}}><Share2 size={14} /> Share</button>
+              {project.members && project.members.length > 0 && (
+                <div className="avatar-group" style={{ display: 'flex', flexDirection: 'row', marginRight: '12px' }}>
+                  {project.members.slice(0, 4).map((m, i) => (
+                    <div key={m.id} className="avatar" title={m.name} style={{ backgroundColor: `hsl(${(m.name.length * 50) % 360}, 70%, 60%)`, width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 500, fontSize: '12px', border: '2px solid var(--bg-color)', marginLeft: i > 0 ? '-8px' : '0' }}>{m.initials}</div>
+                  ))}
+                </div>
+              )}
+              <button 
+                className="btn-secondary share-btn" 
+                onClick={() => setIsInviteModalOpen(true)}
+                style={{display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', fontSize: '13px'}}
+              >
+                <Share2 size={14} /> Share
+              </button>
             </div>
           </div>
+          
+          {isInviteModalOpen && (
+            <InviteMemberModal 
+              targetType={InvitationTargetType.Project} 
+              targetId={project.id} 
+              targetName={project.name}
+              onClose={() => setIsInviteModalOpen(false)} 
+            />
+          )}
           
           <div className="space-tabs">
             <button className={`space-tab ${activeView === 'list' ? 'active' : ''}`} onClick={() => setActiveView('list')}>
@@ -183,6 +212,7 @@ export const ProjectBoard = ({ projectId, spaceId }: { projectId: number; spaceI
         {activeView === 'board' && (
           <BoardView
             tasks={tasks}
+            projectId={project.id}
             projectName={project.name}
             onMoveTask={handleMoveTask}
             onCreateTask={handleCreateTask}

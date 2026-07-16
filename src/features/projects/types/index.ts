@@ -7,4 +7,5 @@ export interface Project {
   // Not returned by the API today; kept optional for UI theming with a fallback.
   color?: string;
   icon?: string;
+  members?: { id: number; name: string; initials: string }[];
 }

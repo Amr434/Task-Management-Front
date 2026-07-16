@@ -2,12 +2,13 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { ChevronDown, ChevronRight, Plus, CheckSquare, Network, MoreHorizontal, Pencil, Link2, Copy, Trash2, FolderInput } from 'lucide-react';
+import { ChevronDown, ChevronRight, Plus, CheckSquare, Network, MoreHorizontal, Pencil, Link2, Copy, Trash2, FolderInput, BarChart3, UserCircle, CalendarClock, User, Inbox, MessageSquareReply, MessageSquare } from 'lucide-react';
 import { getSpaces, deleteSpace, duplicateSpace } from '@/features/spaces/api';
 import { getProjectsBySpace, deleteProject, duplicateProject, updateProject } from '@/features/projects/api';
 import { Space } from '@/features/spaces/types';
 import { Project } from '@/features/projects/types';
 import { useI18n } from '@/contexts/I18nContext';
+import { useInvitationStore } from '@/features/invitations/store/useInvitationStore';
 import { CreateSpaceModal } from '@/features/spaces/components/CreateSpaceModal';
 import { SpaceIcon } from '@/features/spaces/components/SpaceIcon';
 import { CreateProjectModal } from '@/features/projects/components/CreateProjectModal';
@@ -22,6 +23,7 @@ export const Sidebar = () => {
   const [spaces, setSpaces] = useState<Space[]>([]);
   const [expandedSpaces, setExpandedSpaces] = useState<Record<number, boolean>>({});
   const [projectsBySpace, setProjectsBySpace] = useState<Record<number, Project[]>>({});
+  const [myTasksExpanded, setMyTasksExpanded] = useState(true);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [projectModalSpace, setProjectModalSpace] = useState<{ id: number; name: string } | null>(null);
@@ -57,11 +59,16 @@ export const Sidebar = () => {
     };
   }, [activeDropdown, activeProjectDropdown]);
 
+  // Refetches when sidebarVersion changes — bumped after accepting an
+  // invitation, so newly shared spaces appear without a page reload.
+  const sidebarVersion = useInvitationStore((s) => s.sidebarVersion);
   useEffect(() => {
     getSpaces().then(data => {
       setSpaces(data);
+      // Drop cached project lists so shared projects reload with fresh access.
+      setProjectsBySpace({});
     }).catch(err => console.warn("Failed to fetch spaces:", err instanceof Error ? err.message : String(err)));
-  }, []);
+  }, [sidebarVersion]);
 
   const toggleSpace = async (spaceId: number) => {
     const isExpanded = expandedSpaces[spaceId];
@@ -125,7 +132,7 @@ export const Sidebar = () => {
       }
     } catch (err) {
       console.warn("Failed to delete space", err instanceof Error ? err.message : String(err));
-      alert("Failed to delete space");
+      alert(err instanceof Error ? err.message : "Failed to delete space");
     } finally {
       setIsDeleting(false);
     }
@@ -155,7 +162,7 @@ export const Sidebar = () => {
       setSpaces(prev => [...prev, newSpace]);
     } catch (err) {
       console.warn("Failed to duplicate space", err instanceof Error ? err.message : String(err));
-      alert("Failed to duplicate space");
+      alert(err instanceof Error ? err.message : "Failed to duplicate space");
     } finally {
       setDuplicatingId(null);
     }
@@ -198,7 +205,7 @@ export const Sidebar = () => {
       }));
     } catch (err) {
       console.warn("Failed to duplicate project", err instanceof Error ? err.message : String(err));
-      alert("Failed to duplicate project");
+      alert(err instanceof Error ? err.message : "Failed to duplicate project");
     } finally {
       setDuplicatingProjectId(null);
     }
@@ -226,7 +233,7 @@ export const Sidebar = () => {
       });
     } catch (err) {
       console.warn("Failed to move project", err instanceof Error ? err.message : String(err));
-      alert("Failed to move project");
+      alert(err instanceof Error ? err.message : "Failed to move project");
     }
   };
 
@@ -251,7 +258,7 @@ export const Sidebar = () => {
       }
     } catch (err) {
       console.warn("Failed to delete project", err instanceof Error ? err.message : String(err));
-      alert("Failed to delete project");
+      alert(err instanceof Error ? err.message : "Failed to delete project");
     } finally {
       setIsDeleting(false);
     }
@@ -269,9 +276,61 @@ export const Sidebar = () => {
 
       <nav className="sidebar-nav">
         <div className="nav-section">
-          <span className="section-title">{t.favorites}</span>
-          <div className="nav-item" onClick={() => router.push('/')}>
-            <Network size={16} style={{ transform: 'rotate(90deg)' }} /> <span className="item-name">{t.everything || 'All Tasks'}</span>
+          <span className="section-title">Home</span>
+          <div className="nav-item" onClick={() => router.push('/inbox')}>
+            <Inbox size={16} /> <span className="item-name">Inbox</span>
+          </div>
+          <div className="nav-item" onClick={() => router.push('/replies')}>
+            <MessageSquareReply size={16} /> <span className="item-name">Replies</span>
+          </div>
+          <div className="nav-item" onClick={() => router.push('/assigned-comments')}>
+            <MessageSquare size={16} /> <span className="item-name">Assigned Comments</span>
+          </div>
+
+          {/* My Tasks Section */}
+          <div className="project-group" style={{ marginTop: '4px' }}>
+            <div className="nav-item project-item" onClick={() => setMyTasksExpanded(!myTasksExpanded)}>
+              <span className="space-icon-toggle">
+                <User size={16} className="text-secondary" />
+                <span className="hover-chevron">
+                  {myTasksExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                </span>
+              </span>
+              <span className="item-name space-name" style={{ fontWeight: 500 }}>My Tasks</span>
+            </div>
+            
+            {myTasksExpanded && (
+              <div className="lists-container" style={{ paddingLeft: '8px' }}>
+                <div 
+                  className={`nav-item ${pathname === '/my-tasks/assigned' ? 'active' : ''}`}
+                  onClick={() => router.push('/my-tasks/assigned')}
+                >
+                  <span className="nav-leading-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '16px', height: '16px', borderRadius: '50%', backgroundColor: '#5b5b5b', fontSize: '10px', color: '#fff', fontWeight: 'bold' }}>
+                    A
+                  </span>
+                  <span className="item-name">Assigned to me</span>
+                </div>
+                
+                <div 
+                  className={`nav-item ${pathname === '/my-tasks/today' ? 'active' : ''}`}
+                  onClick={() => router.push('/my-tasks/today')}
+                >
+                  <CalendarClock size={16} className="text-secondary" style={{ minWidth: '16px' }} />
+                  <span className="item-name">Today & Overdue</span>
+                </div>
+                
+                <div 
+                  className={`nav-item ${pathname === '/my-tasks/personal' ? 'active' : ''}`}
+                  onClick={() => router.push('/my-tasks/personal')}
+                >
+                  <UserCircle size={16} className="text-secondary" style={{ minWidth: '16px' }} />
+                  <span className="item-name">Personal List</span>
+                </div>
+              </div>
+            )}
+          </div>
+          <div className={`nav-item ${pathname.startsWith('/dashboards') ? 'active' : ''}`} onClick={() => router.push('/dashboards')}>
+            <BarChart3 size={16} /> <span className="item-name">{t.dashboards || 'Dashboard'}</span>
           </div>
         </div>
 

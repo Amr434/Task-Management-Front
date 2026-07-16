@@ -2,13 +2,17 @@
 
 import React, { useEffect, useState } from 'react';
 import {
-  ChevronLeft, ChevronRight, Ban, Search, Settings, Plus, Flag, Tag as TagIcon, X, AlertTriangle
+  ChevronLeft, ChevronRight, Ban, Search, Settings, Plus, Flag, Tag as TagIcon, X, AlertTriangle, Check
 } from 'lucide-react';
-import { Priority, PRIORITY_META, Tag } from '../types';
-import { getTags, findOrCreateTag } from '../api';
+import { Priority, PRIORITY_META, Tag, User, userInitials, userDisplayName, avatarColor } from '../types';
+import { getTags, findOrCreateTag, getProjectMembers } from '../api';
+import { useAuthStore } from '@/features/auth/store/useAuthStore';
 
 // --- Date helpers (shared) ---
 export const startOfDay = (d: Date) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
+// Due dates are date-only: anchor them at local noon so the UTC conversion in
+// toISOString() (max ±12h shift) can never move them to another calendar day.
+export const atNoon = (d: Date) => { const x = new Date(d); x.setHours(12, 0, 0, 0); return x; };
 export const addDays = (d: Date, n: number) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
 export const sameDay = (a: Date, b: Date) =>
   a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
@@ -118,29 +122,95 @@ export const StatusMenu: React.FC<{
   </div>
 );
 
-// ---- Assignee menu (no backend field — local/visual only) ----
-export const AssigneeMenu: React.FC<{
-  assigned: boolean;
-  onAssign: () => void;
-  onClear: () => void;
-}> = ({ assigned, onAssign, onClear }) => (
-  <div className="composer-dropdown">
-    <div className="dd-search">
-      <Search size={15} />
-      <input placeholder="Search or enter email..." autoFocus />
-    </div>
-    <div className="dd-section-title">People</div>
-    <button className="dd-row" onClick={onAssign}>
-      <span className="dd-avatar">AK</span>
-      <span>Me</span>
-    </button>
-    {assigned && (
-      <button className="dd-row danger" onClick={onClear}>
-        <Ban size={16} /> <span>Clear</span>
-      </button>
-    )}
-  </div>
+// ---- Avatar helpers (DB-backed users) ----
+export const Avatar: React.FC<{ user: User; size?: 'sm' | 'md'; title?: boolean }> = ({ user, size = 'md', title = true }) => (
+  <span
+    className={`dd-avatar ${size === 'sm' ? 'sm' : ''}`}
+    style={{ backgroundColor: avatarColor(user) }}
+    title={title ? userDisplayName(user) : undefined}
+  >
+    {userInitials(user)}
+  </span>
 );
+
+// Overlapping avatar stack with a "+N" overflow chip.
+export const AvatarStack: React.FC<{ users: User[]; max?: number; size?: 'sm' | 'md' }> = ({ users, max = 3, size = 'sm' }) => {
+  if (!users || users.length === 0) return null;
+  const shown = users.slice(0, max);
+  const overflow = users.length - shown.length;
+  return (
+    <span className="avatar-stack">
+      {shown.map((u) => (
+        <Avatar key={u.id} user={u} size={size} />
+      ))}
+      {overflow > 0 && <span className={`dd-avatar ${size === 'sm' ? 'sm' : ''} more`}>+{overflow}</span>}
+    </span>
+  );
+};
+
+// ---- Assignee menu (project members only: owner + accepted invitees) ----
+export const AssigneeMenu: React.FC<{
+  projectId: number | null;
+  selected: User[];
+  onToggle: (user: User) => void;
+}> = ({ projectId, selected, onToggle }) => {
+  const [query, setQuery] = useState('');
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (projectId == null) {
+      setUsers([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    getProjectMembers(projectId)
+      .then(setUsers)
+      .catch((e) => console.warn('Failed to load project members', e instanceof Error ? e.message : String(e)))
+      .finally(() => setLoading(false));
+  }, [projectId]);
+
+  const currentUserId = useAuthStore((s) => s.user?.id);
+
+  const trimmed = query.trim().toLowerCase();
+  const selectedIds = new Set(selected.map((u) => u.id));
+  const matches = users
+    .filter(
+      (u) => userDisplayName(u).toLowerCase().includes(trimmed) || u.email.toLowerCase().includes(trimmed)
+    )
+    // Signed-in user first, shown as "Me".
+    .sort((a, b) => Number(b.id === currentUserId) - Number(a.id === currentUserId));
+
+  return (
+    <div className="composer-dropdown assignee-dropdown">
+      <div className="dd-search">
+        <Search size={15} />
+        <input
+          placeholder="Search people..."
+          autoFocus
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+      </div>
+      <div className="dd-section-title">People</div>
+
+      {loading && <div className="dd-empty">Loading…</div>}
+      {!loading && matches.length === 0 && <div className="dd-empty">No people found</div>}
+
+      {!loading && matches.map((u) => {
+        const isSel = selectedIds.has(u.id);
+        return (
+          <button key={u.id} className={`dd-row ${isSel ? 'selected' : ''}`} onClick={() => onToggle(u)}>
+            <Avatar user={u} size="sm" title={false} />
+            <span>{u.id === currentUserId ? 'Me' : userDisplayName(u)}</span>
+            {isSel && <Check size={15} style={{ marginLeft: 'auto' }} />}
+          </button>
+        );
+      })}
+    </div>
+  );
+};
 
 // ---- Date picker menu ----
 export const DateMenu: React.FC<{
@@ -177,7 +247,7 @@ export const DateMenu: React.FC<{
       <div className="date-dropdown-body">
         <div className="date-quick-list">
           {quick.map((q) => (
-            <button key={q.label} className="date-quick-row" onClick={() => onSelect(q.date)}>
+            <button key={q.label} className="date-quick-row" onClick={() => onSelect(atNoon(q.date))}>
               <span>{q.label}</span>
               <span className="date-quick-hint">{q.hint}</span>
             </button>
@@ -216,7 +286,7 @@ export const DateMenu: React.FC<{
                 <button
                   key={i}
                   className={`date-cal-day ${sameDay(cell, today) ? 'today' : ''} ${value && sameDay(cell, value) ? 'selected' : ''}`}
-                  onClick={() => onSelect(cell)}
+                  onClick={() => onSelect(atNoon(cell))}
                 >
                   {cell.getDate()}
                 </button>

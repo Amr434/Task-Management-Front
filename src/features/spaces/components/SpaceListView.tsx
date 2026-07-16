@@ -1,11 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { SpaceProjectSection } from './SpaceProjectSection';
 import { Project } from '@/features/projects/types';
 import { TaskItem } from '@/features/tasks/types';
-import { Filter, CheckCircle2, User, SlidersHorizontal, Plus } from 'lucide-react';
+import { Filter, CheckCircle2 } from 'lucide-react';
 import { CreateTaskModal } from '@/features/tasks/components/CreateTaskModal';
 import { SelectionBar } from '@/features/tasks/components/SelectionBar';
 import { GroupByControl } from '@/features/tasks/components/GroupByControl';
+import { FilterPopover } from './FilterPopover';
+import { AssigneeFilterControl } from './AssigneeFilterControl';
+import { CustomizeColumnsControl } from './CustomizeColumnsControl';
+
+import { useSpaceStore } from '@/store/useSpaceStore';
 
 interface SpaceListViewProps {
   projects: Project[];
@@ -14,6 +19,24 @@ interface SpaceListViewProps {
 
 export const SpaceListView: React.FC<SpaceListViewProps> = ({ projects, tasksByProjectId }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showFilterBar, setShowFilterBar] = useState(false);
+  const filterButtonRef = useRef<HTMLButtonElement>(null);
+
+  const filterQuery = useSpaceStore((s) => s.filterQuery);
+  const showClosed = useSpaceStore((s) => s.showClosed);
+  const filterPriority = useSpaceStore((s) => s.filterPriority);
+  const filterStatus = useSpaceStore((s) => s.filterStatus);
+  const filterTagId = useSpaceStore((s) => s.filterTagId);
+  const setShowClosed = useSpaceStore((s) => s.setShowClosed);
+
+  const filterCount = useMemo(() => {
+    let count = 0;
+    if (filterQuery !== '') count++;
+    if (filterPriority !== null) count++;
+    if (filterStatus !== null) count++;
+    if (filterTagId !== null) count++;
+    return count;
+  }, [filterQuery, filterPriority, filterStatus, filterTagId]);
 
   return (
     <div className="space-list-view">
@@ -25,13 +48,32 @@ export const SpaceListView: React.FC<SpaceListViewProps> = ({ projects, tasksByP
           </button>
         </div>
         <div className="action-bar-right">
-          <button className="icon-text-btn"><Filter size={14} /> Filter</button>
-          <button className="icon-text-btn"><CheckCircle2 size={14} /> Closed</button>
-          <button className="icon-text-btn"><User size={14} /> Assignee</button>
-          <button className="icon-text-btn"><SlidersHorizontal size={14} /> Customize</button>
+          <button 
+            ref={filterButtonRef}
+            className={`icon-text-btn ${showFilterBar || filterCount > 0 ? 'active' : ''}`}
+            onClick={() => setShowFilterBar(!showFilterBar)}
+          >
+            <Filter size={14} /> Filter {filterCount > 0 && <span className="filter-count-badge">{filterCount}</span>}
+          </button>
+          <button
+            className={`icon-text-btn ${showClosed ? 'active' : ''}`}
+            onClick={() => setShowClosed(!showClosed)}
+            title={showClosed ? 'Show all tasks' : 'Show only completed tasks'}
+          >
+            <CheckCircle2 size={14} /> Closed
+          </button>
+          <AssigneeFilterControl />
+          <CustomizeColumnsControl />
           <button className="btn-primary add-task-btn" onClick={() => setIsModalOpen(true)}>Add Task <ChevronDownIcon /></button>
         </div>
       </div>
+      
+      {showFilterBar && (
+        <FilterPopover
+          anchorRef={filterButtonRef}
+          onClose={() => setShowFilterBar(false)}
+        />
+      )}
       
 
       

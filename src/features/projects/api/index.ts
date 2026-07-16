@@ -40,6 +40,13 @@ export const getProjectById = async (projectId: number): Promise<Project> => {
 };
 
 
+// The current user's private Personal List project. The backend lazily
+// creates the hidden personal space + project on first call.
+export const getPersonalProject = async (): Promise<Project> => {
+  return apiClient.get<any, Project>('/Projects/personal');
+};
+
+
 // Deep-copies a project (into the same space) with all of its tasks.
 export const duplicateProject = async (project: Project): Promise<Project> => {
   const newProject = await createProject({

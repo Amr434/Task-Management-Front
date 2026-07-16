@@ -3,12 +3,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSpaceStore } from '@/store/useSpaceStore';
 import { X, Calendar, Flag, Tag as TagIcon, Users, FileText, CheckCircle, ChevronRight, Play, Paperclip, LayoutGrid, Check } from 'lucide-react';
-import { StatusMenu, PriorityMenu, DateMenu, TagMenu, AssigneeMenu } from './TaskFieldMenus';
-import { PRIORITY_META, Priority, TaskItem, TaskStatus } from '../types';
-import { patchTask, addTagToTask, removeTagFromTask } from '../api';
+import { StatusMenu, PriorityMenu, DateMenu, TagMenu, AssigneeMenu, Avatar } from './TaskFieldMenus';
+import { PRIORITY_META, Priority, TaskItem, TaskStatus, User, userDisplayName } from '../types';
+import { patchTask, addTagToTask, removeTagFromTask, assignUserToTask, removeUserFromTask } from '../api';
+import { TaskComments } from '@/features/comments/components/TaskComments';
 
 export const TaskDetailSidebar: React.FC = () => {
-  const { detailTaskId, setDetailTaskId, tasksByProjectId, projects, updateTaskLocally, addTaskLocally } = useSpaceStore();
+  const { detailTaskId, setDetailTaskId, tasksByProjectId, assignedTasks, projects, updateTaskLocally, addTaskLocally } = useSpaceStore();
   
   const [openField, setOpenField] = useState<'status' | 'assignee' | 'dates' | 'priority' | 'tags' | null>(null);
   
@@ -22,8 +23,18 @@ export const TaskDetailSidebar: React.FC = () => {
     if (found) {
       task = found;
       const proj = projects.find(p => p.id === Number(projectId));
-      projectName = proj?.name || 'Project';
+      projectName = proj?.name || found.projectName || 'Project';
       break;
+    }
+  }
+
+  // Fall back to the "Assigned to me" list, so rows opened from that page
+  // (whose projects may not be loaded into tasksByProjectId) still resolve.
+  if (!task) {
+    const found = assignedTasks.find(t => t.id === detailTaskId);
+    if (found) {
+      task = found;
+      projectName = found.projectName || 'Project';
     }
   }
 
@@ -68,6 +79,18 @@ export const TaskDetailSidebar: React.FC = () => {
     if (!task) return;
     updateTaskLocally(task.id, patch);
     patchTask(task, patch).catch(e => console.error(e));
+  };
+
+  const toggleAssignee = (user: User) => {
+    if (!task) return;
+    const assignees = task.assignees ?? [];
+    const isAssigned = assignees.some((a) => a.id === user.id);
+    const next = isAssigned ? assignees.filter((a) => a.id !== user.id) : [...assignees, user];
+    updateTaskLocally(task.id, { assignees: next });
+    (isAssigned ? removeUserFromTask(task.id, user.id) : assignUserToTask(task.id, user.id)).catch((e) => {
+      console.warn('Failed to update assignees', e instanceof Error ? e.message : String(e));
+      updateTaskLocally(task.id, { assignees });
+    });
   };
 
   const handleDescBlur = () => {
@@ -130,10 +153,20 @@ export const TaskDetailSidebar: React.FC = () => {
             <div className="tds-field-row">
               <div className="tds-field-label"><Users size={14} /> Assignees</div>
               <div className="tds-field-value">
-                <button className="tds-field-btn" onClick={() => toggle('assignee')}>Empty</button>
+                <button className="tds-field-btn" onClick={() => toggle('assignee')}>
+                  {task.assignees && task.assignees.length > 0 ? (
+                    <div className="tds-assignees-list">
+                      {task.assignees.map((u) => (
+                        <span key={u.id} className="tds-assignee-chip">
+                          <Avatar user={u} size="sm" title={false} /> {userDisplayName(u)}
+                        </span>
+                      ))}
+                    </div>
+                  ) : 'Empty'}
+                </button>
                 {openField === 'assignee' && (
                   <div className="popup-anchor bottom-left">
-                    <AssigneeMenu assigned={false} onAssign={() => setOpenField(null)} onClear={() => setOpenField(null)} />
+                    <AssigneeMenu projectId={task.projectId} selected={task.assignees ?? []} onToggle={toggleAssignee} />
                   </div>
                 )}
               </div>
@@ -245,6 +278,10 @@ export const TaskDetailSidebar: React.FC = () => {
               <input type="file" className="tds-file-input" title="Upload attachment" />
             </div>
           </div>
+          <div className="tds-divider" />
+
+          {/* Comments Section */}
+          <TaskComments taskId={task.id} projectId={task.projectId} />
 
         </div>
       </div>

@@ -1,5 +1,5 @@
 import apiClient from '@/services/apiClient';
-import { TaskItem, Tag } from '../types';
+import { TaskItem, Tag, User } from '../types';
 
 
 export interface CreateTaskDTO {
@@ -22,6 +22,10 @@ export const createTask = async (data: CreateTaskDTO): Promise<TaskItem> => {
 
 export const getTasksByProject = async (projectId: number): Promise<TaskItem[]> => {
   return apiClient.get<TaskItem[], TaskItem[]>(`/Tasks/project/${projectId}`);
+};
+
+export const getAssignedTasks = async (): Promise<TaskItem[]> => {
+  return apiClient.get<TaskItem[], TaskItem[]>('/Tasks/assigned');
 };
 
 
@@ -91,4 +95,23 @@ export const findOrCreateTag = async (name: string, existing: Tag[]): Promise<Ta
   const match = existing.find((t) => t.name.toLowerCase() === trimmed.toLowerCase());
   if (match) return match;
   return createTag(trimmed, pickTagColor());
+};
+
+
+// ---- Users / Assignees ----
+
+// Users who can be assigned in a project: the space owner plus everyone who
+// accepted a space- or project-level invitation. Backend: GET /Projects/{id}/members.
+export const getProjectMembers = async (projectId: number): Promise<User[]> => {
+  return apiClient.get<User[], User[]>(`/Projects/${projectId}/members`);
+};
+
+// Assign a user to a task. Backend: POST /Tasks/{taskId}/assignees/{userId}.
+export const assignUserToTask = async (taskId: number, userId: number): Promise<void> => {
+  return apiClient.post(`/Tasks/${taskId}/assignees/${userId}`, {});
+};
+
+// Unassign a user from a task. Backend: DELETE /Tasks/{taskId}/assignees/{userId}.
+export const removeUserFromTask = async (taskId: number, userId: number): Promise<void> => {
+  return apiClient.delete(`/Tasks/${taskId}/assignees/${userId}`);
 };
