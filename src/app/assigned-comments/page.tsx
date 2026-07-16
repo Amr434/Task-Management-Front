@@ -5,11 +5,15 @@ import { useRouter } from 'next/navigation';
 import { Check, ChevronRight, MessageSquare } from 'lucide-react';
 import { CommentItem, timeAgo } from '@/features/comments/types';
 import { getAssignedComments, resolveComment, reopenComment } from '@/features/comments/api';
+import { getTasksByProject } from '@/features/tasks/api';
 import { userDisplayName } from '@/features/tasks/types';
 import { Avatar } from '@/features/tasks/components/TaskFieldMenus';
+import { useSpaceStore } from '@/store/useSpaceStore';
 
 export default function AssignedCommentsPage() {
   const router = useRouter();
+  const setTasksForProject = useSpaceStore((s) => s.setTasksForProject);
+  const setDetailTaskId = useSpaceStore((s) => s.setDetailTaskId);
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<'open' | 'resolved'>('open');
@@ -26,6 +30,22 @@ export default function AssignedCommentsPage() {
     [comments, tab]
   );
   const openCount = useMemo(() => comments.filter((c) => !c.resolvedAt).length, [comments]);
+
+  // Open the task detail sidebar for the comment's task. The sidebar finds
+  // tasks via the space store, so load the project's tasks into it first.
+  const openTask = async (comment: CommentItem) => {
+    if (!comment.projectId || !comment.taskItemId) return;
+    try {
+      const { tasksByProjectId } = useSpaceStore.getState();
+      if (!tasksByProjectId[comment.projectId]?.some((t) => t.id === comment.taskItemId)) {
+        const tasks = await getTasksByProject(comment.projectId);
+        setTasksForProject(comment.projectId, tasks);
+      }
+      setDetailTaskId(comment.taskItemId);
+    } catch (e) {
+      console.warn('Failed to open task', e instanceof Error ? e.message : String(e));
+    }
+  };
 
   const toggleResolve = async (comment: CommentItem, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -82,7 +102,7 @@ export default function AssignedCommentsPage() {
                   key={comment.id}
                   className={`comment-item ${resolved ? 'resolved-comment' : 'assigned-comment'}`}
                   style={{ cursor: 'pointer' }}
-                  onClick={() => comment.projectId && router.push(`/projects/${comment.projectId}`)}
+                  onClick={() => openTask(comment)}
                 >
                   <div className="comment-header">
                     <div className="comment-author-info">
@@ -108,7 +128,14 @@ export default function AssignedCommentsPage() {
                   </div>
 
                   {crumb && (
-                    <div style={{ marginLeft: '32px', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-secondary)', fontSize: '12px' }}>
+                    <div
+                      style={{ marginLeft: '32px', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-secondary)', fontSize: '12px' }}
+                      title="Go to project"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (comment.projectId) router.push(`/projects/${comment.projectId}`);
+                      }}
+                    >
                       {crumb} <ChevronRight size={12} />
                     </div>
                   )}

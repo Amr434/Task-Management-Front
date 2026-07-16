@@ -9,7 +9,7 @@ import { patchTask, addTagToTask, removeTagFromTask, assignUserToTask, removeUse
 import { TaskComments } from '@/features/comments/components/TaskComments';
 
 export const TaskDetailSidebar: React.FC = () => {
-  const { detailTaskId, setDetailTaskId, tasksByProjectId, projects, updateTaskLocally, addTaskLocally } = useSpaceStore();
+  const { detailTaskId, setDetailTaskId, tasksByProjectId, assignedTasks, projects, updateTaskLocally, addTaskLocally } = useSpaceStore();
   
   const [openField, setOpenField] = useState<'status' | 'assignee' | 'dates' | 'priority' | 'tags' | null>(null);
   
@@ -23,8 +23,18 @@ export const TaskDetailSidebar: React.FC = () => {
     if (found) {
       task = found;
       const proj = projects.find(p => p.id === Number(projectId));
-      projectName = proj?.name || 'Project';
+      projectName = proj?.name || found.projectName || 'Project';
       break;
+    }
+  }
+
+  // Fall back to the "Assigned to me" list, so rows opened from that page
+  // (whose projects may not be loaded into tasksByProjectId) still resolve.
+  if (!task) {
+    const found = assignedTasks.find(t => t.id === detailTaskId);
+    if (found) {
+      task = found;
+      projectName = found.projectName || 'Project';
     }
   }
 

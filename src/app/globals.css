@@ -3733,6 +3733,11 @@ body {
 }
 
 .comment-author-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 /* ── Dashboards ── */
 .dashboard-page {
   max-width: 1200px;
