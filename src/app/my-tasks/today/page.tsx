@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronDown, ChevronRight, Flag } from 'lucide-react';
 import { getAssignedTasks, patchTask } from '@/features/tasks/api';
+import { isNetworkError } from '@/services/apiClient';
 import { TaskItem, TaskStatus, priorityMeta } from '@/features/tasks/types';
 import { useAuthStore } from '@/features/auth/store/useAuthStore';
 import { useI18n } from '@/contexts/I18nContext';
@@ -25,17 +26,25 @@ export default function TodayAndOverduePage() {
 
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<'network' | 'other' | null>(null);
   const [tab, setTab] = useState<'todo' | 'done'>('todo');
   const [collapsed, setCollapsed] = useState<Record<Bucket, boolean>>({
     overdue: false, today: false, next: false, unscheduled: false,
   });
 
-  useEffect(() => {
+  const loadTasks = useCallback(() => {
+    setLoading(true);
+    setLoadError(null);
     getAssignedTasks()
       .then(setTasks)
-      .catch((err) => console.warn('Failed to fetch assigned tasks', err instanceof Error ? err.message : String(err)))
+      .catch((err) => {
+        console.warn('Failed to fetch assigned tasks:', err instanceof Error ? err.message : String(err));
+        setLoadError(isNetworkError(err) ? 'network' : 'other');
+      })
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => { loadTasks(); }, [loadTasks]);
 
   const buckets = useMemo(() => {
     const startOfToday = new Date();
@@ -173,6 +182,16 @@ export default function TodayAndOverduePage() {
 
           {loading ? (
             <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>{t.loadingTasks}</div>
+          ) : loadError ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', padding: '24px 0', color: 'var(--text-secondary)', fontSize: '14px' }}>
+              <p style={{ margin: 0 }}>{loadError === 'network' ? t.serverUnreachable : t.tasksLoadFailed}</p>
+              <button
+                onClick={loadTasks}
+                style={{ padding: '6px 16px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-primary)', cursor: 'pointer' }}
+              >
+                {t.retry}
+              </button>
+            </div>
           ) : (
             (['overdue', 'today', 'next', 'unscheduled'] as Bucket[]).map(renderBucket)
           )}

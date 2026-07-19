@@ -153,6 +153,9 @@ export const en = {
   personalEmpty: 'Your private tasks live here — only you can see them.',
   personalLoadFailed: 'Could not load your personal list.',
   personalOnlyYou: 'Only you can see this list',
+  serverUnreachable: 'Could not connect to the server. Check your connection and try again.',
+  tasksLoadFailed: 'Could not load your tasks.',
+  retry: 'Retry',
 
   // Comments
   activityComments: 'Activity & Comments',

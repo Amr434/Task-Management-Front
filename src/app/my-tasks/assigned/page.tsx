@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { getAssignedTasks } from '@/features/tasks/api';
+import { isNetworkError } from '@/services/apiClient';
 import { TaskItem } from '@/features/tasks/types';
 import { TaskRow } from '@/features/tasks/components/TaskRow';
 import { useColumnGridTemplate } from '@/features/tasks/hooks/useColumnGridTemplate';
@@ -13,16 +14,24 @@ export default function AssignedToMePage() {
   const tasks = useSpaceStore((s) => s.assignedTasks);
   const setAssignedTasks = useSpaceStore((s) => s.setAssignedTasks);
   const [loading, setLoading] = useState(true);
-  
+  const [loadError, setLoadError] = useState<'network' | 'other' | null>(null);
+
   const visibleColumns = useSpaceStore((s) => s.visibleColumns);
   const gridTemplateColumns = useColumnGridTemplate();
 
-  useEffect(() => {
+  const loadTasks = useCallback(() => {
+    setLoading(true);
+    setLoadError(null);
     getAssignedTasks()
       .then(data => setAssignedTasks(data))
-      .catch(err => console.error("Failed to fetch assigned tasks", err))
+      .catch(err => {
+        console.warn('Failed to fetch assigned tasks:', err instanceof Error ? err.message : String(err));
+        setLoadError(isNetworkError(err) ? 'network' : 'other');
+      })
       .finally(() => setLoading(false));
   }, [setAssignedTasks]);
+
+  useEffect(() => { loadTasks(); }, [loadTasks]);
 
   const { rootTasks, childrenByParent } = useMemo(() => {
     const byParent: Record<number, TaskItem[]> = {};
@@ -54,6 +63,16 @@ export default function AssignedToMePage() {
       <div style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
         {loading ? (
           <div style={{ color: 'var(--text-secondary)' }}>{t.loadingTasks}</div>
+        ) : loadError ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '12px', color: 'var(--text-secondary)' }}>
+            <p style={{ margin: 0 }}>{loadError === 'network' ? t.serverUnreachable : t.tasksLoadFailed}</p>
+            <button
+              onClick={loadTasks}
+              style={{ padding: '6px 16px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'transparent', color: 'var(--text-primary)', cursor: 'pointer' }}
+            >
+              {t.retry}
+            </button>
+          </div>
         ) : tasks.length === 0 ? (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-secondary)' }}>
             <p>{t.assignedEmpty}</p>

@@ -155,6 +155,9 @@ export const ar: Dictionary = {
   personalEmpty: 'مهامك الخاصة تعيش هنا — أنت وحدك من يراها.',
   personalLoadFailed: 'تعذر تحميل قائمتك الشخصية.',
   personalOnlyYou: 'أنت وحدك من يرى هذه القائمة',
+  serverUnreachable: 'تعذر الاتصال بالخادم. تحقق من اتصالك وحاول مرة أخرى.',
+  tasksLoadFailed: 'تعذر تحميل مهامك.',
+  retry: 'إعادة المحاولة',
 
   // Comments
   activityComments: 'النشاط والتعليقات',

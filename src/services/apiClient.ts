@@ -6,6 +6,11 @@ import { API_BASE_URL } from './config';
 
 export { API_BASE_URL };
 
+// True when a request failed because the server never answered (offline,
+// refused connection, timeout) as opposed to answering with an error status.
+export const isNetworkError = (err: unknown): boolean =>
+  err instanceof Error && (err as Error & { isNetworkError?: boolean }).isNetworkError === true;
+
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -63,6 +68,13 @@ apiClient.interceptors.response.use(
         // Refresh failed (revoked/expired): drop the session; the guard redirects to /login.
         useAuthStore.getState().clearSession();
       }
+    }
+
+    // No response at all: the server is unreachable (offline, DNS, CORS, timeout).
+    if (!error.response) {
+      const netError = new Error("Cannot reach the server. Please check that it is running and try again.");
+      (netError as Error & { isNetworkError: boolean }).isNetworkError = true;
+      return Promise.reject(netError);
     }
 
     const errorData = error.response?.data as { message?: string; title?: string } | undefined;
