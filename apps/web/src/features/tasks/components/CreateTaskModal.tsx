@@ -10,6 +10,7 @@ import { useSpaceStore } from '@task/core/store/useSpaceStore';
 import { PriorityMenu, AssigneeMenu, DateMenu, TagMenu, TagPills, AvatarStack, shortDate } from './TaskFieldMenus';
 import { useI18n } from '@/contexts/I18nContext';
 import { uploadAttachment } from '@/features/attachments/api';
+import { RichTextEditor } from './RichTextEditor';
 
 interface CreateTaskModalProps {
   onClose: () => void;
@@ -221,12 +222,11 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({ onClose, proje
 
         {/* Description */}
         <div className="task-desc-input-wrapper">
-          <textarea
-            className="task-desc-input"
+          <RichTextEditor
             placeholder={t.addDescriptionShort}
-            rows={3}
+            minHeight={80}
             value={description}
-            onChange={(e) => setDescription(e.target.value)}
+            onChange={setDescription}
           />
         </div>
 

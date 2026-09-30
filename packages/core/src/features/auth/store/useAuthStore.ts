@@ -12,6 +12,29 @@ import * as authApi from '../api';
 // configureAuthStorage() with a SecureStore-backed adapter during startup.
 let storageAdapter: StateStorage | null = null;
 
+// Where writes go when nothing real is available: React Native before
+// configureAuthStorage() has run, and the server during SSR.
+//
+// It has to be a working no-op rather than nothing at all. Handing zustand an
+// undefined storage makes it warn on every single write ("the given storage is
+// currently unavailable"), and there is no session worth keeping at that point
+// anyway — on mobile SecureStore takes over and re-reads moments later.
+//
+// Deliberately not an in-memory map: this module is shared across requests on
+// the server, so a Map here would let one request's session be read by the next.
+const noopStorage: StateStorage = {
+  getItem: () => null,
+  setItem: () => {},
+  removeItem: () => {},
+};
+
+// Resolved per access, so configureAuthStorage() is picked up without the
+// storage having been captured at module init.
+const resolveStorage = (): StateStorage => {
+  if (storageAdapter) return storageAdapter;
+  return typeof localStorage !== 'undefined' ? localStorage : noopStorage;
+};
+
 interface AuthState {
   user: AuthUser | null;
   accessToken: string | null;
@@ -70,7 +93,7 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
-      storage: createJSONStorage(() => storageAdapter ?? localStorage),
+      storage: createJSONStorage(resolveStorage),
       partialize: (s) => ({
         user: s.user,
         accessToken: s.accessToken,

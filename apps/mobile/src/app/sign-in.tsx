@@ -75,7 +75,7 @@ export default function SignInScreen() {
     : Boolean(email.trim() && password);
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.bgSidebar }]}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.bgCanvas }]}>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -84,7 +84,7 @@ export default function SignInScreen() {
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={[styles.card, { backgroundColor: theme.bgMain, borderColor: theme.border }]}>
+          <View style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
             <View style={styles.brand}>
               <View style={[styles.mark, { backgroundColor: theme.accent }]}>
                 <Text style={styles.markText}>T</Text>
@@ -103,7 +103,7 @@ export default function SignInScreen() {
 
                 <Text style={[styles.label, { color: theme.textSecondary }]}>Email</Text>
                 <TextInput
-                  style={[styles.input, { color: theme.textPrimary, borderColor: theme.border, backgroundColor: theme.bgHover }]}
+                  style={[styles.input, { color: theme.textPrimary, borderColor: theme.border, backgroundColor: theme.bgCanvas }]}
                   placeholder="you@example.com"
                   placeholderTextColor={theme.textSecondary}
                   value={email}
@@ -117,7 +117,7 @@ export default function SignInScreen() {
 
                 <Text style={[styles.label, { color: theme.textSecondary }]}>Password</Text>
                 <TextInput
-                  style={[styles.input, { color: theme.textPrimary, borderColor: theme.border, backgroundColor: theme.bgHover }]}
+                  style={[styles.input, { color: theme.textPrimary, borderColor: theme.border, backgroundColor: theme.bgCanvas }]}
                   placeholder="Your password"
                   placeholderTextColor={theme.textSecondary}
                   value={password}
@@ -137,7 +137,7 @@ export default function SignInScreen() {
 
                 <Text style={[styles.label, { color: theme.textSecondary }]}>New password</Text>
                 <TextInput
-                  style={[styles.input, { color: theme.textPrimary, borderColor: theme.border, backgroundColor: theme.bgHover }]}
+                  style={[styles.input, { color: theme.textPrimary, borderColor: theme.border, backgroundColor: theme.bgCanvas }]}
                   placeholder="At least 8 characters"
                   placeholderTextColor={theme.textSecondary}
                   value={newPassword}
@@ -149,7 +149,7 @@ export default function SignInScreen() {
 
                 <Text style={[styles.label, { color: theme.textSecondary }]}>Confirm new password</Text>
                 <TextInput
-                  style={[styles.input, { color: theme.textPrimary, borderColor: theme.border, backgroundColor: theme.bgHover }]}
+                  style={[styles.input, { color: theme.textPrimary, borderColor: theme.border, backgroundColor: theme.bgCanvas }]}
                   placeholder="Repeat new password"
                   placeholderTextColor={theme.textSecondary}
                   value={confirmPassword}

@@ -9,6 +9,7 @@ import { patchTask, addTagToTask, removeTagFromTask, assignUserToTask, removeUse
 import { TaskComments } from '@/features/comments/components/TaskComments';
 import { useI18n } from '@/contexts/I18nContext';
 import { TaskAttachments } from '@/features/attachments/components/TaskAttachments';
+import { RichTextEditor } from './RichTextEditor';
 
 export const TaskDetailSidebar: React.FC = () => {
   const { detailTaskId, setDetailTaskId, tasksByProjectId, assignedTasks, projects, updateTaskLocally, addTaskLocally } = useSpaceStore();
@@ -60,11 +61,38 @@ export const TaskDetailSidebar: React.FC = () => {
     return () => document.removeEventListener('mousedown', onDocClick);
   }, [openField]);
 
-  // Description draft
+  // Description draft.
+  //
+  // The draft is kept with the task it was typed into, never "whatever task is
+  // open now". The editor is an iframe, and an iframe's blur arrives in a later
+  // task than the click that caused it — by then this sidebar has already
+  // switched tasks, so saving against the current one wrote the previous task's
+  // description onto the newly opened task.
   const [descDraft, setDescDraft] = useState(task?.description || '');
+  const pendingDesc = useRef<{ task: TaskItem; text: string } | null>(null);
+
   useEffect(() => {
     if (task) setDescDraft(task.description || '');
   }, [task?.description, task?.id]);
+
+  const flushDesc = () => {
+    const p = pendingDesc.current;
+    pendingDesc.current = null;
+    if (!p || p.text === (p.task.description || '')) return;
+    updateTaskLocally(p.task.id, { description: p.text });
+    patchTask(p.task, { description: p.text }).catch((e) => console.error(e));
+  };
+  // Read through a ref so the cleanup below always runs the latest one.
+  const flushRef = useRef(flushDesc);
+  useEffect(() => {
+    flushRef.current = flushDesc;
+  });
+
+  // Switching task (or closing the panel) saves what was typed into the
+  // previous one, without waiting for a blur that may never arrive in time.
+  useEffect(() => {
+    return () => flushRef.current();
+  }, [task?.id]);
 
   if (!detailTaskId || !task) {
     return null;
@@ -99,10 +127,9 @@ export const TaskDetailSidebar: React.FC = () => {
     });
   };
 
-  const handleDescBlur = () => {
-    if (descDraft !== task.description) {
-      handleUpdate({ description: descDraft });
-    }
+  const handleDescChange = (markdown: string) => {
+    setDescDraft(markdown);
+    if (task) pendingDesc.current = { task, text: markdown };
   };
 
   return (
@@ -262,12 +289,11 @@ export const TaskDetailSidebar: React.FC = () => {
 
           {/* Description */}
           <div className="tds-description-section">
-            <textarea
-              className="tds-desc-textarea"
+            <RichTextEditor
               placeholder={t.addDescription}
               value={descDraft}
-              onChange={(e) => setDescDraft(e.target.value)}
-              onBlur={handleDescBlur}
+              onChange={handleDescChange}
+              onBlur={flushDesc}
             />
           </div>
 

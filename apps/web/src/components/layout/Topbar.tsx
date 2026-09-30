@@ -6,7 +6,7 @@ import { Search, Settings, LogOut, Palette } from 'lucide-react';
 import { ThemeModal } from '@/features/theme/components/ThemeModal';
 import { useAuthStore } from '@task/core/features/auth/store/useAuthStore';
 import { useI18n } from '@/contexts/I18nContext';
-import { useInvitationStore } from '@/features/invitations/store/useInvitationStore';
+import { useInvitationStore } from '@task/core/features/invitations/store/useInvitationStore';
 import { InvitationBell } from './InvitationBell';
 
 export const Topbar = () => {

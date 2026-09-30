@@ -8,7 +8,7 @@ import { getProjectsBySpace, deleteProject, duplicateProject, updateProject } fr
 import { Space } from '@task/core/features/spaces/types';
 import { Project } from '@task/core/features/projects/types';
 import { useI18n } from '@/contexts/I18nContext';
-import { useInvitationStore } from '@/features/invitations/store/useInvitationStore';
+import { useInvitationStore } from '@task/core/features/invitations/store/useInvitationStore';
 import { CreateSpaceModal } from '@/features/spaces/components/CreateSpaceModal';
 import { SpaceIcon } from '@/features/spaces/components/SpaceIcon';
 import { CreateProjectModal } from '@/features/projects/components/CreateProjectModal';

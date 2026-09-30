@@ -50,6 +50,11 @@ export default function RootLayout() {
       >
         <Stack.Protected guard={signedIn}>
           <Stack.Screen name="(app)" options={{ headerShown: false }} />
+          {/* Above the tabs so the floating tab bar does not cover the writing area. */}
+          <Stack.Screen
+            name="description"
+            options={{ headerShown: false, animation: 'slide_from_bottom' }}
+          />
         </Stack.Protected>
 
         <Stack.Protected guard={!signedIn}>

@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Bell, Check, X, FolderKanban, LayoutGrid } from 'lucide-react';
-import { useInvitationStore } from '@/features/invitations/store/useInvitationStore';
+import { useInvitationStore } from '@task/core/features/invitations/store/useInvitationStore';
 import { Invitation, InvitationTargetType } from '@task/core/features/invitations/types';
 import { invitationsApi } from '@task/core/features/invitations/api';
 import { useI18n } from '@/contexts/I18nContext';

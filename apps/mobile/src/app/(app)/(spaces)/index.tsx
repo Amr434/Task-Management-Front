@@ -1,0 +1,438 @@
+import { useCallback, useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { useAuthStore } from '@task/core/features/auth/store/useAuthStore';
+import { createSpace, getSpaces } from '@task/core/features/spaces/api';
+import type { Space } from '@task/core/features/spaces/types';
+import { getProjectsBySpace } from '@task/core/features/projects/api';
+import type { Project } from '@task/core/features/projects/types';
+import { InvitationTargetType } from '@task/core/features/invitations/types';
+
+import { Chip, ErrorState, Field, Loading, PrimaryButton, SectionHeader, Sheet, Tile, glyphFor } from '@/components/ui';
+import { Icon, type IconName } from '@/components/icon';
+import { InviteSheet, type InviteTarget } from '@/components/invite-sheet';
+import { useTheme } from '@/theme';
+
+const SPACE_COLORS = ['#7b68ee', '#2684ff', '#00c875', '#ffb800', '#e2445c', '#00b4d8', '#ff7b72', '#12a594'];
+
+/** Shown in the header until the user picks a specific space. */
+const WORKSPACE = { name: 'CiSS Egypt', glyph: 'C', color: '#00c875' };
+
+export default function HomeScreen() {
+  const theme = useTheme();
+  const user = useAuthStore((s) => s.user);
+  const params = useLocalSearchParams<{ new?: string }>();
+
+  const [spaces, setSpaces] = useState<Space[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
+
+  // null means "the whole workspace": the header shows CiSS Egypt and the tree
+  // lists every space. Picking one narrows both.
+  const [selectedSpaceId, setSelectedSpaceId] = useState<number | null>(null);
+  const [switcherOpen, setSwitcherOpen] = useState(false);
+
+  const [spacesOpen, setSpacesOpen] = useState(true);
+  const [expanded, setExpanded] = useState<Record<number, boolean>>({});
+  const [projects, setProjects] = useState<Record<number, Project[]>>({});
+  const [loadingSpace, setLoadingSpace] = useState<number | null>(null);
+  const [inviteTarget, setInviteTarget] = useState<InviteTarget | null>(null);
+
+  const [creating, setCreating] = useState(false);
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [color, setColor] = useState(SPACE_COLORS[0]);
+  const [busy, setBusy] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setError(null);
+    try {
+      setSpaces(await getSpaces());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not load spaces');
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      load().finally(() => setLoading(false));
+    }, [load])
+  );
+
+  // The floating + in the tab bar stamps a fresh value on ?new to ask for the
+  // create sheet; the timestamp makes repeat taps register.
+  useEffect(() => {
+    if (params.new) setCreating(true);
+  }, [params.new]);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setProjects({});
+    load().finally(() => setRefreshing(false));
+  }, [load]);
+
+  // Lists load the first time a space is opened, then stay cached.
+  const loadProjects = useCallback(async (spaceId: number) => {
+    setLoadingSpace(spaceId);
+    try {
+      const list = await getProjectsBySpace(spaceId);
+      setProjects((prev) => ({ ...prev, [spaceId]: list }));
+    } catch {
+      setProjects((prev) => ({ ...prev, [spaceId]: [] }));
+    } finally {
+      setLoadingSpace(null);
+    }
+  }, []);
+
+  const toggleSpace = (space: Space) => {
+    const isOpen = expanded[space.id];
+    setExpanded((prev) => ({ ...prev, [space.id]: !isOpen }));
+    if (!isOpen && !projects[space.id]) void loadProjects(space.id);
+  };
+
+  const selectSpace = (space: Space | null) => {
+    setSwitcherOpen(false);
+    setSelectedSpaceId(space?.id ?? null);
+    if (space) {
+      setExpanded((prev) => ({ ...prev, [space.id]: true }));
+      if (!projects[space.id]) void loadProjects(space.id);
+    }
+  };
+
+  const submit = async () => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    setFormError(null);
+    setBusy(true);
+    try {
+      const created = await createSpace({ name: trimmed, description: description.trim() || undefined, color });
+      setSpaces((prev) => [...prev, created]);
+      setCreating(false);
+      setName('');
+      setDescription('');
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : 'Could not create the space');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const selectedSpace = spaces.find((s) => s.id === selectedSpaceId) ?? null;
+
+  const visible = (selectedSpace ? [selectedSpace] : spaces).filter((s) => {
+    const q = query.trim().toLowerCase();
+    return !q || s.name.toLowerCase().includes(q);
+  });
+
+  const initials = `${user?.firstName?.[0] ?? ''}${user?.lastName?.[0] ?? ''}`.toUpperCase() || '?';
+
+  if (loading) return <Loading />;
+  if (error) return <ErrorState message={error} onRetry={onRefresh} />;
+
+  return (
+    <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: theme.bgMain }}>
+      <View style={styles.header}>
+        <Pressable
+          onPress={() => setSwitcherOpen(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Switch space"
+          style={({ pressed }) => [styles.workspaceBtn, { opacity: pressed ? 0.6 : 1 }]}
+        >
+          <Tile
+            text={selectedSpace ? glyphFor(selectedSpace.name, selectedSpace.icon) : WORKSPACE.glyph}
+            color={selectedSpace ? selectedSpace.color || theme.accent : WORKSPACE.color}
+            size={32}
+          />
+          <Text style={[styles.workspace, { color: theme.textPrimary }]} numberOfLines={1}>
+            {selectedSpace ? selectedSpace.name : WORKSPACE.name}
+          </Text>
+          <Icon name="chevronDown" size={17} color={theme.textSecondary} />
+        </Pressable>
+        <Pressable onPress={() => router.push('/profile')} accessibilityLabel="Profile">
+          <Tile text={initials} color={theme.accent} size={32} />
+        </Pressable>
+      </View>
+
+      <View style={styles.searchWrap}>
+        <View style={[styles.search, { backgroundColor: theme.bgCanvas }]}>
+          <Icon name="search" size={18} color={theme.textFaint} />
+          <TextInput
+            style={[styles.searchInput, { color: theme.textPrimary }]}
+            placeholder="Search"
+            placeholderTextColor={theme.textFaint}
+            value={query}
+            onChangeText={setQuery}
+          />
+        </View>
+      </View>
+
+      <ScrollView
+        contentContainerStyle={styles.body}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.accent} />}
+      >
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.cards}>
+          <QuickCard icon="tasks" title="Assigned" caption="to me" onPress={() => router.push('/my-tasks')} />
+          <QuickCard icon="clock" title="Today" caption="& overdue" onPress={() => router.push('/my-tasks')} />
+          <QuickCard icon="inbox" title="Inbox" caption="invitations" onPress={() => router.push('/inbox')} />
+        </ScrollView>
+
+        <View style={[styles.divider, { backgroundColor: theme.border }]} />
+
+        <SectionHeader
+          title="Spaces"
+          count={visible.length}
+          expanded={spacesOpen}
+          onToggle={() => setSpacesOpen((v) => !v)}
+          onAdd={() => setCreating(true)}
+        />
+
+        {spacesOpen
+          ? visible.map((space) => {
+              const open = !!expanded[space.id];
+              const lists = projects[space.id] ?? [];
+              return (
+                <View key={space.id}>
+                  <Pressable
+                    onPress={() => toggleSpace(space)}
+                    onLongPress={() =>
+                      router.push({ pathname: '/space/[id]', params: { id: String(space.id), name: space.name } })
+                    }
+                    style={({ pressed }) => [
+                      styles.treeRow,
+                      { backgroundColor: pressed ? theme.bgHover : 'transparent' },
+                    ]}
+                  >
+                    <View style={styles.caret}>
+                      <Icon name={open ? 'caretDown' : 'caretRight'} size={13} color={theme.textFaint} />
+                    </View>
+                    <Tile text={glyphFor(space.name, space.icon)} color={space.color || theme.accent} size={28} />
+                    <Text style={[styles.treeLabel, { color: theme.textPrimary }]} numberOfLines={1}>
+                      {space.name}
+                    </Text>
+                    {loadingSpace === space.id ? <ActivityIndicator size="small" color={theme.textFaint} /> : null}
+                    <Pressable
+                      onPress={() =>
+                        setInviteTarget({ type: InvitationTargetType.Space, id: space.id, name: space.name })
+                      }
+                      hitSlop={10}
+                      accessibilityLabel={`Share ${space.name}`}
+                      style={styles.shareBtn}
+                    >
+                      <Icon name="people" size={19} color={theme.textSecondary} />
+                    </Pressable>
+                  </Pressable>
+
+                  {open
+                    ? lists.length === 0 && loadingSpace !== space.id
+                      ? <Text style={[styles.treeEmpty, { color: theme.textFaint }]}>No lists yet</Text>
+                      : lists.map((project) => (
+                          <Pressable
+                            key={project.id}
+                            onPress={() =>
+                              router.push({
+                                pathname: '/project/[id]',
+                                params: { id: String(project.id), name: project.name },
+                              })
+                            }
+                            style={({ pressed }) => [
+                              styles.treeChild,
+                              { backgroundColor: pressed ? theme.bgHover : 'transparent', borderLeftColor: theme.border },
+                            ]}
+                          >
+                            <Icon name="list" size={16} color={theme.textFaint} />
+                            <Text style={[styles.treeChildLabel, { color: theme.textPrimary }]} numberOfLines={1}>
+                              {project.name}
+                            </Text>
+                            <Pressable
+                              onPress={() =>
+                                setInviteTarget({
+                                  type: InvitationTargetType.Project,
+                                  id: project.id,
+                                  name: project.name,
+                                })
+                              }
+                              hitSlop={10}
+                              accessibilityLabel={`Share ${project.name}`}
+                              style={styles.shareBtn}
+                            >
+                              <Icon name="people" size={17} color={theme.textFaint} />
+                            </Pressable>
+                          </Pressable>
+                        ))
+                    : null}
+                </View>
+              );
+            })
+          : null}
+
+        {spacesOpen && visible.length === 0 ? (
+          <Text style={[styles.treeEmpty, { color: theme.textFaint }]}>
+            {query ? 'No spaces match your search.' : 'No spaces yet — tap + to create one.'}
+          </Text>
+        ) : null}
+      </ScrollView>
+
+      <InviteSheet visible={!!inviteTarget} target={inviteTarget} onClose={() => setInviteTarget(null)} />
+
+      <Sheet visible={switcherOpen} title="Spaces" onClose={() => setSwitcherOpen(false)}>
+        <Pressable
+          onPress={() => selectSpace(null)}
+          style={({ pressed }) => [
+            styles.switchRow,
+            { borderBottomColor: theme.border, backgroundColor: pressed ? theme.bgHover : 'transparent' },
+          ]}
+        >
+          <Tile text={WORKSPACE.glyph} color={WORKSPACE.color} size={34} />
+          <View style={styles.switchText}>
+            <Text
+              style={[styles.switchName, { color: selectedSpaceId === null ? theme.accent : theme.textPrimary }]}
+              numberOfLines={1}
+            >
+              {WORKSPACE.name}
+            </Text>
+            <Text style={[styles.switchSub, { color: theme.textSecondary }]}>All spaces · {spaces.length}</Text>
+          </View>
+          {selectedSpaceId === null ? <Icon name="check" size={19} color={theme.accent} /> : null}
+        </Pressable>
+
+        {spaces.map((space) => {
+          const active = selectedSpaceId === space.id;
+          return (
+            <Pressable
+              key={space.id}
+              onPress={() => selectSpace(space)}
+              style={({ pressed }) => [
+                styles.switchRow,
+                { borderBottomColor: theme.border, backgroundColor: pressed ? theme.bgHover : 'transparent' },
+              ]}
+            >
+              <Tile text={glyphFor(space.name, space.icon)} color={space.color || theme.accent} size={34} />
+              <View style={styles.switchText}>
+                <Text
+                  style={[styles.switchName, { color: active ? theme.accent : theme.textPrimary }]}
+                  numberOfLines={1}
+                >
+                  {space.name}
+                </Text>
+                <Text style={[styles.switchSub, { color: theme.textSecondary }]} numberOfLines={1}>
+                  {projects[space.id]?.length ? `${projects[space.id].length} lists` : space.description || 'Space'}
+                </Text>
+              </View>
+              {active ? <Icon name="check" size={19} color={theme.accent} /> : null}
+            </Pressable>
+          );
+        })}
+
+        <View style={{ marginTop: 18 }}>
+          <PrimaryButton
+            label="Create Space"
+            onPress={() => {
+              setSwitcherOpen(false);
+              setCreating(true);
+            }}
+          />
+        </View>
+      </Sheet>
+
+      <Sheet visible={creating} title="Create Space" onClose={() => setCreating(false)}>
+        <Field label="Name" value={name} onChangeText={setName} placeholder="Marketing" autoFocus />
+        <Field
+          label="Description (optional)"
+          value={description}
+          onChangeText={setDescription}
+          placeholder="What is this space for?"
+          multiline
+        />
+        <Text style={[styles.pickerLabel, { color: theme.textSecondary }]}>Colour</Text>
+        <View style={styles.swatches}>
+          {SPACE_COLORS.map((c) => (
+            <Pressable
+              key={c}
+              onPress={() => setColor(c)}
+              accessibilityLabel={`Colour ${c}`}
+              style={[styles.swatch, { backgroundColor: c, borderColor: color === c ? theme.textPrimary : 'transparent' }]}
+            />
+          ))}
+        </View>
+        {formError ? <Chip text={formError} color={theme.danger} /> : null}
+        <View style={{ marginTop: 16 }}>
+          <PrimaryButton label="Create Space" onPress={submit} disabled={!name.trim()} busy={busy} />
+        </View>
+      </Sheet>
+    </SafeAreaView>
+  );
+}
+
+function QuickCard({
+  icon,
+  title,
+  caption,
+  onPress,
+}: {
+  icon: IconName;
+  title: string;
+  caption: string;
+  onPress: () => void;
+}) {
+  const theme = useTheme();
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.card, { backgroundColor: theme.bgCanvas, opacity: pressed ? 0.7 : 1 }]}
+    >
+      <Icon name={icon} size={20} color={theme.textSecondary} />
+      <Text style={[styles.cardTitle, { color: theme.textPrimary }]}>{title}</Text>
+      <Text style={[styles.cardCaption, { color: theme.textSecondary }]}>{caption}</Text>
+    </Pressable>
+  );
+}
+
+const styles = StyleSheet.create({
+  header: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 10 },
+  workspaceBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  workspace: { flexShrink: 1, fontSize: 19, fontWeight: '700' },
+  searchWrap: { paddingHorizontal: 16, paddingBottom: 6 },
+  search: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 12, paddingHorizontal: 14, height: 44 },
+  searchInput: { flex: 1, fontSize: 15, paddingVertical: 0 },
+  body: { paddingHorizontal: 16, paddingBottom: 170 },
+  cards: { gap: 10, paddingVertical: 12, paddingRight: 4 },
+  card: { width: 124, borderRadius: 14, padding: 14, gap: 4 },
+  cardTitle: { fontSize: 14, fontWeight: '700' },
+  cardCaption: { fontSize: 12 },
+  divider: { height: StyleSheet.hairlineWidth, marginTop: 4 },
+  treeRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 11, borderRadius: 8, paddingHorizontal: 4 },
+  caret: { width: 14, alignItems: 'center' },
+  treeLabel: { flex: 1, fontSize: 15, fontWeight: '600' },
+  shareBtn: { padding: 4 },
+  treeChild: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 10,
+    paddingLeft: 18,
+    marginLeft: 17,
+    borderLeftWidth: 1,
+  },
+  treeChildLabel: { flex: 1, fontSize: 14 },
+  treeEmpty: { fontSize: 13, paddingVertical: 10, paddingLeft: 40 },
+  switchRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth },
+  switchText: { flex: 1, gap: 2 },
+  switchName: { fontSize: 15, fontWeight: '700' },
+  switchSub: { fontSize: 12 },
+  pickerLabel: { fontSize: 13, fontWeight: '600', marginBottom: 8 },
+  swatches: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  swatch: { width: 32, height: 32, borderRadius: 16, borderWidth: 2 },
+});

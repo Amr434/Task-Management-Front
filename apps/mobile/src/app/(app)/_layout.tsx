@@ -1,20 +1,28 @@
-import { Stack } from 'expo-router';
+import { Tabs } from 'expo-router';
 
+import { FloatingTabBar } from '@/components/tab-bar';
+import { useRealtimeInvitations } from '@/features/invitations/useRealtimeInvitations';
 import { useTheme } from '@/theme';
 
 export default function AppLayout() {
   const theme = useTheme();
 
+  // Opened once for the whole signed-in session, and reconnected whenever the
+  // app returns to the foreground.
+  useRealtimeInvitations();
+
   return (
-    <Stack
+    <Tabs
+      tabBar={(props) => <FloatingTabBar {...props} />}
       screenOptions={{
-        headerStyle: { backgroundColor: theme.bgMain },
-        headerTintColor: theme.textPrimary,
-        headerTitleStyle: { color: theme.textPrimary },
-        contentStyle: { backgroundColor: theme.bgMain },
+        headerShown: false,
+        sceneStyle: { backgroundColor: theme.bgMain },
       }}
     >
-      <Stack.Screen name="index" options={{ title: 'Spaces' }} />
-    </Stack>
+      <Tabs.Screen name="(spaces)" options={{ title: 'Home' }} />
+      <Tabs.Screen name="my-tasks" options={{ title: 'My Tasks' }} />
+      <Tabs.Screen name="inbox" options={{ title: 'Inbox' }} />
+      <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
+    </Tabs>
   );
 }

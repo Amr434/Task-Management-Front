@@ -1,10 +1,10 @@
 import { create } from 'zustand';
 import { HubConnection, HubConnectionBuilder, ILogger, LogLevel } from '@microsoft/signalr';
-import { getApiBaseUrl } from '@task/core/services/config';
-import { refreshAccessToken } from '@task/core/services/apiClient';
-import { useAuthStore } from '@task/core/features/auth/store/useAuthStore';
-import { Invitation } from '@task/core/features/invitations/types';
-import { invitationsApi } from '@task/core/features/invitations/api';
+import { getApiBaseUrl } from '../../../services/config';
+import { refreshAccessToken } from '../../../services/apiClient';
+import { useAuthStore } from '../../auth/store/useAuthStore';
+import { Invitation } from '../types';
+import { invitationsApi } from '../api';
 
 // Resolved at connect time, not module scope: the app injects the real base URL
 // during startup, which may happen after this module is first imported.
