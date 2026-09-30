@@ -55,6 +55,9 @@ export default function RootLayout() {
             name="description"
             options={{ headerShown: false, animation: 'slide_from_bottom' }}
           />
+          {/* Admins and the Super Admin only (opened from Profile). */}
+          <Stack.Screen name="users" options={{ headerShown: false }} />
+          <Stack.Screen name="replies" options={{ headerShown: false }} />
         </Stack.Protected>
 
         <Stack.Protected guard={!signedIn}>

@@ -41,3 +41,29 @@ export const deleteComment = async (commentId: number): Promise<void> => {
 export const getAssignedComments = async (): Promise<CommentItem[]> => {
   return apiClient.get<CommentItem[], CommentItem[]>('/Comments/assigned');
 };
+
+// "Replies": all comments on the tasks the current user is assigned to
+// (including comments from before they were added), newest first.
+export const getReplies = async (): Promise<CommentItem[]> => {
+  return apiClient.get<CommentItem[], CommentItem[]>('/Comments/replies');
+};
+
+// ---- Unread replies (the badge on Replies) ----
+
+// How many replies the current user hasn't opened yet.
+export const getUnreadRepliesCount = async (): Promise<number> => {
+  return apiClient.get<number, number>('/Comments/replies/unread-count');
+};
+
+// Opening a task marks all of its comments as read.
+export const markTaskCommentsRead = async (taskId: number): Promise<number> => {
+  return apiClient.post<{}, number>(`/Tasks/${taskId}/comments/read`, {});
+};
+
+export const markCommentRead = async (commentId: number): Promise<number> => {
+  return apiClient.post<{}, number>(`/Comments/${commentId}/read`, {});
+};
+
+export const markAllRepliesRead = async (): Promise<number> => {
+  return apiClient.post<{}, number>('/Comments/replies/read', {});
+};
