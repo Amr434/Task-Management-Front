@@ -43,6 +43,16 @@ const NAMES = {
   statusDone: 'checkmark-circle',
   logout: 'log-out-outline',
   settings: 'settings-outline',
+  back: 'chevron-back',
+  key: 'key-outline',
+  shieldOn: 'shield-checkmark-outline',
+  shieldOff: 'shield-outline',
+  personAdd: 'person-add-outline',
+  personRemove: 'person-remove-outline',
+  camera: 'camera',
+  send: 'arrow-up',
+  replies: 'chatbubbles-outline',
+  checkAll: 'checkmark-done-outline',
 } as const;
 
 export type IconName = keyof typeof NAMES;

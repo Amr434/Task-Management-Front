@@ -49,6 +49,8 @@ interface AuthState {
   setSession: (accessToken: string, refreshToken: string, user: AuthUser, mustChangePassword: boolean) => void;
   clearSession: () => void;
   setMustChangePassword: (v: boolean) => void;
+  // Replace the signed-in user's details (e.g. after changing the profile picture).
+  updateUser: (user: AuthUser) => void;
   setHydrated: () => void;
 }
 
@@ -88,6 +90,8 @@ export const useAuthStore = create<AuthState>()(
         set({ user: null, accessToken: null, refreshToken: null, mustChangePassword: false }),
 
       setMustChangePassword: (v) => set({ mustChangePassword: v }),
+
+      updateUser: (user) => set({ user }),
 
       setHydrated: () => set({ hydrated: true }),
     }),

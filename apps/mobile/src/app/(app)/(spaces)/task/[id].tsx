@@ -37,6 +37,7 @@ import {
 import { DatePickerSheet } from '@/components/date-picker-sheet';
 import { DescriptionField } from '@/components/description-field';
 import { Icon } from '@/components/icon';
+import { TaskComments } from '@/components/task-comments';
 import { TagPill, TagSheet } from '@/components/tag-sheet';
 import { Chip, ErrorState, Field, Loading, PrimaryButton, Sheet, SheetOption, StatusGlyph } from '@/components/ui';
 import { STATUS_META, STATUS_ORDER, formatDueDate, nextStatus } from '@/features/tasks/display';
@@ -384,6 +385,8 @@ export default function TaskScreen() {
           <Text style={[styles.subAddText, { color: theme.accent }]}>Add subtask</Text>
         </Pressable>
       </View>
+
+      <TaskComments taskId={taskId} />
 
       <Pressable onPress={confirmDelete} style={({ pressed }) => [styles.delete, { opacity: pressed ? 0.6 : 1 }]}>
         <Text style={{ color: theme.danger, fontWeight: '600' }}>Delete task</Text>

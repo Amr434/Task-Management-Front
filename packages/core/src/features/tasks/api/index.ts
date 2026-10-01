@@ -24,6 +24,11 @@ export const getTasksByProject = async (projectId: number): Promise<TaskItem[]> 
   return apiClient.get<TaskItem[], TaskItem[]>(`/Tasks/project/${projectId}`);
 };
 
+// Search box: by task number ("2", "#2", "task 2") or name, among tasks the user can access.
+export const searchTasks = async (query: string): Promise<TaskItem[]> => {
+  return apiClient.get<TaskItem[], TaskItem[]>('/Tasks/search', { params: { q: query } });
+};
+
 export const getAssignedTasks = async (): Promise<TaskItem[]> => {
   return apiClient.get<TaskItem[], TaskItem[]>('/Tasks/assigned');
 };

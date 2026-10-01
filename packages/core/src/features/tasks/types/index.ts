@@ -10,6 +10,8 @@ export interface User {
   firstName: string;
   lastName: string;
   email: string;
+  // Profile picture, relative to the API base URL (see avatarSrc).
+  avatarUrl?: string | null;
 }
 
 // Two-letter initials from a user's name (falls back to the email).

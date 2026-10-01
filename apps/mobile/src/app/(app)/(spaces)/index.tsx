@@ -17,8 +17,12 @@ import type { Space } from '@task/core/features/spaces/types';
 import { getProjectsBySpace } from '@task/core/features/projects/api';
 import type { Project } from '@task/core/features/projects/types';
 import { InvitationTargetType } from '@task/core/features/invitations/types';
+import { useUnreadReplies } from '@task/core/features/comments/hooks/useUnreadReplies';
+import { badgeLabel, refreshUnreadReplies } from '@task/core/features/comments/unread';
+import { en } from '@task/core/i18n/dictionaries/en';
 
-import { Chip, ErrorState, Field, Loading, PrimaryButton, SectionHeader, Sheet, Tile, glyphFor } from '@/components/ui';
+import { Avatar, Chip, ErrorState, Field, Loading, PrimaryButton, SectionHeader, Sheet, Tile, glyphFor } from '@/components/ui';
+import { TaskSearchResults } from '@/components/task-search-results';
 import { Icon, type IconName } from '@/components/icon';
 import { InviteSheet, type InviteTarget } from '@/components/invite-sheet';
 import { useTheme } from '@/theme';
@@ -32,6 +36,8 @@ export default function HomeScreen() {
   const theme = useTheme();
   const user = useAuthStore((s) => s.user);
   const params = useLocalSearchParams<{ new?: string }>();
+  // Unread replies: the red badge on the Replies card (updates live).
+  const unreadReplies = useUnreadReplies();
 
   const [spaces, setSpaces] = useState<Space[]>([]);
   const [loading, setLoading] = useState(true);
@@ -69,6 +75,7 @@ export default function HomeScreen() {
   useFocusEffect(
     useCallback(() => {
       load().finally(() => setLoading(false));
+      refreshUnreadReplies();
     }, [load])
   );
 
@@ -137,7 +144,6 @@ export default function HomeScreen() {
     return !q || s.name.toLowerCase().includes(q);
   });
 
-  const initials = `${user?.firstName?.[0] ?? ''}${user?.lastName?.[0] ?? ''}`.toUpperCase() || '?';
 
   if (loading) return <Loading />;
   if (error) return <ErrorState message={error} onRetry={onRefresh} />;
@@ -162,7 +168,13 @@ export default function HomeScreen() {
           <Icon name="chevronDown" size={17} color={theme.textSecondary} />
         </Pressable>
         <Pressable onPress={() => router.push('/profile')} accessibilityLabel="Profile">
-          <Tile text={initials} color={theme.accent} size={32} />
+          <Avatar
+            firstName={user?.firstName}
+            lastName={user?.lastName}
+            avatarUrl={user?.avatarUrl}
+            color={theme.accent}
+            size={32}
+          />
         </Pressable>
       </View>
 
@@ -171,7 +183,7 @@ export default function HomeScreen() {
           <Icon name="search" size={18} color={theme.textFaint} />
           <TextInput
             style={[styles.searchInput, { color: theme.textPrimary }]}
-            placeholder="Search"
+            placeholder="Search spaces and tasks"
             placeholderTextColor={theme.textFaint}
             value={query}
             onChangeText={setQuery}
@@ -183,11 +195,21 @@ export default function HomeScreen() {
         contentContainerStyle={styles.body}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.accent} />}
       >
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.cards}>
+        <TaskSearchResults query={query} />
+
+        {/* Four equal cards that always fit the screen width (no sideways scrolling). */}
+        <View style={styles.cards}>
           <QuickCard icon="tasks" title="Assigned" caption="to me" onPress={() => router.push('/my-tasks')} />
           <QuickCard icon="clock" title="Today" caption="& overdue" onPress={() => router.push('/my-tasks')} />
-          <QuickCard icon="inbox" title="Inbox" caption="invitations" onPress={() => router.push('/inbox')} />
-        </ScrollView>
+          <QuickCard icon="inbox" title="Inbox" caption="invites" onPress={() => router.push('/inbox')} />
+          <QuickCard
+            icon="replies"
+            title="Replies"
+            caption="comments"
+            badge={unreadReplies}
+            onPress={() => router.push('/replies')}
+          />
+        </View>
 
         <View style={[styles.divider, { backgroundColor: theme.border }]} />
 
@@ -380,22 +402,35 @@ function QuickCard({
   icon,
   title,
   caption,
+  badge = 0,
   onPress,
 }: {
   icon: IconName;
   title: string;
   caption: string;
+  // Unread count shown as a red badge on the corner (hidden at 0).
+  badge?: number;
   onPress: () => void;
 }) {
   const theme = useTheme();
   return (
     <Pressable
       onPress={onPress}
+      accessibilityLabel={badge > 0 ? `${title}, ${en.unreadRepliesCount.replace('{count}', String(badge))}` : title}
       style={({ pressed }) => [styles.card, { backgroundColor: theme.bgCanvas, opacity: pressed ? 0.7 : 1 }]}
     >
       <Icon name={icon} size={20} color={theme.textSecondary} />
-      <Text style={[styles.cardTitle, { color: theme.textPrimary }]}>{title}</Text>
-      <Text style={[styles.cardCaption, { color: theme.textSecondary }]}>{caption}</Text>
+      {badge > 0 ? (
+        <View style={[styles.badge, { backgroundColor: theme.danger, borderColor: theme.bgMain }]}>
+          <Text style={styles.badgeText}>{badgeLabel(badge)}</Text>
+        </View>
+      ) : null}
+      <Text style={[styles.cardTitle, { color: theme.textPrimary }]} numberOfLines={1} adjustsFontSizeToFit>
+        {title}
+      </Text>
+      <Text style={[styles.cardCaption, { color: theme.textSecondary }]} numberOfLines={1} adjustsFontSizeToFit>
+        {caption}
+      </Text>
     </Pressable>
   );
 }
@@ -408,10 +443,23 @@ const styles = StyleSheet.create({
   search: { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: 12, paddingHorizontal: 14, height: 44 },
   searchInput: { flex: 1, fontSize: 15, paddingVertical: 0 },
   body: { paddingHorizontal: 16, paddingBottom: 170 },
-  cards: { gap: 10, paddingVertical: 12, paddingRight: 4 },
-  card: { width: 124, borderRadius: 14, padding: 14, gap: 4 },
-  cardTitle: { fontSize: 14, fontWeight: '700' },
-  cardCaption: { fontSize: 12 },
+  cards: { flexDirection: 'row', gap: 8, paddingVertical: 12 },
+  card: { flex: 1, minWidth: 0, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 8, gap: 4, alignItems: 'center' },
+  cardTitle: { fontSize: 13, fontWeight: '700' },
+  cardCaption: { fontSize: 11 },
+  badge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    paddingHorizontal: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
   divider: { height: StyleSheet.hairlineWidth, marginTop: 4 },
   treeRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 11, borderRadius: 8, paddingHorizontal: 4 },
   caret: { width: 14, alignItems: 'center' },

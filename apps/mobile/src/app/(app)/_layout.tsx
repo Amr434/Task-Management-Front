@@ -1,5 +1,7 @@
+import { View } from 'react-native';
 import { Tabs } from 'expo-router';
 
+import { CommentNotifications } from '@/components/comment-notifications';
 import { FloatingTabBar } from '@/components/tab-bar';
 import { useRealtimeInvitations } from '@/features/invitations/useRealtimeInvitations';
 import { useTheme } from '@/theme';
@@ -12,6 +14,7 @@ export default function AppLayout() {
   useRealtimeInvitations();
 
   return (
+    <View style={{ flex: 1 }}>
     <Tabs
       tabBar={(props) => <FloatingTabBar {...props} />}
       screenOptions={{
@@ -24,5 +27,8 @@ export default function AppLayout() {
       <Tabs.Screen name="inbox" options={{ title: 'Inbox' }} />
       <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
     </Tabs>
+    {/* Live "new comment" pop-ups, above every tab. */}
+    <CommentNotifications />
+    </View>
   );
 }

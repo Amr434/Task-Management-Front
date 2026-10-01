@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { HubConnection, HubConnectionBuilder, ILogger, LogLevel } from '@microsoft/signalr';
+import type { CommentItem } from '../../comments/types';
+import { useNotificationStore } from '../../../store/useNotificationStore';
 import { getApiBaseUrl } from '../../../services/config';
 import { refreshAccessToken } from '../../../services/apiClient';
 import { useAuthStore } from '../../auth/store/useAuthStore';
@@ -98,6 +100,11 @@ export const useInvitationStore = create<InvitationState>((set, get) => ({
 
     connection.on('ReceiveInvitation', (invitation: Invitation) => {
       get().addInvitation(invitation);
+    });
+
+    // Someone commented on a task this user can see: show a notification.
+    connection.on('CommentAdded', (comment: CommentItem) => {
+      useNotificationStore.getState().pushComment(comment);
     });
 
     connection.on('InvitationResponded', (invitation: Invitation) => {

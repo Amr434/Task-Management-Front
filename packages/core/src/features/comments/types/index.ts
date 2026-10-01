@@ -15,6 +15,8 @@ export interface CommentItem {
   projectId: number;
   projectName?: string;
   spaceName?: string;
+  // Replies feed only: false = the current user hasn't opened it yet.
+  isRead?: boolean;
 }
 
 // Compact relative timestamp for comment rows ("just now", "21m", "3h", "2d",
