@@ -98,7 +98,7 @@ export default function TodayAndOverduePage() {
           onClick={() => setCollapsed((prev) => ({ ...prev, [bucket]: !prev[bucket] }))}
         >
           {isCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
-          <span style={{ fontWeight: 'bold' }}>{BUCKET_LABELS[bucket]}</span>
+          <span style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>{BUCKET_LABELS[bucket]}</span>
           <span style={{ color: bucket === 'overdue' && items.length > 0 ? '#e2445c' : 'var(--text-secondary)', fontSize: '12px' }}>
             {items.length}
           </span>
@@ -127,7 +127,7 @@ export default function TodayAndOverduePage() {
                         onClick={(e) => { e.stopPropagation(); markComplete(task); }}
                         style={{ width: '14px', height: '14px', border: '1px solid var(--text-secondary)', borderRadius: '50%', background: task.status === TaskStatus.Complete ? '#00c875' : 'transparent', cursor: 'pointer', flexShrink: 0, padding: 0 }}
                       />
-                      <span style={{ fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <span style={{ fontSize: '14px', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {task.title}
                       </span>
                       {crumb && (
@@ -163,8 +163,9 @@ export default function TodayAndOverduePage() {
       </div>
 
       <div style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
-        <div style={{ backgroundColor: '#212224', borderRadius: '8px', padding: '20px' }}>
-          <h2 style={{ fontSize: '18px', margin: '0 0 16px 0' }}>{t.myWork}</h2>
+        {/* Theme colours (not a fixed dark grey) so the text stays readable in light and dark themes. */}
+        <div style={{ backgroundColor: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '20px', color: 'var(--text-primary)', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.06)' }}>
+          <h2 style={{ fontSize: '18px', margin: '0 0 16px 0', color: 'var(--text-primary)' }}>{t.myWork}</h2>
 
           <div style={{ display: 'flex', gap: '16px', borderBottom: '1px solid var(--border-color)', marginBottom: '24px' }}>
             {(['todo', 'done'] as const).map((tabKey) => (
@@ -172,7 +173,7 @@ export default function TodayAndOverduePage() {
                 key={tabKey}
                 onClick={() => setTab(tabKey)}
                 style={tab === tabKey
-                  ? { fontWeight: 'bold', color: 'var(--text-primary)', borderBottom: '2px solid var(--text-primary)', paddingBottom: '8px', marginBottom: '-1px', cursor: 'pointer' }
+                  ? { fontWeight: 'bold', color: 'var(--accent-color)', borderBottom: '2px solid var(--accent-color)', paddingBottom: '8px', marginBottom: '-1px', cursor: 'pointer' }
                   : { color: 'var(--text-secondary)', paddingBottom: '8px', cursor: 'pointer' }}
               >
                 {tabKey === 'todo' ? t.toDo : t.done}

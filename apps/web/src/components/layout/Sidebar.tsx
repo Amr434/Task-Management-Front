@@ -2,13 +2,17 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { ChevronDown, ChevronRight, Plus, CheckSquare, Network, MoreHorizontal, Pencil, Link2, Copy, Trash2, FolderInput, BarChart3, UserCircle, CalendarClock, User, Inbox, MessageSquareReply, MessageSquare } from 'lucide-react';
+import { ChevronDown, ChevronRight, Plus, CheckSquare, Network, MoreHorizontal, Pencil, Link2, Copy, Trash2, FolderInput, BarChart3, UserCircle, CalendarClock, User, Inbox, MessageSquareReply, MessageSquare, Users } from 'lucide-react';
+import { useAuthStore } from '@task/core/features/auth/store/useAuthStore';
+import { canManageUsers } from '@task/core/features/auth/types';
 import { getSpaces, deleteSpace, duplicateSpace } from '@task/core/features/spaces/api';
 import { getProjectsBySpace, deleteProject, duplicateProject, updateProject } from '@task/core/features/projects/api';
 import { Space } from '@task/core/features/spaces/types';
 import { Project } from '@task/core/features/projects/types';
 import { useI18n } from '@/contexts/I18nContext';
 import { useInvitationStore } from '@task/core/features/invitations/store/useInvitationStore';
+import { useUnreadReplies } from '@task/core/features/comments/hooks/useUnreadReplies';
+import { badgeLabel } from '@task/core/features/comments/unread';
 import { CreateSpaceModal } from '@/features/spaces/components/CreateSpaceModal';
 import { SpaceIcon } from '@/features/spaces/components/SpaceIcon';
 import { CreateProjectModal } from '@/features/projects/components/CreateProjectModal';
@@ -19,6 +23,10 @@ export const Sidebar = () => {
   const router = useRouter();
   const pathname = usePathname();
   const { t, language, setLanguage } = useI18n();
+  // Unread replies, shown as a badge on "Replies" (updates live).
+  const unreadReplies = useUnreadReplies();
+  // Only Admins and the Super Admin see the user-management link.
+  const currentRole = useAuthStore((s) => s.user?.role);
 
   const [spaces, setSpaces] = useState<Space[]>([]);
   const [expandedSpaces, setExpandedSpaces] = useState<Record<number, boolean>>({});
@@ -282,6 +290,11 @@ export const Sidebar = () => {
           </div>
           <div className="nav-item" onClick={() => router.push('/replies')}>
             <MessageSquareReply size={16} /> <span className="item-name">{t.replies}</span>
+            {unreadReplies > 0 && (
+              <span className="nav-badge" aria-label={t.unreadRepliesCount.replace('{count}', String(unreadReplies))}>
+                {badgeLabel(unreadReplies)}
+              </span>
+            )}
           </div>
           <div className="nav-item" onClick={() => router.push('/assigned-comments')}>
             <MessageSquare size={16} /> <span className="item-name">{t.assignedComments}</span>
@@ -332,6 +345,11 @@ export const Sidebar = () => {
           <div className={`nav-item ${pathname.startsWith('/dashboards') ? 'active' : ''}`} onClick={() => router.push('/dashboards')}>
             <BarChart3 size={16} /> <span className="item-name">{t.dashboards || 'Dashboard'}</span>
           </div>
+          {canManageUsers(currentRole) && (
+            <div className={`nav-item ${pathname.startsWith('/users') ? 'active' : ''}`} onClick={() => router.push('/users')}>
+              <Users size={16} /> <span className="item-name">{t.manageUsers}</span>
+            </div>
+          )}
         </div>
 
         <div className="nav-section">

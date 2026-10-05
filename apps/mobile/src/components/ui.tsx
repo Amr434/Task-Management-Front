@@ -12,6 +12,9 @@ import {
   View,
 } from 'react-native';
 
+import { Image } from 'expo-image';
+import { avatarSrc } from '@task/core/features/users/avatar';
+
 import { Icon } from '@/components/icon';
 import { useTheme, type Theme } from '@/theme';
 
@@ -209,6 +212,8 @@ export function Field({
   placeholder,
   multiline,
   autoFocus,
+  keyboardType,
+  autoCapitalize,
 }: {
   label: string;
   value: string;
@@ -216,6 +221,8 @@ export function Field({
   placeholder?: string;
   multiline?: boolean;
   autoFocus?: boolean;
+  keyboardType?: 'default' | 'email-address';
+  autoCapitalize?: 'none' | 'sentences' | 'words';
 }) {
   const theme = useTheme();
   return (
@@ -233,6 +240,8 @@ export function Field({
         placeholderTextColor={theme.textFaint}
         multiline={multiline}
         autoFocus={autoFocus}
+        keyboardType={keyboardType}
+        autoCapitalize={autoCapitalize}
       />
     </View>
   );
@@ -285,6 +294,33 @@ export function Tile({ text, color, size = 32 }: { text: string; color: string; 
       <Text style={[s.tileText, { fontSize: size * 0.42 }]} numberOfLines={1}>
         {text}
       </Text>
+    </View>
+  );
+}
+
+/** A user's profile picture, or their initials in a coloured circle. */
+export function Avatar({
+  firstName = '',
+  lastName = '',
+  avatarUrl,
+  color,
+  size = 32,
+}: {
+  firstName?: string;
+  lastName?: string;
+  avatarUrl?: string | null;
+  color: string;
+  size?: number;
+}) {
+  const src = avatarSrc(avatarUrl);
+  const round = { width: size, height: size, borderRadius: size / 2 };
+  if (src) {
+    return <Image source={{ uri: src }} style={round} contentFit="cover" transition={150} />;
+  }
+  const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase() || '?';
+  return (
+    <View style={[s.tile, round, { backgroundColor: color }]}>
+      <Text style={[s.tileText, { fontSize: size * 0.38 }]}>{initials}</Text>
     </View>
   );
 }

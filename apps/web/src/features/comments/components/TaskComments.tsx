@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { CheckCircle, UserPlus, X, Check, Trash2 } from 'lucide-react';
 import { CommentItem, timeAgo } from '@task/core/features/comments/types';
-import { getTaskComments, createTaskComment, assignComment, resolveComment, reopenComment, unassignComment, deleteComment } from '@task/core/features/comments/api';
+import { createTaskComment, assignComment, resolveComment, reopenComment, unassignComment, deleteComment } from '@task/core/features/comments/api';
 import { getProjectMembers } from '@task/core/features/tasks/api';
 import { User, userDisplayName } from '@task/core/features/tasks/types';
 import { Avatar } from '@/features/tasks/components/TaskFieldMenus';
 import { useAuthStore } from '@task/core/features/auth/store/useAuthStore';
+import { useTaskComments } from '@task/core/features/comments/hooks/useTaskComments';
 import { useI18n } from '@/contexts/I18nContext';
 
 interface TaskCommentsProps {
@@ -16,7 +17,9 @@ interface TaskCommentsProps {
 export const TaskComments: React.FC<TaskCommentsProps> = ({ taskId, projectId }) => {
   const currentUser = useAuthStore((s) => s.user);
   const { t } = useI18n();
-  const [comments, setComments] = useState<CommentItem[]>([]);
+  // Shared hook: loads the comments and refreshes them every few seconds, so
+  // comments written on the mobile app appear here while the task is open.
+  const { comments, setComments } = useTaskComments(taskId);
   const [members, setMembers] = useState<User[]>([]);
   const [newCommentText, setNewCommentText] = useState('');
   const [assignNewTo, setAssignNewTo] = useState<number | null>(null);
@@ -25,9 +28,8 @@ export const TaskComments: React.FC<TaskCommentsProps> = ({ taskId, projectId })
   const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    loadComments();
     loadMembers();
-  }, [taskId, projectId]);
+  }, [projectId]);
 
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
@@ -39,15 +41,6 @@ export const TaskComments: React.FC<TaskCommentsProps> = ({ taskId, projectId })
     document.addEventListener('mousedown', onDocClick);
     return () => document.removeEventListener('mousedown', onDocClick);
   }, []);
-
-  const loadComments = async () => {
-    try {
-      const data = await getTaskComments(taskId);
-      setComments(data);
-    } catch (e) {
-      console.error('Failed to load comments', e);
-    }
-  };
 
   const loadMembers = async () => {
     try {

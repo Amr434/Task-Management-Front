@@ -2,12 +2,15 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, Settings, LogOut, Palette } from 'lucide-react';
+import { LogOut, Palette, Camera } from 'lucide-react';
 import { ThemeModal } from '@/features/theme/components/ThemeModal';
 import { useAuthStore } from '@task/core/features/auth/store/useAuthStore';
 import { useI18n } from '@/contexts/I18nContext';
 import { useInvitationStore } from '@task/core/features/invitations/store/useInvitationStore';
 import { InvitationBell } from './InvitationBell';
+import { TaskSearch } from '@/features/tasks/components/TaskSearch';
+import { UserAvatar } from '@/components/ui/UserAvatar';
+import { ProfilePictureModal } from '@/features/users/components/ProfilePictureModal';
 
 export const Topbar = () => {
   const router = useRouter();
@@ -17,6 +20,7 @@ export const Topbar = () => {
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [themeOpen, setThemeOpen] = useState(false);
+  const [pictureOpen, setPictureOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -27,10 +31,6 @@ export const Topbar = () => {
     document.addEventListener('mousedown', onDown);
     return () => document.removeEventListener('mousedown', onDown);
   }, [menuOpen]);
-
-  const initials = user
-    ? `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase() || user.email.charAt(0).toUpperCase()
-    : '?';
 
   const handleLogout = async () => {
     setMenuOpen(false);
@@ -46,25 +46,35 @@ export const Topbar = () => {
         <span className="breadcrumbs">{t.breadcrumbHome}</span>
       </div>
       <div className="topbar-right">
-        <div className="search-bar">
-          <Search size={18} className="search-icon" />
-          <input type="text" placeholder={t.searchPlaceholder} />
-        </div>
+        <TaskSearch />
         <InvitationBell />
-        <button className="icon-btn"><Settings size={20} /></button>
         <div className="user-menu" ref={menuRef}>
           <button className="user-avatar-btn" onClick={() => setMenuOpen((v) => !v)} title={user?.email}>
-            <span className="user-avatar">{initials}</span>
+            <UserAvatar firstName={user?.firstName} lastName={user?.lastName} avatarUrl={user?.avatarUrl} />
           </button>
           {menuOpen && (
             <div className="user-menu-popover">
               <div className="user-menu-header">
-                <span className="user-avatar large">{initials}</span>
+                <UserAvatar
+                  firstName={user?.firstName}
+                  lastName={user?.lastName}
+                  avatarUrl={user?.avatarUrl}
+                  className="user-avatar large"
+                />
                 <div className="user-menu-identity">
                   <span className="user-menu-name">{user ? `${user.firstName} ${user.lastName}` : ''}</span>
                   <span className="user-menu-email">{user?.email}</span>
                 </div>
               </div>
+              <button
+                className="user-menu-item"
+                onClick={() => {
+                  setMenuOpen(false);
+                  setPictureOpen(true);
+                }}
+              >
+                <Camera size={14} /> {t.profilePicture}
+              </button>
               <button
                 className="user-menu-item"
                 onClick={() => {
@@ -82,6 +92,7 @@ export const Topbar = () => {
         </div>
       </div>
       {themeOpen && <ThemeModal onClose={() => setThemeOpen(false)} />}
+      {pictureOpen && <ProfilePictureModal onClose={() => setPictureOpen(false)} />}
     </header>
   );
 };
