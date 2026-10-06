@@ -1,0 +1,59 @@
+# Lives in <frontend repo>/deploy. Expected VM layout:
+#   /opt/task-management/frontend   (this repo)
+#   /opt/task-management/backend    (Task-Management-Api repo)
+name: task-management
+
+services:
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"            # Cloudflare Tunnel (or direct) reaches nginx here
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - web
+      - api
+
+  web:
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${PUBLIC_URL}/api
+    restart: unless-stopped
+    expose:
+      - "3000"
+
+  api:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    expose:
+      - "8080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"   # SQL Server runs on the VM itself
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: "Server=host.docker.internal,1433;Database=${DB_NAME};User Id=${DB_USER};Password=${DB_PASSWORD};Encrypt=True;TrustServerCertificate=True;MultipleActiveResultSets=True"
+      Jwt__Key: ${JWT_KEY}
+      # appsettings.json uses a Windows path ("App_Data\attachments"); override for Linux.
+      Attachments__StoragePath: /app/App_Data/attachments
+    volumes:
+      - app_data:/app/App_Data
+
+  # Only started with: docker compose --profile tunnel up -d
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    profiles: ["tunnel"]
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
+    depends_on:
+      - nginx
+
+volumes:
+  app_data:
