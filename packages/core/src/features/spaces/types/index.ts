@@ -4,5 +4,5 @@ export interface Space {
   description?: string;
   color?: string;
   icon?: string;
-  members?: { id: number; name: string; initials: string }[];
+  members?: { id: number; name: string; initials: string; avatarUrl?: string | null }[];
 }

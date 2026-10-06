@@ -11,12 +11,14 @@ import { InvitationBell } from './InvitationBell';
 import { TaskSearch } from '@/features/tasks/components/TaskSearch';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { ProfilePictureModal } from '@/features/users/components/ProfilePictureModal';
+import { usePageTitle } from './usePageTitle';
 
 export const Topbar = () => {
   const router = useRouter();
   const { t } = useI18n();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+  const pageTitle = usePageTitle();
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [themeOpen, setThemeOpen] = useState(false);
@@ -42,8 +44,8 @@ export const Topbar = () => {
   return (
     <header className="topbar">
       <div className="topbar-left">
-        {/* Placeholder for breadcrumbs or context */}
-        <span className="breadcrumbs">{t.breadcrumbHome}</span>
+        {/* The name of the page that is open. */}
+        <div className="page-title">{pageTitle}</div>
       </div>
       <div className="topbar-right">
         <TaskSearch />

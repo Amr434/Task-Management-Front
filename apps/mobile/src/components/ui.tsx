@@ -182,11 +182,14 @@ export function SheetOption({
   label,
   selected,
   color,
+  leading,
   onPress,
 }: {
   label: string;
   selected?: boolean;
   color?: string;
+  // Shown before the label, e.g. a person's profile picture.
+  leading?: ReactNode;
   onPress: () => void;
 }) {
   const theme = useTheme();
@@ -198,6 +201,7 @@ export function SheetOption({
         { borderColor: theme.border, backgroundColor: pressed ? theme.bgHover : 'transparent' },
       ]}
     >
+      {leading}
       {color ? <View style={[s.dot, { backgroundColor: color }]} /> : null}
       <Text style={[s.optionText, { color: theme.textPrimary }]}>{label}</Text>
       {selected ? <Icon name="check" size={18} color={theme.accent} /> : null}

@@ -57,7 +57,8 @@ export default function RootLayout() {
           />
           {/* Admins and the Super Admin only (opened from Profile). */}
           <Stack.Screen name="users" options={{ headerShown: false }} />
-          <Stack.Screen name="replies" options={{ headerShown: false }} />
+          {/* Space and list invitations (opened from the bell on Home). */}
+          <Stack.Screen name="invitations" options={{ headerShown: false }} />
         </Stack.Protected>
 
         <Stack.Protected guard={!signedIn}>

@@ -7,7 +7,7 @@ import { InvitationTargetType } from '@task/core/features/invitations/types';
 import { usersApi } from '@task/core/features/users/api';
 
 import { Icon } from '@/components/icon';
-import { Sheet, Tile } from '@/components/ui';
+import { Avatar, Sheet } from '@/components/ui';
 import { useTheme } from '@/theme';
 
 export interface InviteTarget {
@@ -115,7 +115,13 @@ export function InviteSheet({
           const state = invited[user.id];
           return (
             <View key={user.id} style={[styles.row, { borderBottomColor: theme.border }]}>
-              <Tile text={displayName(user).charAt(0).toUpperCase()} color={theme.accent} size={34} />
+              <Avatar
+                firstName={user.firstName}
+                lastName={user.lastName}
+                avatarUrl={user.avatarUrl}
+                color={theme.accent}
+                size={34}
+              />
               <View style={styles.rowText}>
                 <Text style={[styles.name, { color: theme.textPrimary }]} numberOfLines={1}>
                   {displayName(user)}

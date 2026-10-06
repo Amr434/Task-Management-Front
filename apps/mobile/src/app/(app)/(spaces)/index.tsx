@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -12,12 +13,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useAuthStore } from '@task/core/features/auth/store/useAuthStore';
+import { canManageUsers } from '@task/core/features/auth/types';
+import { useInvitationStore } from '@task/core/features/invitations/store/useInvitationStore';
 import { createSpace, getSpaces } from '@task/core/features/spaces/api';
 import type { Space } from '@task/core/features/spaces/types';
 import { createProject, getProjectsBySpace } from '@task/core/features/projects/api';
 import type { Project } from '@task/core/features/projects/types';
 import { InvitationTargetType } from '@task/core/features/invitations/types';
-import { useUnreadReplies } from '@task/core/features/comments/hooks/useUnreadReplies';
+import { useNotificationStore } from '@task/core/store/useNotificationStore';
 import { badgeLabel, refreshUnreadReplies } from '@task/core/features/comments/unread';
 import { en } from '@task/core/i18n/dictionaries/en';
 
@@ -30,14 +33,21 @@ import { useTheme } from '@/theme';
 const SPACE_COLORS = ['#7b68ee', '#2684ff', '#00c875', '#ffb800', '#e2445c', '#00b4d8', '#ff7b72', '#12a594'];
 
 /** Shown in the header until the user picks a specific space. */
-const WORKSPACE = { name: 'CiSS Egypt', glyph: 'C', color: '#00c875' };
+const WORKSPACE = { name: 'CiSS Egypt' };
+
+// Opens the My Tasks tab on a given filter. `at` changes on every press so the
+// screen applies the filter again even if it was already asked for.
+const openMyTasks = (filter: 'open' | 'today') =>
+  router.push({ pathname: '/my-tasks', params: { filter, at: String(Date.now()) } });
 
 export default function HomeScreen() {
   const theme = useTheme();
   const user = useAuthStore((s) => s.user);
   const params = useLocalSearchParams<{ new?: string }>();
   // Unread replies: the red badge on the Replies card (updates live).
-  const unreadReplies = useUnreadReplies();
+  const unreadReplies = useNotificationStore((st) => st.unreadReplies);
+  // Pending space/list invitations: the badge on the bell.
+  const pendingInvitations = useInvitationStore((st) => st.pendingInvitations.length);
 
   const [spaces, setSpaces] = useState<Space[]>([]);
   const [loading, setLoading] = useState(true);
@@ -180,15 +190,38 @@ export default function HomeScreen() {
           accessibilityLabel="Switch space"
           style={({ pressed }) => [styles.workspaceBtn, { opacity: pressed ? 0.6 : 1 }]}
         >
-          <Tile
-            text={selectedSpace ? glyphFor(selectedSpace.name, selectedSpace.icon) : WORKSPACE.glyph}
-            color={selectedSpace ? selectedSpace.color || theme.accent : WORKSPACE.color}
-            size={32}
-          />
+          {selectedSpace ? (
+            <Tile
+              text={glyphFor(selectedSpace.name, selectedSpace.icon)}
+              color={selectedSpace.color || theme.accent}
+              size={32}
+            />
+          ) : (
+            // The whole workspace: the company logo.
+            <Image
+              source={require('../../../../assets/images/ciss-logo.png')}
+              style={styles.logo}
+              accessibilityLabel="CISS"
+            />
+          )}
           <Text style={[styles.workspace, { color: theme.textPrimary }]} numberOfLines={1}>
             {selectedSpace ? selectedSpace.name : WORKSPACE.name}
           </Text>
           <Icon name="chevronDown" size={17} color={theme.textSecondary} />
+        </Pressable>
+        {/* Space and list invitations, like the bell at the top of the web app. */}
+        <Pressable
+          onPress={() => router.push('/invitations')}
+          hitSlop={8}
+          accessibilityLabel={pendingInvitations > 0 ? `Invitations, ${pendingInvitations} pending` : 'Invitations'}
+          style={({ pressed }) => [styles.bell, { opacity: pressed ? 0.6 : 1 }]}
+        >
+          <Icon name="bell" size={24} color={theme.textSecondary} />
+          {pendingInvitations > 0 ? (
+            <View style={[styles.bellBadge, { backgroundColor: theme.danger, borderColor: theme.bgMain }]}>
+              <Text style={styles.badgeText}>{pendingInvitations > 9 ? '9+' : pendingInvitations}</Text>
+            </View>
+          ) : null}
         </Pressable>
         <Pressable onPress={() => router.push('/profile')} accessibilityLabel="Profile">
           <Avatar
@@ -220,11 +253,8 @@ export default function HomeScreen() {
       >
         <TaskSearchResults query={query} />
 
-        {/* Four equal cards that always fit the screen width (no sideways scrolling). */}
+        {/* Equal cards that always fit the screen width (no sideways scrolling). */}
         <View style={styles.cards}>
-          <QuickCard icon="tasks" title="Assigned" caption="to me" onPress={() => router.push('/my-tasks')} />
-          <QuickCard icon="clock" title="Today" caption="& overdue" onPress={() => router.push('/my-tasks')} />
-          <QuickCard icon="inbox" title="Inbox" caption="invites" onPress={() => router.push('/inbox')} />
           <QuickCard
             icon="replies"
             title="Replies"
@@ -232,6 +262,12 @@ export default function HomeScreen() {
             badge={unreadReplies}
             onPress={() => router.push('/replies')}
           />
+          <QuickCard icon="tasks" title="Assigned" caption="to me" onPress={() => openMyTasks('open')} />
+          <QuickCard icon="clock" title="Today" caption="& overdue" onPress={() => openMyTasks('today')} />
+          {/* Admins and the Super Admin only, as on the web. */}
+          {canManageUsers(user?.role) ? (
+            <QuickCard icon="people" title="Users" caption="manage" onPress={() => router.push('/users')} />
+          ) : null}
         </View>
 
         <View style={[styles.divider, { backgroundColor: theme.border }]} />
@@ -355,7 +391,11 @@ export default function HomeScreen() {
             { borderBottomColor: theme.border, backgroundColor: pressed ? theme.bgHover : 'transparent' },
           ]}
         >
-          <Tile text={WORKSPACE.glyph} color={WORKSPACE.color} size={34} />
+          <Image
+            source={require('../../../../assets/images/ciss-logo.png')}
+            style={{ width: 34, height: 34 }}
+            accessibilityLabel="CISS"
+          />
           <View style={styles.switchText}>
             <Text
               style={[styles.switchName, { color: selectedSpaceId === null ? theme.accent : theme.textPrimary }]}
@@ -497,6 +537,20 @@ const styles = StyleSheet.create({
   card: { flex: 1, minWidth: 0, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 8, gap: 4, alignItems: 'center' },
   cardTitle: { fontSize: 13, fontWeight: '700' },
   cardCaption: { fontSize: 11 },
+  logo: { width: 32, height: 32 },
+  bell: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
+  bellBadge: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 2,
+    paddingHorizontal: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   badge: {
     position: 'absolute',
     top: 4,

@@ -7,8 +7,8 @@ import { I18nProvider } from "@/contexts/I18nContext";
 import { TaskSelectionProvider } from "@/contexts/TaskSelectionContext";
 
 export const metadata: Metadata = {
-  title: "Task Management MVP",
-  description: "ClickUp clone MVP",
+  title: "Click up CISS",
+  description: "CISS task management",
 };
 
 export default function RootLayout({

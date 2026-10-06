@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { KeyRound, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useAuthStore } from '@task/core/features/auth/store/useAuthStore';
 import { changePassword } from '@task/core/features/auth/api';
 import { useI18n } from '@/contexts/I18nContext';
@@ -74,8 +74,10 @@ export default function LoginPage() {
     <div className="login-page">
       <div className="login-card">
         <div className="login-logo">
-          <span className="login-logo-mark"><KeyRound size={22} /></span>
-          <h1>Task Management</h1>
+          {/* Plain <img>: a small static logo from /public, no optimisation needed. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="login-logo-img" src="/ciss-logo.png" alt="CISS" width={40} height={40} />
+          <h1>Click up CISS</h1>
         </div>
 
         {!showChangeStep ? (

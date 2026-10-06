@@ -1,7 +1,8 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Tabs, router } from 'expo-router';
-import { useInvitationStore } from '@task/core/features/invitations/store/useInvitationStore';
+import { badgeLabel } from '@task/core/features/comments/unread';
+import { useUnreadReplies } from '@task/core/features/comments/hooks/useUnreadReplies';
 
 import { Icon, type IconName } from '@/components/icon';
 import { useTheme } from '@/theme';
@@ -14,7 +15,7 @@ type TabBarProps = Parameters<NonNullable<React.ComponentProps<typeof Tabs>['tab
 const ICONS: Record<string, { on: IconName; off: IconName }> = {
   '(spaces)': { on: 'homeActive', off: 'home' },
   'my-tasks': { on: 'tasksActive', off: 'tasks' },
-  inbox: { on: 'inbox', off: 'inbox' },
+  replies: { on: 'repliesActive', off: 'replies' },
   profile: { on: 'profileActive', off: 'profile' },
 };
 
@@ -29,7 +30,9 @@ const ICONS: Record<string, { on: IconName; off: IconName }> = {
 export function FloatingTabBar({ state, descriptors, navigation }: TabBarProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const pendingCount = useInvitationStore((st) => st.pendingInvitations.length);
+  // Unread replies: loaded and refreshed here because the tab bar is always on
+  // screen; live comments bump the number straight away.
+  const unreadReplies = useUnreadReplies();
 
   const half = Math.ceil(state.routes.length / 2);
   const leftRoutes = state.routes.slice(0, half);
@@ -72,9 +75,9 @@ export function FloatingTabBar({ state, descriptors, navigation }: TabBarProps) 
           size={26}
           color={focused ? theme.accent : theme.textSecondary}
         />
-        {route.name === 'inbox' && pendingCount > 0 ? (
+        {route.name === 'replies' && unreadReplies > 0 ? (
           <View style={[styles.badge, { backgroundColor: theme.danger, borderColor: theme.bgSurface }]}>
-            <Text style={styles.badgeText}>{pendingCount > 9 ? '9+' : pendingCount}</Text>
+            <Text style={styles.badgeText}>{badgeLabel(unreadReplies)}</Text>
           </View>
         ) : null}
       </Pressable>
@@ -135,13 +138,13 @@ const styles = StyleSheet.create({
   tab: { width: 62, height: 54, borderRadius: 27, alignItems: 'center', justifyContent: 'center' },
   badge: {
     position: 'absolute',
-    top: 8,
-    right: 12,
+    top: 6,
+    right: 8,
     minWidth: 18,
     height: 18,
     borderRadius: 9,
     borderWidth: 2,
-    paddingHorizontal: 4,
+    paddingHorizontal: 3,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -11,7 +11,8 @@ import { Avatar, Empty, ErrorState, Loading } from '@/components/ui';
 import { useTheme } from '@/theme';
 
 /**
- * Replies: all comments on the tasks assigned to you, newest first. Same shared useReplies hook as the web page. Tap one to open its task.
+ * Replies tab: all comments on tasks in projects shared with you, newest
+ * first. Same shared useReplies hook as the web page. Tap one to open its task.
  */
 export default function RepliesScreen() {
   const theme = useTheme();
@@ -23,14 +24,6 @@ export default function RepliesScreen() {
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: theme.bgMain }}>
       <View style={styles.header}>
-        <Pressable
-          onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
-          hitSlop={10}
-          accessibilityLabel="Back"
-          style={[styles.round, { backgroundColor: theme.bgHover }]}
-        >
-          <Icon name="back" size={20} color={theme.textSecondary} />
-        </Pressable>
         <Text style={[styles.title, { color: theme.textPrimary }]}>{en.replies}</Text>
         {unreadCount > 0 ? (
           <Pressable
@@ -121,8 +114,8 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   round: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  title: { fontSize: 18, fontWeight: '700' },
-  body: { padding: 16, paddingBottom: 60, gap: 10 },
+  title: { fontSize: 24, fontWeight: '700' },
+  body: { padding: 16, paddingBottom: 170, gap: 10 },
   subtitle: { fontSize: 13, lineHeight: 18, marginBottom: 4 },
   card: { borderWidth: 1, borderRadius: 12, padding: 12, gap: 6 },
   head: { flexDirection: 'row', alignItems: 'center', gap: 8 },

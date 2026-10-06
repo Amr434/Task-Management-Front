@@ -109,7 +109,7 @@ export const TaskDetailSidebar: React.FC = () => {
 
   // Status mapping
   const statusLabels: Record<TaskStatus, { label: string; color: string; bg: string }> = {
-    0: { label: t.statusToDo, color: '#b2b2b2', bg: 'transparent' },
+    0: { label: t.statusToDo, color: '#87909e', bg: 'transparent' },
     1: { label: t.statusInProgress, color: '#2684ff', bg: 'rgba(38, 132, 255, 0.1)' },
     2: { label: t.statusComplete, color: '#00c875', bg: 'rgba(0, 200, 117, 0.1)' },
   };
