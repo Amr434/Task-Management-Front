@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { getTaskActivity } from '@task/core/features/tasks/api';
 import { describeActivity } from '@task/core/features/tasks/activity';
-import { avatarColor, userDisplayName, userInitials, type TaskActivity } from '@task/core/features/tasks/types';
+import { avatarColor, userDisplayName, type TaskActivity } from '@task/core/features/tasks/types';
 import { timeAgo } from '@task/core/features/comments/types';
 import { en } from '@task/core/i18n/dictionaries/en';
 import { useNotificationStore } from '@task/core/store/useNotificationStore';
 
-import { Tile } from '@/components/ui';
+import { Avatar } from '@/components/ui';
 import { useTheme } from '@/theme';
 
 // Entries shown before "Show all".
@@ -57,7 +57,13 @@ export function TaskHistory({ taskId, version }: { taskId: number; version: numb
         shown.map((a) => (
           <View key={a.id} style={[styles.row, { borderBottomColor: theme.border }]}>
             {a.user ? (
-              <Tile text={userInitials(a.user)} color={avatarColor(a.user)} size={26} />
+              <Avatar
+                firstName={a.user.firstName}
+                lastName={a.user.lastName}
+                avatarUrl={a.user.avatarUrl}
+                color={avatarColor(a.user)}
+                size={26}
+              />
             ) : (
               <View style={{ width: 26 }} />
             )}

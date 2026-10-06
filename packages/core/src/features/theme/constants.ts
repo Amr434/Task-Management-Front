@@ -10,7 +10,8 @@ export const THEME_COLOR_OPTIONS: ThemeColorOption[] = [
   { id: 'indigo', label: 'Indigo', accent: '#5b69ff', sidebarLight: '#f0f1ff', sidebarDark: '#1f2238' },
   { id: 'teal', label: 'Teal', accent: '#12a594', sidebarLight: '#ecfbf9', sidebarDark: '#1a2b29' },
   { id: 'bronze', label: 'Bronze', accent: '#aa8d80', sidebarLight: '#f8f4f2', sidebarDark: '#2a2523' },
-  { id: 'mint', label: 'Mint', accent: '#0f9d8a', sidebarLight: '#ecfbf8', sidebarDark: '#1a2d2a' },
+  // A fresh green, clearly different from Teal's blue-green.
+  { id: 'mint', label: 'Mint', accent: '#2fbf7f', sidebarLight: '#edfbf3', sidebarDark: '#1b2d24' },
 ];
 
 export const DEFAULT_THEME_MODE = 'light' as const;

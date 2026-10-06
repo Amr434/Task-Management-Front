@@ -156,12 +156,7 @@ export default function TodayAndOverduePage() {
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)' }}>
-        <div style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
-          {t.myTasks} / <span style={{ color: 'var(--text-primary)' }}>{t.todayOverdue}</span>
-        </div>
-      </div>
-
+      {/* The page name is shown in the top bar. */}
       <div style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
         {/* Theme colours (not a fixed dark grey) so the text stays readable in light and dark themes. */}
         <div style={{ backgroundColor: 'var(--bg-main)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '20px', color: 'var(--text-primary)', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.06)' }}>

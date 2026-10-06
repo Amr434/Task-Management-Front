@@ -14,6 +14,7 @@ import { useSpaceStore } from '@task/core/store/useSpaceStore';
 import { InviteMemberModal } from '@/features/invitations/components/InviteMemberModal';
 import { InvitationTargetType } from '@task/core/features/invitations/types';
 import { useI18n } from '@/contexts/I18nContext';
+import { avatarSrc } from '@task/core/features/users/avatar';
 
 type ProjectView = 'list' | 'board' | 'calendar';
 
@@ -160,7 +161,14 @@ export const ProjectBoard = ({ projectId, spaceId }: { projectId: number; spaceI
               {project.members && project.members.length > 0 && (
                 <div className="avatar-group" style={{ display: 'flex', flexDirection: 'row', marginRight: '12px' }}>
                   {project.members.slice(0, 4).map((m, i) => (
-                    <div key={m.id} className="avatar" title={m.name} style={{ backgroundColor: `hsl(${(m.name.length * 50) % 360}, 70%, 60%)`, width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 500, fontSize: '12px', border: '2px solid var(--bg-color)', marginLeft: i > 0 ? '-8px' : '0' }}>{m.initials}</div>
+                    <div key={m.id} className="avatar avatar-frame" title={m.name} style={{ backgroundColor: `hsl(${(m.name.length * 50) % 360}, 70%, 60%)`, width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 500, fontSize: '12px', border: '2px solid var(--bg-color)', marginLeft: i > 0 ? '-8px' : '0' }}>
+                  {avatarSrc(m.avatarUrl) ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- served by our API
+                    <img src={avatarSrc(m.avatarUrl)!} alt={m.name} />
+                  ) : (
+                    m.initials
+                  )}
+                </div>
                   ))}
                 </div>
               )}

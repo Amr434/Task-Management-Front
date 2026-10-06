@@ -34,8 +34,10 @@ export function resolveThemePalette(mode: ThemeMode, colorId: ThemeColorId): The
     bgMain: isLight ? '#ffffff' : '#2b2c2f',
     bgTopbar: isLight ? '#ffffff' : '#2b2c2f',
     bgHover: isLight ? '#f0f1f3' : '#333537',
-    textPrimary: isLight ? '#292d34' : '#f6f6f6',
-    textSecondary: isLight ? '#7c828d' : '#87909e',
+    // Secondary text is kept at roughly 7:1 against the page in both modes,
+    // so labels, dates and captions stay easy to read.
+    textPrimary: isLight ? '#1f2329' : '#f6f6f6',
+    textSecondary: isLight ? '#4f5762' : '#b0b8c3',
     border: isLight ? '#e8eaed' : '#383a3f',
     accentMuted: `color-mix(in srgb, ${color.accent} 10%, transparent)`,
     accentMutedStrong: `color-mix(in srgb, ${color.accent} 16%, transparent)`,

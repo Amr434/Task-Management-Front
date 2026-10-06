@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -86,11 +87,13 @@ export default function SignInScreen() {
         >
           <View style={[styles.card, { backgroundColor: theme.bgSurface, borderColor: theme.border }]}>
             <View style={styles.brand}>
-              <View style={[styles.mark, { backgroundColor: theme.accent }]}>
-                <Text style={styles.markText}>T</Text>
-              </View>
+              <Image
+                source={require('../../assets/images/ciss-logo.png')}
+                style={styles.logo}
+                accessibilityLabel="CISS"
+              />
               <Text style={[styles.brandText, { color: theme.textPrimary }]}>
-                Task Management
+                Click up CISS
               </Text>
             </View>
 
@@ -197,8 +200,7 @@ const styles = StyleSheet.create({
   scroll: { flexGrow: 1, justifyContent: 'center', padding: 20 },
   card: { borderWidth: 1, borderRadius: 14, padding: 24, gap: 6 },
   brand: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 18 },
-  mark: { width: 34, height: 34, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
-  markText: { color: '#ffffff', fontSize: 18, fontWeight: '700' },
+  logo: { width: 40, height: 40 },
   brandText: { fontSize: 17, fontWeight: '600' },
   title: { fontSize: 22, fontWeight: '700' },
   subtitle: { fontSize: 14, marginBottom: 14 },

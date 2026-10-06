@@ -11,6 +11,10 @@ export enum UserRole {
 export const canManageUsers = (role: UserRole | undefined | null): boolean =>
   role === UserRole.Admin || role === UserRole.SuperAdmin;
 
+// Dashboards are for Admins and the Super Admin only (the backend enforces it too).
+export const canViewDashboards = (role: UserRole | undefined | null): boolean =>
+  role === UserRole.Admin || role === UserRole.SuperAdmin;
+
 export interface AuthUser {
   id: number;
   firstName: string;
