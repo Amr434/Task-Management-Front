@@ -12,9 +12,11 @@ import { useI18n } from '@/contexts/I18nContext';
 interface TaskCommentsProps {
   taskId: number;
   projectId: number;
+  // Called after a change is saved, so the task history can reload.
+  onChange?: () => void;
 }
 
-export const TaskComments: React.FC<TaskCommentsProps> = ({ taskId, projectId }) => {
+export const TaskComments: React.FC<TaskCommentsProps> = ({ taskId, projectId, onChange }) => {
   const currentUser = useAuthStore((s) => s.user);
   const { t } = useI18n();
   // Shared hook: loads the comments and refreshes them every few seconds, so
@@ -59,6 +61,7 @@ export const TaskComments: React.FC<TaskCommentsProps> = ({ taskId, projectId })
       setNewCommentText('');
       setAssignNewTo(null);
       setShowAssignMenuForNew(false);
+      onChange?.();
     } catch (e) {
       console.error('Failed to post comment', e);
     }
@@ -66,8 +69,10 @@ export const TaskComments: React.FC<TaskCommentsProps> = ({ taskId, projectId })
 
   // Functional updates everywhere: several quick actions in a row must not
   // clobber each other with a stale `comments` closure.
-  const applyUpdated = (updated: CommentItem) =>
+  const applyUpdated = (updated: CommentItem) => {
     setComments(prev => prev.map(c => c.id === updated.id ? updated : c));
+    onChange?.();
+  };
 
   const handleToggleResolve = async (comment: CommentItem) => {
     try {
@@ -102,6 +107,7 @@ export const TaskComments: React.FC<TaskCommentsProps> = ({ taskId, projectId })
     try {
       await deleteComment(commentId);
       setComments(prev => prev.filter(c => c.id !== commentId));
+      onChange?.();
     } catch (e) {
       console.error('Failed to delete comment', e);
     }

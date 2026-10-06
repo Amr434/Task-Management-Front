@@ -1,6 +1,6 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { useAuthStore } from '../features/auth/store/useAuthStore';
-import { refreshSession } from '../features/auth/api';
+import { refreshSession } from '../features/auth/api/session';
 
 import { getApiBaseUrl, setApiBaseUrl } from './config';
 

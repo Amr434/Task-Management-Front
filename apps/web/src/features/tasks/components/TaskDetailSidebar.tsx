@@ -9,6 +9,7 @@ import { patchTask, addTagToTask, removeTagFromTask, assignUserToTask, removeUse
 import { TaskComments } from '@/features/comments/components/TaskComments';
 import { useI18n } from '@/contexts/I18nContext';
 import { TaskAttachments } from '@/features/attachments/components/TaskAttachments';
+import { TaskHistory } from './TaskHistory';
 import { RichTextEditor } from './RichTextEditor';
 
 export const TaskDetailSidebar: React.FC = () => {
@@ -60,6 +61,11 @@ export const TaskDetailSidebar: React.FC = () => {
     document.addEventListener('mousedown', onDocClick);
     return () => document.removeEventListener('mousedown', onDocClick);
   }, [openField]);
+
+  // Bumped when a comment or attachment changes; those aren't fields of the
+  // task, so the history's changeKey wouldn't otherwise notice them.
+  const [sideChanges, setSideChanges] = useState(0);
+  const bumpHistory = () => setSideChanges((n) => n + 1);
 
   // Description draft.
   //
@@ -300,11 +306,27 @@ export const TaskDetailSidebar: React.FC = () => {
           <div className="tds-divider" />
 
           {/* Attachments Section */}
-          <TaskAttachments taskId={task.id} />
+          <TaskAttachments taskId={task.id} onChange={bumpHistory} />
           <div className="tds-divider" />
 
           {/* Comments Section */}
-          <TaskComments taskId={task.id} projectId={task.projectId} />
+          <TaskComments taskId={task.id} projectId={task.projectId} onChange={bumpHistory} />
+
+          {/* History: who changed what */}
+          <TaskHistory
+            taskId={task.id}
+            changeKey={[
+              task.title,
+              task.description,
+              task.status,
+              task.priority,
+              task.dueDate,
+              task.projectId,
+              (task.assignees ?? []).map((a) => a.id).join(','),
+              (task.tags ?? []).map((tg) => tg.id).join(','),
+              sideChanges,
+            ].join('|')}
+          />
 
         </div>
       </div>

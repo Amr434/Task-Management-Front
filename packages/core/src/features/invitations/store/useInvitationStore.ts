@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { HubConnection, HubConnectionBuilder, ILogger, LogLevel } from '@microsoft/signalr';
 import type { CommentItem } from '../../comments/types';
+import type { TaskChange } from '../../tasks/types';
 import { useNotificationStore } from '../../../store/useNotificationStore';
 import { getApiBaseUrl } from '../../../services/config';
 import { refreshAccessToken } from '../../../services/apiClient';
@@ -24,9 +25,15 @@ let authRetryUsed = false;
 // which the Next.js dev overlay surfaces as app errors. A down backend is an
 // expected condition handled by our retry loop, so route everything to
 // console.warn instead.
+//
+// A dropped transport (e.g. code 1006 when Android suspends the app or the
+// network changes) is logged by SignalR at Error level even though
+// withAutomaticReconnect recovers from it, so keep that out of LogBox too.
 const signalRLogger: ILogger = {
   log(level: LogLevel, message: string) {
-    if (level >= LogLevel.Warning) {
+    if (message.startsWith('Connection disconnected with error')) {
+      console.info(`[SignalR] ${message}`);
+    } else if (level >= LogLevel.Warning) {
       console.warn(`[SignalR] ${message}`);
     }
   },
@@ -105,6 +112,11 @@ export const useInvitationStore = create<InvitationState>((set, get) => ({
     // Someone commented on a task this user can see: show a notification.
     connection.on('CommentAdded', (comment: CommentItem) => {
       useNotificationStore.getState().pushComment(comment);
+    });
+
+    // Someone changed a task this user is assigned to (or unassigned them).
+    connection.on('TaskChanged', (change: TaskChange) => {
+      useNotificationStore.getState().pushTaskChange(change);
     });
 
     connection.on('InvitationResponded', (invitation: Invitation) => {

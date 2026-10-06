@@ -4573,6 +4573,71 @@ body {
   overflow-y: auto;
 }
 
+/* Task history */
+.task-history-section {
+  padding: 16px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--bg-main);
+}
+
+.task-history-section h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.task-history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.task-history-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+.task-history-text {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.task-history-item .comment-time {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.task-history-toggle {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 13px;
+  color: var(--accent-color, #7b68ee);
+  cursor: pointer;
+}
+
+.task-history-toggle:hover {
+  text-decoration: underline;
+}
+
 .no-comments {
   color: var(--text-secondary);
   font-size: 14px;

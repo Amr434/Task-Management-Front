@@ -14,7 +14,7 @@ import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useAuthStore } from '@task/core/features/auth/store/useAuthStore';
 import { createSpace, getSpaces } from '@task/core/features/spaces/api';
 import type { Space } from '@task/core/features/spaces/types';
-import { getProjectsBySpace } from '@task/core/features/projects/api';
+import { createProject, getProjectsBySpace } from '@task/core/features/projects/api';
 import type { Project } from '@task/core/features/projects/types';
 import { InvitationTargetType } from '@task/core/features/invitations/types';
 import { useUnreadReplies } from '@task/core/features/comments/hooks/useUnreadReplies';
@@ -62,6 +62,12 @@ export default function HomeScreen() {
   const [color, setColor] = useState(SPACE_COLORS[0]);
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  // The space a new list is being added to; non-null keeps the sheet open.
+  const [listSpace, setListSpace] = useState<Space | null>(null);
+  const [listName, setListName] = useState('');
+  const [listBusy, setListBusy] = useState(false);
+  const [listError, setListError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
@@ -134,6 +140,23 @@ export default function HomeScreen() {
       setFormError(err instanceof Error ? err.message : 'Could not create the space');
     } finally {
       setBusy(false);
+    }
+  };
+
+  const submitList = async () => {
+    const trimmed = listName.trim();
+    if (!trimmed || !listSpace) return;
+    setListError(null);
+    setListBusy(true);
+    try {
+      const created = await createProject({ name: trimmed, spaceId: listSpace.id });
+      setProjects((prev) => ({ ...prev, [listSpace.id]: [...(prev[listSpace.id] ?? []), created] }));
+      setListSpace(null);
+      setListName('');
+    } catch (err) {
+      setListError(err instanceof Error ? err.message : 'Could not create the list');
+    } finally {
+      setListBusy(false);
     }
   };
 
@@ -258,9 +281,7 @@ export default function HomeScreen() {
                   </Pressable>
 
                   {open
-                    ? lists.length === 0 && loadingSpace !== space.id
-                      ? <Text style={[styles.treeEmpty, { color: theme.textFaint }]}>No lists yet</Text>
-                      : lists.map((project) => (
+                    ? lists.map((project) => (
                           <Pressable
                             key={project.id}
                             onPress={() =>
@@ -295,6 +316,23 @@ export default function HomeScreen() {
                           </Pressable>
                         ))
                     : null}
+
+                  {/* Creating a list happens right in the tree, so an empty
+                      space shows the action instead of a dead-end message. */}
+                  {open && loadingSpace !== space.id ? (
+                    <Pressable
+                      onPress={() => setListSpace(space)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Add list to ${space.name}`}
+                      style={({ pressed }) => [
+                        styles.treeChild,
+                        { backgroundColor: pressed ? theme.bgHover : 'transparent', borderLeftColor: theme.border },
+                      ]}
+                    >
+                      <Icon name="add" size={16} color={theme.accent} />
+                      <Text style={[styles.treeChildLabel, { color: theme.accent }]}>Add List</Text>
+                    </Pressable>
+                  ) : null}
                 </View>
               );
             })
@@ -366,6 +404,18 @@ export default function HomeScreen() {
               setCreating(true);
             }}
           />
+        </View>
+      </Sheet>
+
+      <Sheet
+        visible={!!listSpace}
+        title={listSpace ? `New list in ${listSpace.name}` : 'Create List'}
+        onClose={() => setListSpace(null)}
+      >
+        <Field label="List name" value={listName} onChangeText={setListName} placeholder="Website redesign" autoFocus />
+        {listError ? <Chip text={listError} color={theme.danger} /> : null}
+        <View style={{ marginTop: 16 }}>
+          <PrimaryButton label="Create List" onPress={submitList} disabled={!listName.trim()} busy={listBusy} />
         </View>
       </Sheet>
 
