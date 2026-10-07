@@ -35,6 +35,18 @@ export const refreshSession = async (refreshToken: string): Promise<AuthResponse
   return res.data;
 };
 
+// "Forgot password": asks the backend to email a reset link. Resolves the same
+// way whether or not the email belongs to an account (the backend never says).
+export const requestPasswordReset = async (email: string): Promise<void> => {
+  await bare.post('/Auth/forgot-password', { email });
+};
+
+// Sets a new password using the token from the emailed link. Throws with the
+// backend's message when the link is invalid/expired or the password too short.
+export const resetPassword = async (token: string, newPassword: string): Promise<void> => {
+  await bare.post('/Auth/reset-password', { token, newPassword });
+};
+
 // Revokes the refresh token server-side. The caller passes the access token
 // because this bypasses apiClient's request interceptor.
 export const revokeSession = async (refreshToken: string, accessToken: string | null): Promise<void> => {

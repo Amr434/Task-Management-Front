@@ -13,7 +13,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '@task/core/features/auth/store/useAuthStore';
-import { changePassword } from '@task/core/features/auth/api';
+import { changePassword, requestPasswordReset } from '@task/core/features/auth/api';
+import { en } from '@task/core/i18n/dictionaries/en';
 
 import { useTheme } from '@/theme';
 
@@ -31,6 +32,8 @@ export default function SignInScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // 'forgot' asks for the email to send a reset link to; 'sent' confirms it.
+  const [mode, setMode] = useState<'signin' | 'forgot' | 'sent'>('signin');
 
   // An admin-created account lands here with a token but no password of its
   // own. The root layout keeps treating it as signed out until this is done.
@@ -71,9 +74,51 @@ export default function SignInScreen() {
     }
   };
 
+  // "Forgot password?": the backend emails a link that opens the web page
+  // where the new password is chosen. Same confirmation for any email.
+  const handleForgot = async () => {
+    setError(null);
+    setBusy(true);
+    try {
+      await requestPasswordReset(email.trim());
+      setMode('sent');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not send the reset link');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const backToSignIn = () => {
+    setError(null);
+    setMode('signin');
+  };
+
+  const forgotStep = !showChangeStep && mode !== 'signin';
+
   const canSubmit = showChangeStep
     ? Boolean(newPassword && confirmPassword)
-    : Boolean(email.trim() && password);
+    : mode === 'forgot'
+      ? Boolean(email.trim())
+      : mode === 'sent'
+        ? true
+        : Boolean(email.trim() && password);
+
+  const submit = showChangeStep
+    ? handleChangePassword
+    : mode === 'forgot'
+      ? handleForgot
+      : mode === 'sent'
+        ? backToSignIn
+        : handleLogin;
+
+  const submitLabel = showChangeStep
+    ? 'Save and continue'
+    : mode === 'forgot'
+      ? en.forgotSend
+      : mode === 'sent'
+        ? en.backToSignIn
+        : 'Sign in';
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.bgCanvas }]}>
@@ -97,7 +142,39 @@ export default function SignInScreen() {
               </Text>
             </View>
 
-            {!showChangeStep ? (
+            {forgotStep ? (
+              <>
+                <Text style={[styles.title, { color: theme.textPrimary }]}>{en.forgotTitle}</Text>
+                {mode === 'forgot' ? (
+                  <>
+                    <Text style={[styles.subtitle, { color: theme.textSecondary }]}>{en.forgotSubtitle}</Text>
+                    <Text style={[styles.label, { color: theme.textSecondary }]}>Email</Text>
+                    <TextInput
+                      style={[styles.input, { color: theme.textPrimary, borderColor: theme.border, backgroundColor: theme.bgCanvas }]}
+                      placeholder="you@example.com"
+                      placeholderTextColor={theme.textSecondary}
+                      value={email}
+                      onChangeText={setEmail}
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      keyboardType="email-address"
+                      textContentType="username"
+                      editable={!busy}
+                      onSubmitEditing={canSubmit && !busy ? handleForgot : undefined}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <View style={[styles.success, { backgroundColor: theme.mode === 'dark' ? '#16332a' : '#e6f8f0' }]}>
+                      <Text style={[styles.successText, { color: theme.textPrimary }]}>{en.forgotSent}</Text>
+                    </View>
+                    <Text style={[styles.subtitle, { color: theme.textSecondary, marginTop: 12, marginBottom: 0 }]}>
+                      {en.forgotCheckSpam}
+                    </Text>
+                  </>
+                )}
+              </>
+            ) : !showChangeStep ? (
               <>
                 <Text style={[styles.title, { color: theme.textPrimary }]}>Sign in</Text>
                 <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
@@ -172,7 +249,7 @@ export default function SignInScreen() {
 
             <Pressable
               accessibilityRole="button"
-              onPress={showChangeStep ? handleChangePassword : handleLogin}
+              onPress={submit}
               disabled={busy || !canSubmit}
               style={({ pressed }) => [
                 styles.button,
@@ -182,11 +259,27 @@ export default function SignInScreen() {
               {busy ? (
                 <ActivityIndicator color="#ffffff" />
               ) : (
-                <Text style={styles.buttonText}>
-                  {showChangeStep ? 'Save and continue' : 'Sign in'}
-                </Text>
+                <Text style={styles.buttonText}>{submitLabel}</Text>
               )}
             </Pressable>
+
+            {/* Under the button: into the forgot-password step, or back out of it. */}
+            {!showChangeStep && mode !== 'sent' ? (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => {
+                  setError(null);
+                  setMode(mode === 'signin' ? 'forgot' : 'signin');
+                }}
+                disabled={busy}
+                hitSlop={8}
+                style={({ pressed }) => [styles.link, { opacity: pressed ? 0.6 : 1 }]}
+              >
+                <Text style={[styles.linkText, { color: theme.textSecondary }]}>
+                  {mode === 'signin' ? en.forgotPasswordLink : en.backToSignIn}
+                </Text>
+              </Pressable>
+            ) : null}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -210,4 +303,8 @@ const styles = StyleSheet.create({
   errorText: { fontSize: 13 },
   button: { borderRadius: 9, paddingVertical: 14, alignItems: 'center', marginTop: 20 },
   buttonText: { color: '#ffffff', fontSize: 15, fontWeight: '600' },
+  success: { borderRadius: 8, padding: 12, marginTop: 12 },
+  successText: { fontSize: 14, lineHeight: 20 },
+  link: { alignSelf: 'center', marginTop: 16 },
+  linkText: { fontSize: 14, textDecorationLine: 'underline' },
 });
