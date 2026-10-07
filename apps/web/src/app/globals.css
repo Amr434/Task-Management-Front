@@ -3944,11 +3944,42 @@ body {
 .login-error {
   background: rgba(230, 55, 87, 0.12);
   border: 1px solid rgba(230, 55, 87, 0.4);
-  color: #ff8da1;
+  /* Theme text colour: readable on the red tint in both light and dark mode. */
+  color: var(--text-primary);
   border-radius: 6px;
   font-size: 13px;
   padding: 8px 12px;
   margin-bottom: 16px;
+}
+
+.login-success {
+  background: rgba(0, 200, 117, 0.12);
+  border: 1px solid rgba(0, 200, 117, 0.45);
+  color: var(--text-primary);
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 10px 12px;
+  margin: 12px 0 16px;
+}
+
+/* Small text link under the login forms ("Forgot password?", "Back to sign in"). */
+.login-link {
+  align-self: center;
+  margin-top: 14px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.login-link:hover {
+  color: var(--text-primary);
+}
+
+.login-link.inline {
+  margin-top: 0;
+  color: inherit;
 }
 
 .login-submit {
@@ -3958,6 +3989,8 @@ body {
   gap: 8px;
   padding: 10px;
   font-size: 14px;
+  /* Also used on a link ("Sign in" after a reset), which must not be underlined. */
+  text-decoration: none;
 }
 
 .login-submit:disabled {

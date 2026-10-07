@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
 import { useAuthStore } from '@task/core/features/auth/store/useAuthStore';
 import { changePassword } from '@task/core/features/auth/api';
@@ -109,6 +110,7 @@ export default function LoginPage() {
             <button className="btn-primary login-submit" type="submit" disabled={busy || !email.trim() || !password}>
               {busy ? <Loader2 size={16} className="spin" /> : 'Sign in'}
             </button>
+            <Link className="login-link" href="/forgot-password">{t.forgotPasswordLink}</Link>
           </form>
         ) : (
           <form onSubmit={handleChangePassword} className="login-form">

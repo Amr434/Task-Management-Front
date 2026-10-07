@@ -3,7 +3,7 @@ import { AuthUser, ChangePasswordRequest, RegisterUserRequest } from '../types';
 
 // Token-free session calls live in ./session so the auth store and apiClient
 // can use them without a require cycle through this module.
-export { login, refreshSession } from './session';
+export { login, refreshSession, requestPasswordReset, resetPassword } from './session';
 
 // Authenticated endpoints go through apiClient (bearer token attached there).
 export const logout = async (refreshToken: string): Promise<void> => {
