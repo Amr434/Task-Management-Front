@@ -2,12 +2,14 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { LogOut, Palette, Camera } from 'lucide-react';
+import { LogOut, Palette, Camera, BellRing } from 'lucide-react';
 import { ThemeModal } from '@/features/theme/components/ThemeModal';
 import { useAuthStore } from '@task/core/features/auth/store/useAuthStore';
 import { useI18n } from '@/contexts/I18nContext';
 import { useInvitationStore } from '@task/core/features/invitations/store/useInvitationStore';
 import { InvitationBell } from './InvitationBell';
+import { NotificationBell } from './NotificationBell';
+import { NotificationSettingsModal } from '@/features/users/components/NotificationSettingsModal';
 import { TaskSearch } from '@/features/tasks/components/TaskSearch';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { ProfilePictureModal } from '@/features/users/components/ProfilePictureModal';
@@ -23,6 +25,7 @@ export const Topbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [themeOpen, setThemeOpen] = useState(false);
   const [pictureOpen, setPictureOpen] = useState(false);
+  const [notifSettingsOpen, setNotifSettingsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -49,6 +52,7 @@ export const Topbar = () => {
       </div>
       <div className="topbar-right">
         <TaskSearch />
+        <NotificationBell onOpenSettings={() => setNotifSettingsOpen(true)} />
         <InvitationBell />
         <div className="user-menu" ref={menuRef}>
           <button className="user-avatar-btn" onClick={() => setMenuOpen((v) => !v)} title={user?.email}>
@@ -86,6 +90,15 @@ export const Topbar = () => {
               >
                 <Palette size={14} /> {t.theme}
               </button>
+              <button
+                className="user-menu-item"
+                onClick={() => {
+                  setMenuOpen(false);
+                  setNotifSettingsOpen(true);
+                }}
+              >
+                <BellRing size={14} /> {t.notificationSettings}
+              </button>
               <button className="user-menu-item danger" onClick={handleLogout}>
                 <LogOut size={14} /> {t.logout}
               </button>
@@ -95,6 +108,7 @@ export const Topbar = () => {
       </div>
       {themeOpen && <ThemeModal onClose={() => setThemeOpen(false)} />}
       {pictureOpen && <ProfilePictureModal onClose={() => setPictureOpen(false)} />}
+      {notifSettingsOpen && <NotificationSettingsModal onClose={() => setNotifSettingsOpen(false)} />}
     </header>
   );
 };

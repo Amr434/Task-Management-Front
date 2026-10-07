@@ -372,6 +372,48 @@ export const en = {
   historyAttachmentAdded: 'attached {to}',
   historyAttachmentDeleted: 'removed attachment {from}',
 
+  // Notification list (the bell). {name}, {task}, {target} and {date} are
+  // filled in by describeNotification().
+  notifications: 'Notifications',
+  noNotifications: "You're all caught up",
+  loadMore: 'Load more',
+  someone: 'Someone',
+  notifCommented: '{name} commented on {task}',
+  notifMentioned: '{name} mentioned you on {task}',
+  notifInvited: '{name} invited you to {target}',
+  notifInviteAccepted: '{name} accepted your invitation to {target}',
+  notifInviteDeclined: '{name} declined your invitation to {target}',
+  notifDueSoon: 'Due tomorrow',
+  notifOverdue: 'Overdue — was due {date}',
+  notifSpace: 'the space "{name}"',
+  notifProject: 'the project "{name}"',
+  mentionNoMatches: 'No matching people',
+
+  // Notification settings
+  notificationSettings: 'Notification settings',
+  notifSettingsInApp: 'You always see notifications in the app. These settings are for email.',
+  emailDelivery: 'Update emails',
+  emailInstant: 'Right away',
+  emailInstantDesc: 'One email for each update',
+  emailDigest: 'Daily digest',
+  emailDigestDesc: 'One email a day with all the updates',
+  emailOff: 'Off',
+  emailOffDesc: 'No update emails',
+  emailWhich: 'Email me when',
+  emailAssignmentsLabel: "I'm assigned to or removed from a task",
+  emailTaskUpdatesLabel: 'The status or due date of my task changes',
+  emailCommentsLabel: 'A comment is assigned to me',
+  emailMentionsLabel: 'Someone @mentions me',
+  emailInvitationsLabel: "I'm invited, or someone answers my invitation",
+  emailDueRemindersLabel: 'My task is due tomorrow or overdue',
+  emailSummaryTitle: 'Summary of my tasks',
+  emailSummaryDesc: 'My unfinished tasks due in the next 7 days, and any overdue ones',
+  summaryOff: 'Off',
+  summaryDaily: 'Daily',
+  summaryWeekly: 'Weekly',
+  settingsSaved: 'Saved',
+  settingsSaveFailed: "Couldn't save. Please try again.",
+
   // General
   invalidProjectId: 'Invalid Project ID',
 };

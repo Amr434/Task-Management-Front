@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 import { useAuthStore } from '@task/core/features/auth/store/useAuthStore';
 import { useInvitationStore } from '@task/core/features/invitations/store/useInvitationStore';
+import { useNotificationCenterStore } from '@task/core/features/notifications/store';
 
 /**
  * Keeps the shared SignalR connection alive for the mobile lifecycle.
@@ -40,6 +41,8 @@ export function useRealtimeInvitations() {
 
       connectSignalR();
       fetchPending();
+      // The notification list and its badge may have missed live updates too.
+      useNotificationCenterStore.getState().refresh();
     });
     return () => sub.remove();
   }, [connectSignalR, fetchPending]);

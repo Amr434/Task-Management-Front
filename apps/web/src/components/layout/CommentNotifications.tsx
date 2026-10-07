@@ -11,8 +11,7 @@ import {
 import { describeActivity } from '@task/core/features/tasks/activity';
 import { userDisplayName } from '@task/core/features/tasks/types';
 import { useI18n } from '@/contexts/I18nContext';
-import { getTasksByProject } from '@task/core/features/tasks/api';
-import { useSpaceStore } from '@task/core/store/useSpaceStore';
+import { openTaskDetail } from '@/features/tasks/openTask';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 
 const AUTO_HIDE_MS = 7000;
@@ -34,8 +33,6 @@ export const CommentNotifications = () => {
 
 const CommentToast = ({ notification }: { notification: AppNotification }) => {
   const dismiss = useNotificationStore((s) => s.dismiss);
-  const setTasksForProject = useSpaceStore((s) => s.setTasksForProject);
-  const setDetailTaskId = useSpaceStore((s) => s.setDetailTaskId);
   const { t, language } = useI18n();
   const { taskId, projectId } = notificationTarget(notification);
 
@@ -59,19 +56,11 @@ const CommentToast = ({ notification }: { notification: AppNotification }) => {
     return () => clearTimeout(timer);
   }, [notification.id, dismiss]);
 
-  // Open the task's detail panel (loading the project's tasks into the store first).
-  const open = async () => {
+  // Open the task's detail panel. Always reload for a task change: the
+  // stored copy is out of date.
+  const open = () => {
     dismiss(notification.id);
-    try {
-      const { tasksByProjectId } = useSpaceStore.getState();
-      // Always reload for a task change: the stored copy is out of date.
-      if (notification.kind === 'task' || !tasksByProjectId[projectId]?.some((tk) => tk.id === taskId)) {
-        setTasksForProject(projectId, await getTasksByProject(projectId));
-      }
-      setDetailTaskId(taskId);
-    } catch (e) {
-      console.warn('Failed to open task', e instanceof Error ? e.message : String(e));
-    }
+    openTaskDetail(taskId, projectId, notification.kind === 'task');
   };
 
   return (

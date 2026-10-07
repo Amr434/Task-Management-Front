@@ -18,6 +18,8 @@ export interface Invitation {
   inviterId: number;
   inviterName?: string;
   inviteeId: number;
+  // Set on "accepted / declined" notifications sent to the inviter.
+  inviteeName?: string | null;
   status: InvitationStatus;
   createdAtUtc: string;
 }

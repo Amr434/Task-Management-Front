@@ -5,14 +5,17 @@ export const getTaskComments = async (taskId: number): Promise<CommentItem[]> =>
   return apiClient.get<CommentItem[], CommentItem[]>(`/Tasks/${taskId}/comments`);
 };
 
+// mentionedUserIds: people @mentioned in the text (project members); each
+// gets a notification.
 export const createTaskComment = async (
   taskId: number,
   text: string,
-  assignedToId?: number
+  assignedToId?: number,
+  mentionedUserIds?: number[]
 ): Promise<CommentItem> => {
-  return apiClient.post<{ text: string; assignedToId?: number }, CommentItem>(
+  return apiClient.post<{ text: string; assignedToId?: number; mentionedUserIds?: number[] }, CommentItem>(
     `/Tasks/${taskId}/comments`,
-    { text, assignedToId }
+    { text, assignedToId, mentionedUserIds }
   );
 };
 

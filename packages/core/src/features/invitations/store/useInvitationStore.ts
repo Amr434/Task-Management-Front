@@ -3,6 +3,8 @@ import { HubConnection, HubConnectionBuilder, ILogger, LogLevel } from '@microso
 import type { CommentItem } from '../../comments/types';
 import type { TaskChange } from '../../tasks/types';
 import { useNotificationStore } from '../../../store/useNotificationStore';
+import { useNotificationCenterStore } from '../../notifications/store';
+import type { NotificationItem } from '../../notifications/types';
 import { getApiBaseUrl } from '../../../services/config';
 import { refreshAccessToken } from '../../../services/apiClient';
 import { useAuthStore } from '../../auth/store/useAuthStore';
@@ -123,9 +125,15 @@ export const useInvitationStore = create<InvitationState>((set, get) => ({
       console.log('Invitation responded:', invitation);
     });
 
+    // A new entry for the notification list (the bell).
+    connection.on('NotificationCreated', (notification: NotificationItem) => {
+      useNotificationCenterStore.getState().add(notification);
+    });
+
     connection.onreconnected(() => {
       // Resync anything missed while the transport was down.
       get().fetchPending();
+      useNotificationCenterStore.getState().refresh();
     });
 
     connection.onclose(() => {
@@ -146,6 +154,7 @@ export const useInvitationStore = create<InvitationState>((set, get) => ({
         authRetryUsed = false;
         // Refetch in case the initial fetch failed while the API was down.
         get().fetchPending();
+        useNotificationCenterStore.getState().refresh();
       },
       async (err) => {
         // If the slot changed, the failure came from a deliberate stop (logout) — ignore.
@@ -181,6 +190,7 @@ export const useInvitationStore = create<InvitationState>((set, get) => ({
     retryDelayMs = INITIAL_RETRY_MS;
     authRetryUsed = false;
     set({ connection: null, pendingInvitations: [] });
+    useNotificationCenterStore.getState().clear();
     // stop() aborts an in-flight negotiation; that rejection is handled above.
     connection?.stop().catch(() => {});
   },

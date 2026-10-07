@@ -8,6 +8,14 @@ import { Avatar } from '@/features/tasks/components/TaskFieldMenus';
 import { useAuthStore } from '@task/core/features/auth/store/useAuthStore';
 import { useTaskComments } from '@task/core/features/comments/hooks/useTaskComments';
 import { useI18n } from '@/contexts/I18nContext';
+import {
+  findMentionQuery,
+  insertMention,
+  mentionCandidates,
+  mentionedUserIds,
+  splitMentions,
+  type MentionQuery,
+} from '@task/core/features/comments/mentions';
 
 interface TaskCommentsProps {
   taskId: number;
@@ -27,10 +35,27 @@ export const TaskComments: React.FC<TaskCommentsProps> = ({ taskId, projectId, o
   const [assignNewTo, setAssignNewTo] = useState<number | null>(null);
   const [showAssignMenuForNew, setShowAssignMenuForNew] = useState(false);
   const [assignMenuForComment, setAssignMenuForComment] = useState<number | null>(null);
+  // The "@name" being typed, and which suggestion is highlighted.
+  const [mention, setMention] = useState<MentionQuery | null>(null);
+  const [mentionIndex, setMentionIndex] = useState(0);
   const rootRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Anyone in the project except yourself can be mentioned.
+  const mentionable = members.filter(m => m.id !== currentUser?.id);
+  const suggestions = mention ? mentionCandidates(mentionable, mention.query) : [];
+
+  // The project's members: who a comment can be assigned to or mention.
   useEffect(() => {
-    loadMembers();
+    let cancelled = false;
+    getProjectMembers(projectId)
+      .then(data => {
+        if (!cancelled) setMembers(data);
+      })
+      .catch(e => console.error('Failed to load members', e));
+    return () => {
+      cancelled = true;
+    };
   }, [projectId]);
 
   useEffect(() => {
@@ -44,27 +69,41 @@ export const TaskComments: React.FC<TaskCommentsProps> = ({ taskId, projectId, o
     return () => document.removeEventListener('mousedown', onDocClick);
   }, []);
 
-  const loadMembers = async () => {
-    try {
-      const data = await getProjectMembers(projectId);
-      setMembers(data);
-    } catch (e) {
-      console.error('Failed to load members', e);
-    }
-  };
-
   const handlePost = async () => {
     if (!newCommentText.trim()) return;
     try {
-      const newComment = await createTaskComment(taskId, newCommentText.trim(), assignNewTo ?? undefined);
+      const text = newCommentText.trim();
+      const mentioned = mentionedUserIds(text, mentionable);
+      const newComment = await createTaskComment(taskId, text, assignNewTo ?? undefined, mentioned.length ? mentioned : undefined);
       setComments(prev => [...prev, newComment]);
       setNewCommentText('');
+      setMention(null);
       setAssignNewTo(null);
       setShowAssignMenuForNew(false);
       onChange?.();
     } catch (e) {
       console.error('Failed to post comment', e);
     }
+  };
+
+  // Re-check for an "@name" in progress whenever the text or caret moves.
+  const updateMention = (text: string, caret: number) => {
+    const next = findMentionQuery(text, caret);
+    setMention(next);
+    if (next?.query !== mention?.query) setMentionIndex(0);
+  };
+
+  const pickMention = (user: User) => {
+    const el = textareaRef.current;
+    if (!mention || !el) return;
+    const { text, caret } = insertMention(newCommentText, mention, el.selectionStart, user);
+    setNewCommentText(text);
+    setMention(null);
+    // Put the caret after the inserted name once React has updated the value.
+    requestAnimationFrame(() => {
+      el.focus();
+      el.setSelectionRange(caret, caret);
+    });
   };
 
   // Functional updates everywhere: several quick actions in a row must not
@@ -148,7 +187,11 @@ export const TaskComments: React.FC<TaskCommentsProps> = ({ taskId, projectId, o
                 </div>
 
                 <div className="comment-body">
-                  <p>{comment.text}</p>
+                  <p>
+                    {splitMentions(comment.text, members).map((part, i) =>
+                      part.mention ? <span key={i} className="comment-mention">{part.text}</span> : part.text
+                    )}
+                  </p>
                 </div>
 
                 {isAssigned && (
@@ -225,11 +268,60 @@ export const TaskComments: React.FC<TaskCommentsProps> = ({ taskId, projectId, o
       </div>
 
       <div className="new-comment-composer">
+        {mention && (
+          <div className="mention-menu" role="listbox">
+            {suggestions.length === 0 ? (
+              <div className="mention-empty">{t.mentionNoMatches}</div>
+            ) : (
+              suggestions.map((m, i) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  role="option"
+                  aria-selected={i === mentionIndex}
+                  className={`popup-item${i === mentionIndex ? ' active' : ''}`}
+                  // mousedown, not click: keep the textarea focused.
+                  onMouseDown={e => {
+                    e.preventDefault();
+                    pickMention(m);
+                  }}
+                >
+                  <Avatar user={m} size="sm" />
+                  <span>{userDisplayName(m)}</span>
+                </button>
+              ))
+            )}
+          </div>
+        )}
         <textarea
+          ref={textareaRef}
           value={newCommentText}
-          onChange={e => setNewCommentText(e.target.value)}
+          onChange={e => {
+            setNewCommentText(e.target.value);
+            updateMention(e.target.value, e.target.selectionStart);
+          }}
+          onClick={e => updateMention(e.currentTarget.value, e.currentTarget.selectionStart)}
+          onBlur={() => setMention(null)}
           placeholder={t.writeComment}
           onKeyDown={e => {
+            if (mention && suggestions.length > 0) {
+              if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                const step = e.key === 'ArrowDown' ? 1 : -1;
+                setMentionIndex(i => (i + step + suggestions.length) % suggestions.length);
+                return;
+              }
+              if (e.key === 'Enter' || e.key === 'Tab') {
+                e.preventDefault();
+                pickMention(suggestions[Math.min(mentionIndex, suggestions.length - 1)]);
+                return;
+              }
+            }
+            if (mention && e.key === 'Escape') {
+              e.preventDefault();
+              setMention(null);
+              return;
+            }
             if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
               handlePost();
             }

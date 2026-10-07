@@ -25,6 +25,16 @@ In the output, you'll find options to open the app in a
 
 You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
 
+### Route type errors
+
+Screen paths like `router.push('/invitations')` are type-checked against `.expo/types/router.d.ts`, which Expo generates and git ignores. If your copy is older than a screen someone added, TypeScript reports that the path "is not assignable". `npm run typecheck` regenerates the file first. To refresh it on its own (for example, for your editor), run:
+
+```bash
+npm run routes:types
+```
+
+Starting the app with `npx expo start` also regenerates it.
+
 ## Get a fresh project
 
 When you're ready, run:

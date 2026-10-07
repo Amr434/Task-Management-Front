@@ -55,7 +55,7 @@
       "reactCompiler": true
     },
     "extra": {
-      "apiUrl": "http://10.10.2.197:5013/api"
+      "apiUrl": "http://10.10.2.156:5013/api"
     }
   }
 }
