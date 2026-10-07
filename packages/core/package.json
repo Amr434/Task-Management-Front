@@ -1,0 +1,14 @@
+{
+  "name": "@task/core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared logic for the web and mobile task manager clients: types, API calls, stores and translations. No DOM, no React Native — platform code belongs in the apps.",
+  "dependencies": {
+    "@microsoft/signalr": "^10.0.0",
+    "axios": "^1.18.1",
+    "zustand": "^5.0.14"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  }
+}

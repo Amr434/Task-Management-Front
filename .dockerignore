@@ -1,0 +1,9 @@
+**/node_modules
+**/.next
+**/.git
+# Mobile source is not needed, but npm ci needs its package.json (workspace lockfile check).
+apps/mobile/**
+!apps/mobile/package.json
+.claude
+deploy
+*.md
