@@ -11,8 +11,8 @@ import { useSpaceStore } from '@task/core/store/useSpaceStore';
 import { useColumnGridTemplate } from '../hooks/useColumnGridTemplate';
 import { useI18n } from '@/contexts/I18nContext';
 
-const INDENT_BASE = 48;
-const INDENT_STEP = 24;
+// Indent of the name cell: set in CSS (.task-name-cell) from --depth, so
+// phones can use a smaller indent.
 
 interface TaskRowProps {
   task: TaskItem;
@@ -199,7 +199,7 @@ export const TaskRow: React.FC<TaskRowProps> = ({ task, childrenByParent, depth 
           setDetailTaskId(task.id);
         }}
       >
-        <div className="task-cell task-name-cell" style={{ paddingLeft: INDENT_BASE + depth * INDENT_STEP }}>
+        <div className="task-cell task-name-cell" style={{ '--depth': depth } as React.CSSProperties}>
           <div 
             className={`task-row-checkbox ${isSelected ? 'checked' : ''}`}
             onClick={(e) => {
@@ -394,7 +394,7 @@ const SubtaskComposer: React.FC<{
 
   return (
     <div className="task-row subtask-composer-row" style={{ gridTemplateColumns }}>
-      <div className="task-cell task-name-cell" style={{ paddingLeft: INDENT_BASE + depth * INDENT_STEP }}>
+      <div className="task-cell task-name-cell" style={{ '--depth': depth } as React.CSSProperties}>
         <span className="task-expand" />
         <span className="task-status-btn"><StatusGlyph /></span>
         <input
