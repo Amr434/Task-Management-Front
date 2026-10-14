@@ -6,7 +6,9 @@ import { AuthResponse, LoginRequest } from '../types';
 // go through its interceptors (a 401 there would trigger a refresh loop), and
 // keeping this module free of apiClient lets the auth store and apiClient both
 // import it without forming a require cycle.
-const bare = axios.create({ headers: { 'Content-Type': 'application/json' } });
+// 20 s limit: without it a phone that can't reach the server (e.g. an
+// office-only address on mobile data) waits forever on "Sign in".
+const bare = axios.create({ headers: { 'Content-Type': 'application/json' }, timeout: 20000 });
 
 // Resolved per request, not at module init: setApiBaseUrl() usually runs after
 // this module has already been imported.
@@ -20,6 +22,10 @@ bare.interceptors.request.use((config) => {
 bare.interceptors.response.use(
   (response) => response,
   (error) => {
+    if (!error.response) {
+      // The server never answered: say which address, so it's clear what failed.
+      return Promise.reject(new Error(`Can't reach the server (${getApiBaseUrl()}). Check your internet connection and try again.`));
+    }
     const data = error.response?.data as { message?: string; title?: string } | undefined;
     return Promise.reject(new Error(data?.message || data?.title || error.message || 'Request failed'));
   }

@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '@task/core/features/auth/store/useAuthStore';
+import { getApiBaseUrl } from '@task/core/services/config';
 import { changePassword, requestPasswordReset } from '@task/core/features/auth/api';
 import { en } from '@task/core/i18n/dictionaries/en';
 
@@ -281,6 +282,10 @@ export default function SignInScreen() {
               </Pressable>
             ) : null}
           </View>
+          {/* Which server this build talks to — helps when sign-in can't connect. */}
+          <Text style={[styles.server, { color: theme.textSecondary }]}>
+            {getApiBaseUrl().replace(/\/api$/, '')}
+          </Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -291,6 +296,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   flex: { flex: 1 },
   scroll: { flexGrow: 1, justifyContent: 'center', padding: 20 },
+  server: { fontSize: 12, textAlign: 'center', marginTop: 14, opacity: 0.7 },
   card: { borderWidth: 1, borderRadius: 14, padding: 24, gap: 6 },
   brand: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 18 },
   logo: { width: 40, height: 40 },

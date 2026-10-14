@@ -55,7 +55,11 @@
       "reactCompiler": true
     },
     "extra": {
-      "apiUrl": "http://10.10.2.156:5013/api"
+      "apiUrl": "https://clickup.cissegypt.net/api",
+      "router": {},
+      "eas": {
+        "projectId": "57d41bd3-21b9-4a90-a071-f75ff02e5c8a"
+      }
     }
   }
 }
