@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 import { Flag, Search } from 'lucide-react';
 import { TaskItem, priorityMeta } from '@task/core/features/tasks/types';
@@ -21,8 +21,28 @@ export const TaskSearch = () => {
   const [open, setOpen] = useState(false);
   const [highlight, setHighlight] = useState(0);
   const boxRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  // Shown in the hint. False on the server, real value on the client, no mismatch.
+  const isMac = useSyncExternalStore(
+    () => () => {},
+    () => /Mac|iPhone|iPad/.test(navigator.platform),
+    () => false,
+  );
 
   const { results, isSearching, noResults, error } = useTaskSearch(query);
+
+  useEffect(() => {
+    // Cmd+K (Mac) / Ctrl+K (elsewhere) focuses the search from anywhere.
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        inputRef.current?.focus();
+        inputRef.current?.select();
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
 
   // Close when clicking anywhere else.
   useEffect(() => {
@@ -63,6 +83,7 @@ export const TaskSearch = () => {
     <div className="search-bar task-search" ref={boxRef}>
       <Search size={18} className="search-icon" />
       <input
+        ref={inputRef}
         type="text"
         placeholder={t.searchTasksPlaceholder}
         value={query}
@@ -74,6 +95,11 @@ export const TaskSearch = () => {
         onFocus={() => setOpen(true)}
         onKeyDown={onKeyDown}
       />
+      {!query && (
+        <kbd className="pointer-events-none ms-2 hidden shrink-0 select-none items-center gap-0.5 rounded-md border border-line bg-surface px-1.5 py-0.5 font-sans text-[11px] font-medium text-muted sm:inline-flex">
+          {isMac ? '⌘' : 'Ctrl'} K
+        </kbd>
+      )}
 
       {showPanel && (
         <div className="task-search-panel">
