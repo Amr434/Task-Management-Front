@@ -1,3 +1,28 @@
+/*
+ * Tailwind v4 is layered in WITHOUT its preflight reset: this file has its own reset
+ * and the older screens depend on it. Un-layered rules in this file beat Tailwind
+ * utilities, so old and new components don't fight. New components use utilities;
+ * old ones keep their classes until they are migrated.
+ */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+/* Expose the runtime theme variables (set by applyTheme) as Tailwind colors, so
+   bg-surface / text-ink / border-line follow the user's light/dark + accent choice. */
+@theme inline {
+  --color-accent: var(--accent-color);
+  --color-accent-soft: var(--accent-muted);
+  --color-accent-line: var(--accent-border);
+  --color-surface: var(--bg-main);
+  --color-chrome: var(--bg-topbar);
+  --color-rail: var(--bg-sidebar);
+  --color-hover: var(--bg-hover);
+  --color-ink: var(--text-primary);
+  --color-muted: var(--text-secondary);
+  --color-line: var(--border-color);
+}
+
 :root {
   /* Theme variables — defaults: light mode + purple accent */
   --bg-sidebar: #f3f0ff;
@@ -80,9 +105,17 @@ body {
   display: flex;
   align-items: center;
   background-color: var(--bg-hover);
-  border-radius: 6px;
-  padding: 6px 12px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 7px 12px;
   width: 250px;
+  transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s;
+}
+
+.search-bar:focus-within {
+  background-color: var(--bg-main);
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px var(--accent-muted-strong);
 }
 
 .search-bar input {
