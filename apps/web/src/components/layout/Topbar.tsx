@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'motion/react';
-import { Camera, ChevronRight, LogOut, Palette } from 'lucide-react';
+import { Camera, ChevronRight, LogOut, Menu, Palette } from 'lucide-react';
 import { ThemeModal } from '@/features/theme/components/ThemeModal';
 import { useAuthStore } from '@task/core/features/auth/store/useAuthStore';
 import { useI18n } from '@/contexts/I18nContext';
@@ -13,6 +13,7 @@ import { InvitationBell } from './InvitationBell';
 import { TaskSearch } from '@/features/tasks/components/TaskSearch';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { ProfilePictureModal } from '@/features/users/components/ProfilePictureModal';
+import { useMobileNav } from './mobileNav';
 
 type Crumb = { label: string; href?: string };
 
@@ -25,6 +26,7 @@ export const Topbar = () => {
   const { t } = useI18n();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+  const openNav = useMobileNav((s) => s.open);
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [themeOpen, setThemeOpen] = useState(false);
@@ -70,14 +72,22 @@ export const Topbar = () => {
   const fullName = user ? `${user.firstName} ${user.lastName}` : '';
 
   return (
-    <header className="relative z-30 flex h-(--topbar-height) shrink-0 items-center justify-between gap-4 border-b border-line bg-chrome px-6">
-      <nav aria-label="Breadcrumb" className="min-w-0">
+    <header className="relative z-30 flex h-(--topbar-height) shrink-0 items-center justify-between gap-2 border-b border-line bg-chrome px-3 md:gap-4 md:px-6">
+      {/* Phones only: opens the sidebar as a slide-in menu. */}
+      <button
+        onClick={() => openNav(pathname)}
+        aria-label={t.menu}
+        className="-ms-1 flex shrink-0 cursor-pointer items-center rounded-lg border-0 bg-transparent p-1.5 text-ink hover:bg-hover md:hidden"
+      >
+        <Menu size={22} />
+      </button>
+      <nav aria-label="Breadcrumb" className="min-w-0 flex-1">
         <ol className="flex items-center gap-1.5 text-sm">
           {crumbs.map((c, i) => {
             const last = i === crumbs.length - 1;
             return (
-              <li key={c.label} className="flex items-center gap-1.5">
-                {i > 0 && <ChevronRight size={14} className="text-muted/60 rtl:rotate-180" aria-hidden />}
+              <li key={c.label} className={`flex min-w-0 items-center gap-1.5${last ? '' : ' max-md:hidden'}`}>
+                {i > 0 && <ChevronRight size={14} className="text-muted/60 max-md:hidden rtl:rotate-180" aria-hidden />}
                 {last || !c.href ? (
                   <span aria-current={last ? 'page' : undefined} className="truncate font-semibold text-ink">
                     {c.label}
@@ -93,7 +103,7 @@ export const Topbar = () => {
         </ol>
       </nav>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1.5 md:gap-3">
         <TaskSearch />
         <InvitationBell />
 

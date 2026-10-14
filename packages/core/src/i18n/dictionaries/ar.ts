@@ -333,6 +333,7 @@ export const ar: Dictionary = {
   pictureWrongType: 'يرجى اختيار صورة JPG أو PNG أو WEBP أو GIF.',
 
   // Task search
+  menu: 'القائمة',
   searchTasksPlaceholder: 'ابحث عن المهام بالاسم أو #الرقم',
   searchingTasks: 'جارٍ البحث...',
   noTasksFound: 'لم يتم العثور على مهام.',

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import "@/services/apiConfig";
 import { AppShell } from "@/components/layout/AppShell";
@@ -9,6 +9,18 @@ import { TaskSelectionProvider } from "@/contexts/TaskSelectionContext";
 export const metadata: Metadata = {
   title: "Click up CISS",
   description: "CISS task management",
+  // Opened from the iPhone home screen: full screen, with this name.
+  appleWebApp: {
+    capable: true,
+    title: "Click up CISS",
+    statusBarStyle: "default",
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#ffffff",
 };
 
 export default function RootLayout({
