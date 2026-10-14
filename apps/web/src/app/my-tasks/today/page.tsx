@@ -121,17 +121,17 @@ export default function TodayAndOverduePage() {
                     className="today-task-row"
                     onClick={() => router.push(`/projects/${task.projectId}`)}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0, flex: 1 }}>
                       <button
                         title="Mark complete"
                         onClick={(e) => { e.stopPropagation(); markComplete(task); }}
                         style={{ width: '14px', height: '14px', border: '1px solid var(--text-secondary)', borderRadius: '50%', background: task.status === TaskStatus.Complete ? '#00c875' : 'transparent', cursor: 'pointer', flexShrink: 0, padding: 0 }}
                       />
-                      <span style={{ fontSize: '14px', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <span style={{ fontSize: '14px', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>
                         {task.title}
                       </span>
                       {crumb && (
-                        <span style={{ color: 'var(--text-secondary)', fontSize: '12px', whiteSpace: 'nowrap' }}>
+                        <span className="today-task-crumb" style={{ color: 'var(--text-secondary)', fontSize: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0, flexShrink: 2 }}>
                           • {crumb}
                         </span>
                       )}

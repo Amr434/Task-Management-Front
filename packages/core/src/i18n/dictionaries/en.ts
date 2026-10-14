@@ -331,6 +331,7 @@ export const en = {
   pictureWrongType: 'Please choose a JPG, PNG, WEBP or GIF image.',
 
   // Task search
+  menu: 'Menu',
   searchTasksPlaceholder: 'Search tasks by name or #number',
   searchingTasks: 'Searching...',
   noTasksFound: 'No tasks found.',
