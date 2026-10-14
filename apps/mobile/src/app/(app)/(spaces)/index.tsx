@@ -21,6 +21,7 @@ import { createProject, getProjectsBySpace } from '@task/core/features/projects/
 import type { Project } from '@task/core/features/projects/types';
 import { InvitationTargetType } from '@task/core/features/invitations/types';
 import { useNotificationStore } from '@task/core/store/useNotificationStore';
+import { useNotificationCenterStore } from '@task/core/features/notifications/store';
 import { badgeLabel, refreshUnreadReplies } from '@task/core/features/comments/unread';
 import { en } from '@task/core/i18n/dictionaries/en';
 
@@ -48,6 +49,7 @@ export default function HomeScreen() {
   const unreadReplies = useNotificationStore((st) => st.unreadReplies);
   // Pending space/list invitations: the badge on the bell.
   const pendingInvitations = useInvitationStore((st) => st.pendingInvitations.length);
+  const unreadNotifications = useNotificationCenterStore((st) => st.unreadCount);
 
   const [spaces, setSpaces] = useState<Space[]>([]);
   const [loading, setLoading] = useState(true);
@@ -209,17 +211,33 @@ export default function HomeScreen() {
           </Text>
           <Icon name="chevronDown" size={17} color={theme.textSecondary} />
         </Pressable>
-        {/* Space and list invitations, like the bell at the top of the web app. */}
+        {/* Space and list invitations, like the invitations button on the web. */}
         <Pressable
           onPress={() => router.push('/invitations')}
           hitSlop={8}
           accessibilityLabel={pendingInvitations > 0 ? `Invitations, ${pendingInvitations} pending` : 'Invitations'}
           style={({ pressed }) => [styles.bell, { opacity: pressed ? 0.6 : 1 }]}
         >
-          <Icon name="bell" size={24} color={theme.textSecondary} />
+          <Icon name="personAdd" size={23} color={theme.textSecondary} />
           {pendingInvitations > 0 ? (
             <View style={[styles.bellBadge, { backgroundColor: theme.danger, borderColor: theme.bgMain }]}>
               <Text style={styles.badgeText}>{pendingInvitations > 9 ? '9+' : pendingInvitations}</Text>
+            </View>
+          ) : null}
+        </Pressable>
+        {/* The notification list, like the bell at the top of the web app. */}
+        <Pressable
+          onPress={() => router.push('/notifications')}
+          hitSlop={8}
+          accessibilityLabel={
+            unreadNotifications > 0 ? `${en.notifications}, ${unreadNotifications} unread` : en.notifications
+          }
+          style={({ pressed }) => [styles.bell, { opacity: pressed ? 0.6 : 1 }]}
+        >
+          <Icon name="bell" size={24} color={theme.textSecondary} />
+          {unreadNotifications > 0 ? (
+            <View style={[styles.bellBadge, { backgroundColor: theme.danger, borderColor: theme.bgMain }]}>
+              <Text style={styles.badgeText}>{unreadNotifications > 9 ? '9+' : unreadNotifications}</Text>
             </View>
           ) : null}
         </Pressable>

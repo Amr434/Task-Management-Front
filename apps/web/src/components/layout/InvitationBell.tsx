@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bell, Check, X, FolderKanban, LayoutGrid } from 'lucide-react';
+import { UserPlus, Check, X, FolderKanban, LayoutGrid } from 'lucide-react';
 import { useInvitationStore } from '@task/core/features/invitations/store/useInvitationStore';
 import { Invitation, InvitationTargetType } from '@task/core/features/invitations/types';
 import { invitationsApi } from '@task/core/features/invitations/api';
@@ -66,8 +66,9 @@ export const InvitationBell = () => {
 
   return (
     <div className="invitation-bell-container" ref={menuRef}>
-      <button className="icon-btn" onClick={() => setOpen(!open)} title="Invitations">
-        <Bell size={20} />
+      {/* Not a bell: the bell next to it is the notification list. */}
+      <button className="icon-btn" onClick={() => setOpen(!open)} title={t.invitations}>
+        <UserPlus size={20} />
         {pendingInvitations.length > 0 && (
           <span className="invitation-badge">{pendingInvitations.length}</span>
         )}

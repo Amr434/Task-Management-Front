@@ -68,9 +68,9 @@ export function useTaskComments(taskId: number | null | undefined, pollMs = 8000
 
   // Posts a comment and appends it straight away. Throws on failure.
   const add = useCallback(
-    async (text: string, assignedToId?: number) => {
+    async (text: string, assignedToId?: number, mentionedUserIds?: number[]) => {
       if (!taskId) throw new Error('No task selected');
-      const created = await createTaskComment(taskId, text, assignedToId);
+      const created = await createTaskComment(taskId, text, assignedToId, mentionedUserIds);
       setComments((prev) => [...prev.filter((c) => c.id !== created.id), created]);
       return created;
     },

@@ -4,12 +4,14 @@ import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'motion/react';
-import { Camera, ChevronRight, LogOut, Menu, Palette } from 'lucide-react';
+import { BellRing, Camera, ChevronRight, LogOut, Menu, Palette } from 'lucide-react';
 import { ThemeModal } from '@/features/theme/components/ThemeModal';
 import { useAuthStore } from '@task/core/features/auth/store/useAuthStore';
 import { useI18n } from '@/contexts/I18nContext';
 import { useInvitationStore } from '@task/core/features/invitations/store/useInvitationStore';
 import { InvitationBell } from './InvitationBell';
+import { NotificationBell } from './NotificationBell';
+import { NotificationSettingsModal } from '@/features/users/components/NotificationSettingsModal';
 import { TaskSearch } from '@/features/tasks/components/TaskSearch';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { ProfilePictureModal } from '@/features/users/components/ProfilePictureModal';
@@ -31,6 +33,7 @@ export const Topbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [themeOpen, setThemeOpen] = useState(false);
   const [pictureOpen, setPictureOpen] = useState(false);
+  const [notifSettingsOpen, setNotifSettingsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -105,6 +108,7 @@ export const Topbar = () => {
 
       <div className="flex items-center gap-1.5 md:gap-3">
         <TaskSearch />
+        <NotificationBell onOpenSettings={() => setNotifSettingsOpen(true)} />
         <InvitationBell />
 
         <div className="relative" ref={menuRef}>
@@ -162,6 +166,16 @@ export const Topbar = () => {
                 >
                   <Palette size={15} className="text-muted" /> {t.theme}
                 </button>
+                <button
+                  role="menuitem"
+                  className={menuItem}
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setNotifSettingsOpen(true);
+                  }}
+                >
+                  <BellRing size={15} className="text-muted" /> {t.notificationSettings}
+                </button>
                 <div className="my-1 h-px bg-line" />
                 <button
                   role="menuitem"
@@ -178,6 +192,7 @@ export const Topbar = () => {
 
       {themeOpen && <ThemeModal onClose={() => setThemeOpen(false)} />}
       {pictureOpen && <ProfilePictureModal onClose={() => setPictureOpen(false)} />}
+      {notifSettingsOpen && <NotificationSettingsModal onClose={() => setNotifSettingsOpen(false)} />}
     </header>
   );
 };

@@ -54,6 +54,8 @@ const NAMES = {
   replies: 'chatbubbles-outline',
   repliesActive: 'chatbubbles',
   checkAll: 'checkmark-done-outline',
+  alarm: 'alarm-outline',
+  mail: 'mail-outline',
 } as const;
 
 export type IconName = keyof typeof NAMES;

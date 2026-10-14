@@ -90,6 +90,18 @@ export default function ProfileScreen() {
         <Row label="App version" value={Constants.expoConfig?.version ?? '1.0.0'} />
       </View>
 
+      <Pressable
+        onPress={() => router.push('/notification-settings')}
+        style={({ pressed }) => [
+          styles.manage,
+          { borderColor: theme.border, backgroundColor: pressed ? theme.bgHover : theme.bgSurface },
+        ]}
+      >
+        <Icon name="bell" size={20} color={theme.accent} />
+        <Text style={[styles.manageText, { color: theme.textPrimary }]}>{en.notificationSettings}</Text>
+        <Icon name="chevronRight" size={18} color={theme.textFaint} />
+      </Pressable>
+
       {canManageUsers(user?.role) ? (
         <Pressable
           onPress={() => router.push('/users')}

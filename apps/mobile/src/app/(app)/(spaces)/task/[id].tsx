@@ -404,7 +404,7 @@ export default function TaskScreen() {
         </Pressable>
       </View>
 
-      <TaskComments taskId={taskId} onChange={bumpHistory} />
+      <TaskComments taskId={taskId} projectId={task.projectId} onChange={bumpHistory} />
       <TaskHistory taskId={task.id} version={historyVersion} />
 
       <Pressable onPress={confirmDelete} style={({ pressed }) => [styles.delete, { opacity: pressed ? 0.6 : 1 }]}>
