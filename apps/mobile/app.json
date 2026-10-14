@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "task-management-mobile",
+    "name": "Click up CISS",
     "slug": "task-management-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -55,7 +55,7 @@
       "reactCompiler": true
     },
     "extra": {
-      "apiUrl": "http://10.10.2.197:5013/api"
+      "apiUrl": "https://clickup.cissegypt.net/api"
     }
   }
 }

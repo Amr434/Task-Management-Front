@@ -4,9 +4,11 @@ import { configureAuthStorage } from '@task/core/features/auth/store/useAuthStor
 
 import { secureStorage } from './secureStorage';
 
-// Fallback only — the real value comes from app.json's extra.apiUrl, which is a
-// developer-machine LAN address and changes per network. Update it there.
-const DEFAULT_API_URL = 'http://10.10.2.197:5013/api';
+// Fallback only — the real value comes from app.json's extra.apiUrl. It points
+// at the live server so the app works on any network (Wi-Fi or mobile data).
+// For local testing against your own backend, change it in app.json to
+// http://<your machine's IP>:5013/api (and don't commit that change).
+const DEFAULT_API_URL = 'https://clickup.cissegypt.net/api';
 
 // The base URL has to be set before anything fires a request, and the session
 // has to be read out of the Keychain before the first guarded screen decides
