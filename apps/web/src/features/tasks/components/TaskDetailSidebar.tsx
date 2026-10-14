@@ -9,6 +9,7 @@ import { patchTask, addTagToTask, removeTagFromTask, assignUserToTask, removeUse
 import { TaskComments } from '@/features/comments/components/TaskComments';
 import { useI18n } from '@/contexts/I18nContext';
 import { TaskAttachments } from '@/features/attachments/components/TaskAttachments';
+import { TaskHistory } from './TaskHistory';
 import { RichTextEditor } from './RichTextEditor';
 
 export const TaskDetailSidebar: React.FC = () => {
@@ -61,6 +62,11 @@ export const TaskDetailSidebar: React.FC = () => {
     return () => document.removeEventListener('mousedown', onDocClick);
   }, [openField]);
 
+  // Bumped when a comment or attachment changes; those aren't fields of the
+  // task, so the history's changeKey wouldn't otherwise notice them.
+  const [sideChanges, setSideChanges] = useState(0);
+  const bumpHistory = () => setSideChanges((n) => n + 1);
+
   // Description draft.
   //
   // The draft is kept with the task it was typed into, never "whatever task is
@@ -103,7 +109,7 @@ export const TaskDetailSidebar: React.FC = () => {
 
   // Status mapping
   const statusLabels: Record<TaskStatus, { label: string; color: string; bg: string }> = {
-    0: { label: t.statusToDo, color: '#b2b2b2', bg: 'transparent' },
+    0: { label: t.statusToDo, color: '#87909e', bg: 'transparent' },
     1: { label: t.statusInProgress, color: '#2684ff', bg: 'rgba(38, 132, 255, 0.1)' },
     2: { label: t.statusComplete, color: '#00c875', bg: 'rgba(0, 200, 117, 0.1)' },
   };
@@ -300,11 +306,27 @@ export const TaskDetailSidebar: React.FC = () => {
           <div className="tds-divider" />
 
           {/* Attachments Section */}
-          <TaskAttachments taskId={task.id} />
+          <TaskAttachments taskId={task.id} onChange={bumpHistory} />
           <div className="tds-divider" />
 
           {/* Comments Section */}
-          <TaskComments taskId={task.id} projectId={task.projectId} />
+          <TaskComments taskId={task.id} projectId={task.projectId} onChange={bumpHistory} />
+
+          {/* History: who changed what */}
+          <TaskHistory
+            taskId={task.id}
+            changeKey={[
+              task.title,
+              task.description,
+              task.status,
+              task.priority,
+              task.dueDate,
+              task.projectId,
+              (task.assignees ?? []).map((a) => a.id).join(','),
+              (task.tags ?? []).map((tg) => tg.id).join(','),
+              sideChanges,
+            ].join('|')}
+          />
 
         </div>
       </div>

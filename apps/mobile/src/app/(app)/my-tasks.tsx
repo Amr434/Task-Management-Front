@@ -1,7 +1,7 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { getAssignedTasks, patchTask } from '@task/core/features/tasks/api';
 import { TaskStatus, priorityMeta, type TaskItem } from '@task/core/features/tasks/types';
 
@@ -25,6 +25,12 @@ export default function MyTasksScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>('open');
+
+  // The Home cards open this tab on a specific filter ("Today" -> today & overdue).
+  const params = useLocalSearchParams<{ filter?: string; at?: string }>();
+  useEffect(() => {
+    if (params.filter === 'open' || params.filter === 'today') setFilter(params.filter);
+  }, [params.filter, params.at]);
 
   const load = useCallback(async () => {
     setError(null);

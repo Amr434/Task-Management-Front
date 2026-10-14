@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { Priority, PRIORITY_META, Tag, User, userInitials, userDisplayName, avatarColor } from '@task/core/features/tasks/types';
 import { getTags, findOrCreateTag, getProjectMembers } from '@task/core/features/tasks/api';
+import { avatarSrc } from '@task/core/features/users/avatar';
 import { useAuthStore } from '@task/core/features/auth/store/useAuthStore';
 import { useI18n } from '@/contexts/I18nContext';
 
@@ -136,15 +137,24 @@ export const StatusMenu: React.FC<{
 };
 
 // ---- Avatar helpers (DB-backed users) ----
-export const Avatar: React.FC<{ user: User; size?: 'sm' | 'md'; title?: boolean }> = ({ user, size = 'md', title = true }) => (
-  <span
-    className={`dd-avatar ${size === 'sm' ? 'sm' : ''}`}
-    style={{ backgroundColor: avatarColor(user) }}
-    title={title ? userDisplayName(user) : undefined}
-  >
-    {userInitials(user)}
-  </span>
-);
+// Shows the user's profile picture, or their initials when they have none.
+export const Avatar: React.FC<{ user: User; size?: 'sm' | 'md'; title?: boolean }> = ({ user, size = 'md', title = true }) => {
+  const src = avatarSrc(user.avatarUrl);
+  return (
+    <span
+      className={`dd-avatar avatar-frame ${size === 'sm' ? 'sm' : ''}`}
+      style={{ backgroundColor: avatarColor(user) }}
+      title={title ? userDisplayName(user) : undefined}
+    >
+      {src ? (
+        // eslint-disable-next-line @next/next/no-img-element -- served by our API, not optimisable by next/image
+        <img src={src} alt={userDisplayName(user)} />
+      ) : (
+        userInitials(user)
+      )}
+    </span>
+  );
+};
 
 // Overlapping avatar stack with a "+N" overflow chip.
 export const AvatarStack: React.FC<{ users: User[]; max?: number; size?: 'sm' | 'md' }> = ({ users, max = 3, size = 'sm' }) => {

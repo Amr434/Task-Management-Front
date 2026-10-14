@@ -64,8 +64,8 @@ export default function UsersPage() {
     <main className="main-layout dashboard-page">
       <header className="dashboard-page-header">
         <div>
-          <h1>{t.manageUsers}</h1>
-          <p className="users-subtitle">{t.userManagementRules}</p>
+          {/* The page name is shown in the top bar. */}
+          <p className="users-subtitle" style={{ marginTop: 0 }}>{t.userManagementRules}</p>
         </div>
         <button type="button" className="btn-primary users-add-btn" onClick={() => setIsCreateOpen(true)}>
           <UserPlus size={16} /> {t.addUser}

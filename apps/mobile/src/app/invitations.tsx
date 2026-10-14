@@ -10,7 +10,11 @@ import { Icon } from '@/components/icon';
 import { Empty, Tile } from '@/components/ui';
 import { useTheme } from '@/theme';
 
-export default function InboxScreen() {
+/**
+ * Invitations to spaces and lists: accept or decline. Opened from the bell on
+ * the Home screen (the web app shows the same list under its bell).
+ */
+export default function InvitationsScreen() {
   const theme = useTheme();
 
   const pending = useInvitationStore((s) => s.pendingInvitations);
@@ -58,7 +62,18 @@ export default function InboxScreen() {
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: theme.bgMain }}>
-      <Text style={[styles.screenTitle, { color: theme.textPrimary }]}>Inbox</Text>
+      <View style={styles.header}>
+        <Pressable
+          onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
+          hitSlop={10}
+          accessibilityLabel="Back"
+          style={[styles.round, { backgroundColor: theme.bgHover }]}
+        >
+          <Icon name="back" size={20} color={theme.textSecondary} />
+        </Pressable>
+        <Text style={[styles.title, { color: theme.textPrimary }]}>Invitations</Text>
+        <View style={styles.round} />
+      </View>
 
       <ScrollView
         contentContainerStyle={styles.body}
@@ -138,8 +153,16 @@ export default function InboxScreen() {
 }
 
 const styles = StyleSheet.create({
-  screenTitle: { fontSize: 24, fontWeight: '700', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 10 },
-  body: { paddingHorizontal: 16, paddingBottom: 170, gap: 12 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  round: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  title: { fontSize: 18, fontWeight: '700' },
+  body: { paddingHorizontal: 16, paddingBottom: 60, gap: 12 },
   error: { fontSize: 13, paddingBottom: 8 },
   card: { borderWidth: 1, borderRadius: 14, padding: 14, gap: 14 },
   cardHead: { flexDirection: 'row', gap: 12 },

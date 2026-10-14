@@ -24,7 +24,7 @@ export const TaskGroupSection: React.FC<TaskGroupSectionProps> = ({ label, color
   return (
     <div className="space-list-section">
       <div className="list-section-header" onClick={() => setIsExpanded(!isExpanded)}>
-        <span className="chevron-icon" style={{ marginRight: '8px', color: '#87909e' }}>
+        <span className="chevron-icon" style={{ marginRight: '8px', color: 'var(--text-secondary)' }}>
           {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
         </span>
 

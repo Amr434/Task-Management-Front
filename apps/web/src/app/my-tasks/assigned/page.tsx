@@ -56,10 +56,7 @@ export default function AssignedToMePage() {
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)' }}>
-        <h1 style={{ margin: 0, fontSize: '20px' }}>{t.assignedToMe}</h1>
-      </div>
-      
+      {/* The page name is shown in the top bar. */}
       <div style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
         {loading ? (
           <div style={{ color: 'var(--text-secondary)' }}>{t.loadingTasks}</div>

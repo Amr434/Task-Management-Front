@@ -68,6 +68,49 @@ export enum TaskStatus {
   Complete = 2,
 }
 
+// Mirrors backend Task_Management.Domain.Enums.TaskActivityType
+export enum TaskActivityType {
+  Created = 0,
+  TitleChanged = 1,
+  DescriptionChanged = 2,
+  StatusChanged = 3,
+  PriorityChanged = 4,
+  DueDateChanged = 5,
+  AssigneeAdded = 6,
+  AssigneeRemoved = 7,
+  TagAdded = 8,
+  TagRemoved = 9,
+  MovedToProject = 10,
+  CommentAdded = 11,
+  CommentDeleted = 12,
+  CommentAssigned = 13,
+  CommentUnassigned = 14,
+  CommentResolved = 15,
+  CommentReopened = 16,
+  AttachmentAdded = 17,
+  AttachmentDeleted = 18,
+}
+
+// One entry in a task's history (backend TaskActivityDto). Status and priority
+// values are enum names ("InProgress"), dates are yyyy-MM-dd, people and tags
+// are display names captured at the time of the change.
+export interface TaskActivity {
+  id: number;
+  type: TaskActivityType;
+  oldValue?: string | null;
+  newValue?: string | null;
+  createdAt: string;
+  user?: User | null;
+}
+
+// Live "a task you're on changed" notification (backend TaskChangeDto).
+export interface TaskChange {
+  taskId: number;
+  taskTitle: string;
+  projectId: number;
+  activity: TaskActivity;
+}
+
 export interface TaskItem {
   id: number;
   title: string;

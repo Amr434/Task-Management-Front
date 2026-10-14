@@ -13,8 +13,9 @@ import { useTheme } from '@/theme';
  * A task's comments on mobile: the same list the web shows, oldest to newest,
  * plus a box to write one. Uses the shared useTaskComments hook, which
  * refreshes every few seconds so comments written on the web appear here.
+ * onChange runs after a comment is saved, so the task history can reload.
  */
-export function TaskComments({ taskId }: { taskId: number }) {
+export function TaskComments({ taskId, onChange }: { taskId: number; onChange?: () => void }) {
   const theme = useTheme();
   const { comments, isLoading, error, add } = useTaskComments(taskId);
   const [text, setText] = useState('');
@@ -27,6 +28,7 @@ export function TaskComments({ taskId }: { taskId: number }) {
     try {
       await add(trimmed);
       setText('');
+      onChange?.();
     } catch (err) {
       Alert.alert('Could not send comment', err instanceof Error ? err.message : 'Please try again.');
     } finally {

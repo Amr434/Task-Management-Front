@@ -24,7 +24,7 @@ export default function AppLayout() {
     >
       <Tabs.Screen name="(spaces)" options={{ title: 'Home' }} />
       <Tabs.Screen name="my-tasks" options={{ title: 'My Tasks' }} />
-      <Tabs.Screen name="inbox" options={{ title: 'Inbox' }} />
+      <Tabs.Screen name="replies" options={{ title: 'Replies' }} />
       <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
     </Tabs>
     {/* Live "new comment" pop-ups, above every tab. */}

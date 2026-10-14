@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { X, UserPlus, Search, Check } from 'lucide-react';
 import { usersApi } from '@task/core/features/users/api';
+import { avatarSrc } from '@task/core/features/users/avatar';
 import { AuthUser } from '@task/core/features/auth/types';
 import { useAuthStore } from '@task/core/features/auth/store/useAuthStore';
 import { invitationsApi } from '@task/core/features/invitations/api';
@@ -91,8 +92,13 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ targetType
               const row = rows[u.id] ?? { status: 'idle' };
               return (
                 <div key={u.id} className="share-user-row">
-                  <span className="share-avatar" style={{ background: AVATAR_COLORS[u.id % AVATAR_COLORS.length] }}>
-                    {initialsOf(u)}
+                  <span className="share-avatar avatar-frame" style={{ background: AVATAR_COLORS[u.id % AVATAR_COLORS.length] }}>
+                    {avatarSrc(u.avatarUrl) ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- served by our API
+                      <img src={avatarSrc(u.avatarUrl)!} alt={`${u.firstName} ${u.lastName}`.trim()} />
+                    ) : (
+                      initialsOf(u)
+                    )}
                   </span>
                   <div className="share-user-info">
                     <span className="share-user-name">{u.firstName} {u.lastName}</span>
@@ -118,7 +124,7 @@ export const InviteMemberModal: React.FC<InviteMemberModalProps> = ({ targetType
 
         <div className="share-footnote">
           People you invite get access to this {targetType === InvitationTargetType.Space ? 'space' : 'project'} once
-          they accept the invitation from their inbox (🔔).
+          they accept the invitation from the bell (🔔) at the top of the page.
         </div>
       </div>
     </div>

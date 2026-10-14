@@ -9,7 +9,8 @@ import { useI18n } from '@/contexts/I18nContext';
 // Attachment list + upload dropzone for one task (rendered inside the task
 // detail sidebar). Files live on the API host, so every project member the
 // task is shared with sees the same list.
-export const TaskAttachments: React.FC<{ taskId: number }> = ({ taskId }) => {
+// onChange runs after an upload or delete is saved, so the task history can reload.
+export const TaskAttachments: React.FC<{ taskId: number; onChange?: () => void }> = ({ taskId, onChange }) => {
   const { t } = useI18n();
   const [items, setItems] = useState<AttachmentItem[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -29,6 +30,7 @@ export const TaskAttachments: React.FC<{ taskId: number }> = ({ taskId }) => {
       for (const file of list) {
         const created = await uploadAttachment(taskId, file);
         setItems((prev) => [...prev, created]);
+        onChange?.();
       }
     } catch (e) {
       console.warn('Failed to upload attachment', e instanceof Error ? e.message : String(e));
@@ -42,6 +44,7 @@ export const TaskAttachments: React.FC<{ taskId: number }> = ({ taskId }) => {
     try {
       await deleteAttachment(attachment.id);
       setItems((prev) => prev.filter((a) => a.id !== attachment.id));
+      onChange?.();
     } catch (e) {
       console.warn('Failed to delete attachment', e instanceof Error ? e.message : String(e));
     }

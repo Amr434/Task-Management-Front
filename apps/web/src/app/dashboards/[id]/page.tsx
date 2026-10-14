@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { getDashboardSummary } from '@task/core/features/dashboards/api';
 import { DashboardSummary } from '@task/core/features/dashboards/types';
 import { DashboardView } from '@/features/dashboards/components/DashboardView';
+import { useRegisterPageTitle } from '@/components/layout/usePageTitle';
 
 export default function DashboardDetailPage() {
   const params = useParams();
@@ -12,6 +13,9 @@ export default function DashboardDetailPage() {
   const id = Number(params.id);
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Show this dashboard's name at the top of the page.
+  useRegisterPageTitle(summary?.dashboard.name);
 
   useEffect(() => {
     if (!id || Number.isNaN(id)) {

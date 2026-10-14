@@ -1,5 +1,5 @@
 import apiClient from '../../../services/apiClient';
-import { TaskItem, Tag, User } from '../types';
+import { TaskActivity, TaskItem, Tag, User } from '../types';
 
 
 export interface CreateTaskDTO {
@@ -36,6 +36,11 @@ export const getAssignedTasks = async (): Promise<TaskItem[]> => {
 
 export const deleteTask = async (id: number): Promise<void> => {
   return apiClient.delete(`/Tasks/${id}`);
+};
+
+// Who changed what on a task, newest first. Backend: GET /Tasks/{id}/activity.
+export const getTaskActivity = async (taskId: number): Promise<TaskActivity[]> => {
+  return apiClient.get<TaskActivity[], TaskActivity[]>(`/Tasks/${taskId}/activity`);
 };
 
 

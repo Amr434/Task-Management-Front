@@ -25,7 +25,7 @@ const NAMES = {
   folder: 'folder-outline',
   grid: 'grid-outline',
   clock: 'time-outline',
-  inbox: 'file-tray-outline',
+  bell: 'notifications-outline',
   flag: 'flag-outline',
   calendar: 'calendar-outline',
   today: 'today-outline',
@@ -52,6 +52,7 @@ const NAMES = {
   camera: 'camera',
   send: 'arrow-up',
   replies: 'chatbubbles-outline',
+  repliesActive: 'chatbubbles',
   checkAll: 'checkmark-done-outline',
 } as const;
 

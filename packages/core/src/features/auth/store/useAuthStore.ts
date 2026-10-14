@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist, StateStorage } from 'zustand/middleware';
 import { AuthUser } from '../types';
-import * as authApi from '../api';
+import * as authApi from '../api/session';
 
 // Where the session is persisted. Left null on web, so the factory below falls
 // through to localStorage and behaves exactly as it did before extraction
@@ -74,9 +74,9 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: async () => {
-        const { refreshToken } = get();
+        const { refreshToken, accessToken } = get();
         try {
-          if (refreshToken) await authApi.logout(refreshToken);
+          if (refreshToken) await authApi.revokeSession(refreshToken, accessToken);
         } catch {
           // Best-effort revoke; clear the local session regardless.
         }

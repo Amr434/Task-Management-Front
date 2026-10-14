@@ -4,9 +4,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import {
   commentNotificationTitle,
+  notificationTarget,
   useNotificationStore,
-  type CommentNotification,
+  type AppNotification,
 } from '@task/core/store/useNotificationStore';
+import { describeActivity } from '@task/core/features/tasks/activity';
+import { userDisplayName } from '@task/core/features/tasks/types';
+import { en } from '@task/core/i18n/dictionaries/en';
 
 import { Icon } from '@/components/icon';
 import { Avatar } from '@/components/ui';
@@ -16,8 +20,8 @@ const AUTO_HIDE_MS = 6000;
 
 /**
  * Pop-up banners at the top of the screen when someone comments on a task you
- * can see. Fed live by the shared SignalR connection (same as the web).
- * Tap one to open the task.
+ * can see, or changes a task you're assigned to. Fed live by the shared
+ * SignalR connection (same as the web). Tap one to open the task.
  */
 export function CommentNotifications() {
   const insets = useSafeAreaInsets();
@@ -32,10 +36,20 @@ export function CommentNotifications() {
   );
 }
 
-function Banner({ notification }: { notification: CommentNotification }) {
+// Who, headline and detail for either kind of notification.
+function content(n: AppNotification) {
+  if (n.kind === 'comment') {
+    return { person: n.comment.author, title: commentNotificationTitle(n.comment), body: n.comment.text };
+  }
+  const { activity, taskTitle } = n.change;
+  const who = activity.user ? userDisplayName(activity.user) : 'Someone';
+  return { person: activity.user, title: taskTitle, body: `${who} ${describeActivity(activity, en)}` };
+}
+
+function Banner({ notification }: { notification: AppNotification }) {
   const theme = useTheme();
   const dismiss = useNotificationStore((s) => s.dismiss);
-  const { comment } = notification;
+  const { person, title, body } = content(notification);
 
   useEffect(() => {
     const timer = setTimeout(() => dismiss(notification.id), AUTO_HIDE_MS);
@@ -44,9 +58,10 @@ function Banner({ notification }: { notification: CommentNotification }) {
 
   const open = () => {
     dismiss(notification.id);
+    const { taskId, projectId } = notificationTarget(notification);
     router.push({
       pathname: '/task/[id]',
-      params: { id: String(comment.taskItemId), projectId: String(comment.projectId) },
+      params: { id: String(taskId), projectId: String(projectId) },
     });
   };
 
@@ -64,18 +79,18 @@ function Banner({ notification }: { notification: CommentNotification }) {
       ]}
     >
       <Avatar
-        firstName={comment.author?.firstName}
-        lastName={comment.author?.lastName}
-        avatarUrl={comment.author?.avatarUrl}
+        firstName={person?.firstName}
+        lastName={person?.lastName}
+        avatarUrl={person?.avatarUrl}
         color={theme.accent}
         size={30}
       />
       <View style={styles.text}>
         <Text style={[styles.title, { color: theme.textPrimary }]} numberOfLines={1}>
-          {commentNotificationTitle(comment)}
+          {title}
         </Text>
         <Text style={[styles.body, { color: theme.textSecondary }]} numberOfLines={2}>
-          {comment.text}
+          {body}
         </Text>
       </View>
       <Pressable onPress={() => dismiss(notification.id)} hitSlop={10} accessibilityLabel="Dismiss">

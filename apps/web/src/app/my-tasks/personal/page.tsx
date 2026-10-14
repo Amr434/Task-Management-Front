@@ -82,9 +82,8 @@ export default function PersonalListPage() {
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <h1 style={{ margin: 0, fontSize: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {t.personalList} <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }} title={t.personalOnlyYou}>🔒</span>
-        </h1>
+        {/* The page name is shown in the top bar. */}
+        <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>🔒 {t.personalOnlyYou}</p>
         <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '6px' }} onClick={() => setComposing(true)}>
           <Plus size={15} /> {t.addTask}
         </button>

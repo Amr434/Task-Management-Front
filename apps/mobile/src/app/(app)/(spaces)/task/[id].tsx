@@ -27,6 +27,7 @@ import {
 import {
   Priority,
   TaskStatus,
+  avatarColor,
   priorityMeta,
   userDisplayName,
   type Tag,
@@ -39,7 +40,8 @@ import { DescriptionField } from '@/components/description-field';
 import { Icon } from '@/components/icon';
 import { TaskComments } from '@/components/task-comments';
 import { TagPill, TagSheet } from '@/components/tag-sheet';
-import { Chip, ErrorState, Field, Loading, PrimaryButton, Sheet, SheetOption, StatusGlyph } from '@/components/ui';
+import { TaskHistory } from '@/components/task-history';
+import { Avatar, Chip, ErrorState, Field, Loading, PrimaryButton, Sheet, SheetOption, StatusGlyph } from '@/components/ui';
 import { STATUS_META, STATUS_ORDER, formatDueDate, nextStatus } from '@/features/tasks/display';
 import { useTheme } from '@/theme';
 
@@ -64,6 +66,10 @@ export default function TaskScreen() {
 
   const [subtaskTitle, setSubtaskTitle] = useState('');
   const [addingSubtask, setAddingSubtask] = useState(false);
+
+  // Bumped after every successful save so the history reloads.
+  const [historyVersion, setHistoryVersion] = useState(0);
+  const bumpHistory = () => setHistoryVersion((v) => v + 1);
 
   // There is no GET /Tasks/{id} on the API, so the task and its children are
   // found within the project's list. projectId travels in the route params.
@@ -101,6 +107,7 @@ export default function TaskScreen() {
     setTask({ ...task, ...patch } as TaskItem);
     try {
       await patchTask(previous, patch as never);
+      bumpHistory();
     } catch (err) {
       setTask(previous);
       Alert.alert('Could not save', err instanceof Error ? err.message : 'Please try again.');
@@ -183,6 +190,7 @@ export default function TaskScreen() {
     try {
       if (assigned) await removeUserFromTask(task.id, user.id);
       else await assignUserToTask(task.id, user.id);
+      bumpHistory();
     } catch (err) {
       setTask({ ...task, assignees: previous });
       Alert.alert('Could not update assignees', err instanceof Error ? err.message : 'Please try again.');
@@ -196,6 +204,7 @@ export default function TaskScreen() {
     try {
       if (add) await addTagToTask(task.id, tag.id);
       else await removeTagFromTask(task.id, tag.id);
+      bumpHistory();
     } catch (err) {
       setTask({ ...task, tags: previous });
       Alert.alert('Could not update tags', err instanceof Error ? err.message : 'Please try again.');
@@ -300,7 +309,16 @@ export default function TaskScreen() {
           {task.assignees?.length ? (
             <View style={styles.chips}>
               {task.assignees.map((a) => (
-                <Chip key={a.id} text={userDisplayName(a)} color={theme.accent} />
+                <View key={a.id} style={styles.person}>
+                  <Avatar
+                    firstName={a.firstName}
+                    lastName={a.lastName}
+                    avatarUrl={a.avatarUrl}
+                    color={avatarColor(a)}
+                    size={22}
+                  />
+                  <Chip text={userDisplayName(a)} color={theme.accent} />
+                </View>
               ))}
             </View>
           ) : (
@@ -386,7 +404,8 @@ export default function TaskScreen() {
         </Pressable>
       </View>
 
-      <TaskComments taskId={taskId} />
+      <TaskComments taskId={taskId} onChange={bumpHistory} />
+      <TaskHistory taskId={task.id} version={historyVersion} />
 
       <Pressable onPress={confirmDelete} style={({ pressed }) => [styles.delete, { opacity: pressed ? 0.6 : 1 }]}>
         <Text style={{ color: theme.danger, fontWeight: '600' }}>Delete task</Text>
@@ -470,6 +489,15 @@ export default function TaskScreen() {
             <SheetOption
               key={m.id}
               label={userDisplayName(m)}
+              leading={
+                <Avatar
+                  firstName={m.firstName}
+                  lastName={m.lastName}
+                  avatarUrl={m.avatarUrl}
+                  color={avatarColor(m)}
+                  size={26}
+                />
+              }
               selected={task.assignees?.some((a) => a.id === m.id)}
               onPress={() => toggleAssignee(m)}
             />
@@ -515,6 +543,7 @@ const styles = StyleSheet.create({
   detailLabel: { fontSize: 14, width: 88 },
   detailValue: { flex: 1, alignItems: 'flex-end' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'flex-end' },
+  person: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   section: { marginTop: 26 },
   sectionTitle: { fontSize: 15, fontWeight: '700', marginBottom: 6 },
   sectionCount: { fontSize: 13, fontWeight: '600' },

@@ -39,8 +39,8 @@ export default function RepliesPage() {
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <div style={{ padding: '24px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: '20px' }}>{t.replies}</h1>
-          <p style={{ margin: '4px 0 0', color: 'var(--text-secondary)', fontSize: '13px' }}>{t.repliesSubtitle}</p>
+          {/* The page name is shown in the top bar. */}
+          <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '13px' }}>{t.repliesSubtitle}</p>
         </div>
         <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
           {unreadCount > 0 && (

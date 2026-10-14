@@ -2,9 +2,9 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { ChevronDown, ChevronRight, Plus, CheckSquare, Network, MoreHorizontal, Pencil, Link2, Copy, Trash2, FolderInput, BarChart3, UserCircle, CalendarClock, User, Inbox, MessageSquareReply, MessageSquare, Users } from 'lucide-react';
+import { ChevronDown, ChevronRight, Plus, CheckSquare, Network, MoreHorizontal, Pencil, Link2, Copy, Trash2, FolderInput, BarChart3, UserCircle, CalendarClock, User, MessageSquareReply, MessageSquare, Users } from 'lucide-react';
 import { useAuthStore } from '@task/core/features/auth/store/useAuthStore';
-import { canManageUsers } from '@task/core/features/auth/types';
+import { canManageUsers, canViewDashboards } from '@task/core/features/auth/types';
 import { getSpaces, deleteSpace, duplicateSpace } from '@task/core/features/spaces/api';
 import { getProjectsBySpace, deleteProject, duplicateProject, updateProject } from '@task/core/features/projects/api';
 import { Space } from '@task/core/features/spaces/types';
@@ -274,20 +274,18 @@ export const Sidebar = () => {
 
   return (
     <aside className="sidebar">
-      {/* Top section instead of Workspace switcher */}
-      <div className="workspace-switcher">
-        <div className="workspace-icon">
-          {spaces.length > 0 ? spaces[0].name.charAt(0).toUpperCase() : 'M'}
-        </div>
-        <span className="workspace-name">{spaces.length > 0 ? t.spaces : 'My Spaces'}</span>
-      </div>
-
       <nav className="sidebar-nav">
         <div className="nav-section">
-          <span className="section-title">{t.home}</span>
-          <div className="nav-item" onClick={() => router.push('/inbox')}>
-            <Inbox size={16} /> <span className="item-name">{t.inbox}</span>
-          </div>
+          {/* "Home" opens the home page, which lists everything in this sidebar. */}
+          <span
+            className={`section-title section-title-link ${pathname === '/' ? 'active' : ''}`}
+            role="link"
+            tabIndex={0}
+            onClick={() => router.push('/')}
+            onKeyDown={(e) => { if (e.key === 'Enter') router.push('/'); }}
+          >
+            {t.home}
+          </span>
           <div className="nav-item" onClick={() => router.push('/replies')}>
             <MessageSquareReply size={16} /> <span className="item-name">{t.replies}</span>
             {unreadReplies > 0 && (
@@ -342,9 +340,11 @@ export const Sidebar = () => {
               </div>
             )}
           </div>
-          <div className={`nav-item ${pathname.startsWith('/dashboards') ? 'active' : ''}`} onClick={() => router.push('/dashboards')}>
-            <BarChart3 size={16} /> <span className="item-name">{t.dashboards || 'Dashboard'}</span>
-          </div>
+          {canViewDashboards(currentRole) && (
+            <div className={`nav-item ${pathname.startsWith('/dashboards') ? 'active' : ''}`} onClick={() => router.push('/dashboards')}>
+              <BarChart3 size={16} /> <span className="item-name">{t.dashboards || 'Dashboard'}</span>
+            </div>
+          )}
           {canManageUsers(currentRole) && (
             <div className={`nav-item ${pathname.startsWith('/users') ? 'active' : ''}`} onClick={() => router.push('/users')}>
               <Users size={16} /> <span className="item-name">{t.manageUsers}</span>
