@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'motion/react';
-import { BellRing, Camera, LogOut, Menu, Palette } from 'lucide-react';
+import { BellRing, Camera, ChevronRight, LogOut, Menu, Palette } from 'lucide-react';
 import { ThemeModal } from '@/features/theme/components/ThemeModal';
 import { useAuthStore } from '@task/core/features/auth/store/useAuthStore';
 import { useI18n } from '@/contexts/I18nContext';
@@ -16,9 +16,13 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { ProfilePictureModal } from '@/features/users/components/ProfilePictureModal';
 import { useMobileNav } from './mobileNav';
 
-const menuItem =
-  // No Tailwind preflight here, so reset the browser's default button border/background/font.
-  'flex w-full cursor-pointer items-center gap-2.5 rounded-lg border-0 bg-transparent px-3 py-2 text-start font-[inherit] text-sm text-ink transition-colors hover:bg-hover';
+// No Tailwind preflight here, so reset the browser's default button border/background/font.
+const menuItemBase =
+  'group flex w-full cursor-pointer items-center gap-3 rounded-xl border-0 bg-transparent px-2.5 py-2 text-start font-[inherit] text-[15px] font-medium transition-colors';
+const menuItem = `${menuItemBase} text-ink hover:bg-hover`;
+// Icon sits in a soft tile that picks up the accent on hover.
+const menuIcon =
+  'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-hover text-muted transition-colors group-hover:bg-accent-soft group-hover:text-ink';
 
 export const Topbar = () => {
   const router = useRouter();
@@ -96,58 +100,74 @@ export const Topbar = () => {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -6, scale: 0.97 }}
                 transition={{ duration: 0.14, ease: 'easeOut' }}
-                className="absolute end-0 top-[calc(100%+8px)] z-50 w-64 origin-top-right rounded-xl border border-line bg-surface p-1.5 shadow-lg shadow-black/10 rtl:origin-top-left"
+                className="absolute end-0 top-[calc(100%+10px)] z-50 w-80 origin-top-right rounded-2xl border border-line bg-surface p-2 shadow-2xl shadow-black/25 rtl:origin-top-left"
               >
-                <div className="flex items-center gap-3 px-3 py-3">
-                  <UserAvatar
-                    firstName={user?.firstName}
-                    lastName={user?.lastName}
-                    avatarUrl={user?.avatarUrl}
-                    className="user-avatar large"
-                  />
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-ink">{fullName}</p>
-                    <p className="truncate text-xs text-muted">{user?.email}</p>
+                {/* Profile card: accent-tinted banner, large avatar with a quick
+                    "change picture" overlay, then name and email. */}
+                <div className="relative overflow-hidden rounded-xl bg-[linear-gradient(135deg,var(--accent-muted-strong),transparent_75%)] p-4">
+                  <div className="flex items-center gap-3.5">
+                    <button
+                      onClick={() => {
+                        setMenuOpen(false);
+                        setPictureOpen(true);
+                      }}
+                      title={t.profilePicture}
+                      className="group/avatar relative shrink-0 cursor-pointer rounded-full border-0 bg-transparent p-0 ring-2 ring-surface"
+                    >
+                      <UserAvatar
+                        firstName={user?.firstName}
+                        lastName={user?.lastName}
+                        avatarUrl={user?.avatarUrl}
+                        className="user-avatar xl"
+                      />
+                      <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/45 text-white opacity-0 transition-opacity group-hover/avatar:opacity-100">
+                        <Camera size={18} />
+                      </span>
+                    </button>
+                    <div className="min-w-0">
+                      <p className="truncate text-base font-semibold text-ink">{fullName}</p>
+                      <p className="mt-0.5 truncate text-[13px] text-muted">{user?.email}</p>
+                    </div>
                   </div>
                 </div>
-                <div className="my-1 h-px bg-line" />
+
+                <div className="mt-2 flex flex-col gap-0.5">
+                  {[
+                    { icon: Camera, label: t.profilePicture, open: () => setPictureOpen(true) },
+                    { icon: Palette, label: t.theme, open: () => setThemeOpen(true) },
+                    { icon: BellRing, label: t.notificationSettings, open: () => setNotifSettingsOpen(true) },
+                  ].map(({ icon: Icon, label, open }) => (
+                    <button
+                      key={label}
+                      role="menuitem"
+                      className={menuItem}
+                      onClick={() => {
+                        setMenuOpen(false);
+                        open();
+                      }}
+                    >
+                      <span className={menuIcon}>
+                        <Icon size={16} />
+                      </span>
+                      <span className="flex-1 truncate">{label}</span>
+                      <ChevronRight
+                        size={15}
+                        className="text-muted opacity-0 transition-all group-hover:translate-x-0.5 group-hover:opacity-100 rtl:rotate-180 rtl:group-hover:-translate-x-0.5"
+                      />
+                    </button>
+                  ))}
+                </div>
+
+                <div className="mx-2 my-2 h-px bg-line" />
                 <button
                   role="menuitem"
-                  className={menuItem}
-                  onClick={() => {
-                    setMenuOpen(false);
-                    setPictureOpen(true);
-                  }}
-                >
-                  <Camera size={15} className="text-muted" /> {t.profilePicture}
-                </button>
-                <button
-                  role="menuitem"
-                  className={menuItem}
-                  onClick={() => {
-                    setMenuOpen(false);
-                    setThemeOpen(true);
-                  }}
-                >
-                  <Palette size={15} className="text-muted" /> {t.theme}
-                </button>
-                <button
-                  role="menuitem"
-                  className={menuItem}
-                  onClick={() => {
-                    setMenuOpen(false);
-                    setNotifSettingsOpen(true);
-                  }}
-                >
-                  <BellRing size={15} className="text-muted" /> {t.notificationSettings}
-                </button>
-                <div className="my-1 h-px bg-line" />
-                <button
-                  role="menuitem"
-                  className={`${menuItem} text-red-600 hover:bg-red-500/10`}
+                  className={`${menuItemBase} text-red-500 hover:bg-red-500/10`}
                   onClick={handleLogout}
                 >
-                  <LogOut size={15} /> {t.logout}
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-500/10">
+                    <LogOut size={16} />
+                  </span>
+                  <span className="flex-1">{t.logout}</span>
                 </button>
               </motion.div>
             )}

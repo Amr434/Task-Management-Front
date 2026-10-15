@@ -46,10 +46,54 @@
   --topbar-height: 60px;
 }
 
+/* In the base layer so Tailwind spacing utilities (px-3, my-1, ...) can override
+   it; un-layered, it silently zeroed every padding/margin utility. */
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+/* Themed scrollbars: a slim, rounded thumb that follows light/dark mode instead
+   of the browser's default bright track. */
+:root {
+  --scrollbar-thumb: color-mix(in srgb, var(--text-secondary) 35%, transparent);
+  --scrollbar-thumb-hover: color-mix(in srgb, var(--text-secondary) 60%, transparent);
+}
+
+:root[data-mode='dark'] {
+  color-scheme: dark;
+}
+
 * {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 body {
@@ -4083,6 +4127,12 @@ body {
   width: 36px;
   height: 36px;
   font-size: 13px;
+}
+
+.user-avatar.xl {
+  width: 48px;
+  height: 48px;
+  font-size: 16px;
 }
 
 .user-menu-popover {
