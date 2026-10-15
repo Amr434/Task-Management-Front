@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { Priority, PRIORITY_META, Tag, User, userInitials, userDisplayName, avatarColor } from '@task/core/features/tasks/types';
 import { getTags, findOrCreateTag, getProjectMembers } from '@task/core/features/tasks/api';
+import { ProjectStatus } from '@task/core/features/projects/types';
 import { avatarSrc } from '@task/core/features/users/avatar';
 import { useAuthStore } from '@task/core/features/auth/store/useAuthStore';
 import { useI18n } from '@/contexts/I18nContext';
@@ -85,7 +86,8 @@ export const PriorityMenu: React.FC<{
 export const StatusMenu: React.FC<{
   value?: number | null;
   onSelect: (s: number) => void;
-}> = ({ value, onSelect }) => {
+  customStatuses?: ProjectStatus[];
+}> = ({ value, onSelect, customStatuses = [] }) => {
   const { t } = useI18n();
   return (
   <div className="composer-dropdown status-dropdown" style={{ minWidth: '280px' }}>
@@ -115,6 +117,16 @@ export const StatusMenu: React.FC<{
       <span className="status-dot in-progress"></span>
       <span>{t.statusInProgress}</span>
     </button>
+    {customStatuses.map((c) => (
+      <button
+        key={c.id}
+        className={`dd-row status-row ${value === c.id ? 'selected' : ''}`}
+        onClick={() => onSelect(c.id)}
+      >
+        <span className="status-dot" style={{ backgroundColor: c.color, borderColor: c.color }}></span>
+        <span>{c.name}</span>
+      </button>
+    ))}
     
     <div className="dd-section-title">{t.closedGroupTitle}</div>
     <button

@@ -83,8 +83,10 @@ export function buildEditorHtml(o: EditorPageOptions) {
     font-size: 14px;
     font-weight: 700;
   }
-  .tool.on { color: ${o.accent}; background: ${o.accentMuted}; }
-  .tool.pressed { background: ${o.accentMuted}; }
+  /* Text-colour tint, not the accent: some accents (Black) match the dark
+     page background and would make an active button vanish. */
+  .tool.on { color: ${o.text}; background: color-mix(in srgb, ${o.text} 16%, transparent); }
+  .tool.pressed { background: color-mix(in srgb, ${o.text} 12%, transparent); }
   #editor {
     position: relative;
     box-sizing: border-box;
@@ -93,7 +95,7 @@ export function buildEditorHtml(o: EditorPageOptions) {
     outline: none;
     white-space: pre-wrap;
     word-wrap: break-word;
-    caret-color: ${o.accent};
+    caret-color: ${o.text};
   }
   #editor.empty::before {
     content: attr(data-placeholder);
@@ -106,8 +108,8 @@ export function buildEditorHtml(o: EditorPageOptions) {
   code {
     font-family: Menlo, Consolas, monospace;
     font-size: 13px;
-    background: ${o.accentMuted};
-    color: ${o.accent};
+    background: color-mix(in srgb, ${o.text} 12%, transparent);
+    color: ${o.text};
     border-radius: 4px;
     padding: 1px 4px;
   }

@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Plus, Flag, Calendar, MoreHorizontal, ChevronDown, ChevronRight, UserCircle2, Tag as TagIcon, AlignLeft } from 'lucide-react';
+import { Plus, Flag, Calendar, MoreHorizontal, ChevronDown, ChevronRight, UserCircle2, Tag as TagIcon, AlignLeft, Pencil, Trash2 } from 'lucide-react';
 import { TaskItem, priorityMeta, TaskStatus, Priority, Tag, User } from '@task/core/features/tasks/types';
+import { ProjectStatus } from '@task/core/features/projects/types';
 import { InlineTaskComposer, ComposerResult } from './InlineTaskComposer';
 import { PriorityMenu, AssigneeMenu, DateMenu, TagMenu, TagPills, AvatarStack } from './TaskFieldMenus';
 import { assignUserToTask, removeUserFromTask } from '@task/core/features/tasks/api';
@@ -18,6 +19,9 @@ interface BoardViewProps {
   tasks: TaskItem[];
   projectId: number;
   projectName: string;
+  // Custom status columns; with onSaveStatuses the board can add/rename/delete them.
+  customStatuses?: ProjectStatus[];
+  onSaveStatuses?: (statuses: ProjectStatus[]) => Promise<void>;
   onMoveTask: (taskId: number, toStatus: TaskStatus) => void;
   onCreateTask: (data: ComposerResult, status: TaskStatus) => Promise<void> | void;
   onUpdateTask: (taskId: number, patch: TaskPatch) => void;
@@ -118,7 +122,8 @@ const TaskCard: React.FC<{
         </div>
       )}
 
-      <div className="board-card-chips">
+      {/* Chip clicks open their own menus — don't let them also open the task. */}
+      <div className="board-card-chips" onClick={(e) => e.stopPropagation()}>
         {/* Assignee */}
         <div className="board-chip-wrap">
           <button className={`board-chip ${assignees.length > 0 ? '' : 'icon-only'}`} title="Assign" onClick={() => toggle('assignee')}>
@@ -200,20 +205,124 @@ const TaskCard: React.FC<{
   );
 };
 
-export const BoardView: React.FC<BoardViewProps> = ({ tasks, projectId, projectName, onMoveTask, onCreateTask, onUpdateTask, onAddTag, onRemoveTag }) => {
+const STATUS_COLORS = ['#7b68ee', '#ff7800', '#e2445c', '#f9d900', '#00c2e0', '#a25ddc', '#0f9d9f', '#5a5d63'];
+
+// Inline name + colour editor used to add or rename a custom status column.
+const StatusEditor: React.FC<{
+  initialName?: string;
+  initialColor?: string;
+  onSave: (name: string, color: string) => Promise<void> | void;
+  onCancel: () => void;
+}> = ({ initialName = '', initialColor = STATUS_COLORS[0], onSave, onCancel }) => {
+  const [name, setName] = useState(initialName);
+  const [color, setColor] = useState(initialColor);
+  const [saving, setSaving] = useState(false);
+
+  const submit = async () => {
+    const trimmed = name.trim();
+    if (!trimmed || saving) return;
+    setSaving(true);
+    try {
+      await onSave(trimmed, color);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="board-status-editor" onClick={(e) => e.stopPropagation()}>
+      <input
+        autoFocus
+        className="board-status-input"
+        placeholder="Status name"
+        maxLength={40}
+        value={name}
+        style={{ borderColor: color }}
+        onChange={(e) => setName(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') submit();
+          if (e.key === 'Escape') onCancel();
+        }}
+      />
+      <div className="board-status-swatches">
+        {STATUS_COLORS.map((c) => (
+          <button
+            key={c}
+            type="button"
+            className={`board-status-swatch ${c === color ? 'selected' : ''}`}
+            style={{ backgroundColor: c }}
+            onClick={() => setColor(c)}
+            title={c}
+          />
+        ))}
+      </div>
+      <div className="board-status-editor-actions">
+        <button type="button" className="board-status-btn" onClick={onCancel}>Cancel</button>
+        <button type="button" className="board-status-btn primary" disabled={!name.trim() || saving} onClick={submit}>Save</button>
+      </div>
+    </div>
+  );
+};
+
+interface BoardColumnDef {
+  status: TaskStatus;
+  name: string;
+  color: string;
+  custom?: ProjectStatus;
+}
+
+export const BoardView: React.FC<BoardViewProps> = ({ tasks, projectId, projectName, customStatuses = [], onSaveStatuses, onMoveTask, onCreateTask, onUpdateTask, onAddTag, onRemoveTag }) => {
   const [dragOverStatus, setDragOverStatus] = useState<TaskStatus | null>(null);
   const [composerStatus, setComposerStatus] = useState<TaskStatus | null>(null);
   const [collapsed, setCollapsed] = useState<Record<number, boolean>>({});
+  const [menuStatus, setMenuStatus] = useState<TaskStatus | null>(null);
+  const [renamingStatus, setRenamingStatus] = useState<TaskStatus | null>(null);
+  const [addingStatus, setAddingStatus] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   const filteredTasks = useFilteredTasks(tasks);
 
-  const statuses = [TaskStatus.ToDo, TaskStatus.InProgress, TaskStatus.Complete];
+  useEffect(() => {
+    if (menuStatus === null) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuStatus(null);
+    };
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, [menuStatus]);
+
+  // To Do and In Progress first, custom statuses next, Complete always last.
+  const builtIn = (status: TaskStatus): BoardColumnDef => ({ status, name: getStatusName(status), color: getStatusColor(status) });
+  const columns: BoardColumnDef[] = [
+    builtIn(TaskStatus.ToDo),
+    builtIn(TaskStatus.InProgress),
+    ...customStatuses.map((c) => ({ status: c.id as TaskStatus, name: c.name.toUpperCase(), color: c.color, custom: c })),
+    builtIn(TaskStatus.Complete),
+  ];
+
+  const addStatus = async (name: string, color: string) => {
+    await onSaveStatuses?.([...customStatuses, { id: 0, name, color }]);
+    setAddingStatus(false);
+  };
+
+  const renameStatus = async (id: number, name: string, color: string) => {
+    await onSaveStatuses?.(customStatuses.map((c) => (c.id === id ? { ...c, name, color } : c)));
+    setRenamingStatus(null);
+  };
+
+  const deleteStatus = async (status: ProjectStatus) => {
+    setMenuStatus(null);
+    const count = tasks.filter((t) => t.status === status.id).length;
+    const msg = count > 0
+      ? `Delete status "${status.name}"? Its ${count} task(s) will move to TO DO.`
+      : `Delete status "${status.name}"?`;
+    if (!window.confirm(msg)) return;
+    await onSaveStatuses?.(customStatuses.filter((c) => c.id !== status.id));
+  };
 
   return (
     <div className="board-view">
-      {statuses.map((status) => {
+      {columns.map(({ status, name, color, custom }) => {
         const columnTasks = filteredTasks.filter(t => t.status === status);
-        const color = getStatusColor(status);
-        const name = getStatusName(status);
         const isCollapsed = !!collapsed[status];
         const isComposing = composerStatus === status;
 
@@ -244,23 +353,59 @@ export const BoardView: React.FC<BoardViewProps> = ({ tasks, projectId, projectN
               if (!isNaN(taskId)) onMoveTask(taskId, status);
             }}
           >
-            <div className="board-column-header">
-              <span className="board-column-badge" style={{ backgroundColor: color }}>
-                {name}
-              </span>
-              <span className="board-column-count">{columnTasks.length}</span>
-              <div className="board-column-actions">
-                <button className="board-col-action" onClick={() => setCollapsed(p => ({ ...p, [status]: true }))} title="Collapse">
-                  <ChevronDown size={16} />
-                </button>
-                <button className="board-col-action" title="More options">
-                  <MoreHorizontal size={16} />
-                </button>
-                <button className="board-col-action" onClick={() => setComposerStatus(status)} title="Add task">
-                  <Plus size={16} />
-                </button>
+            {custom && renamingStatus === status ? (
+              <StatusEditor
+                initialName={custom.name}
+                initialColor={custom.color}
+                onSave={(n, c) => renameStatus(custom.id, n, c)}
+                onCancel={() => setRenamingStatus(null)}
+              />
+            ) : (
+              <div className="board-column-header">
+                <span className="board-column-badge" style={{ backgroundColor: color }}>
+                  {name}
+                </span>
+                <span className="board-column-count">{columnTasks.length}</span>
+                <div className={`board-column-actions ${menuStatus === status ? 'open' : ''}`}>
+                  <button className="board-col-action" onClick={() => setCollapsed(p => ({ ...p, [status]: true }))} title="Collapse">
+                    <ChevronDown size={16} />
+                  </button>
+                  <div className="board-chip-wrap" ref={menuStatus === status ? menuRef : undefined}>
+                    <button className="board-col-action" onClick={() => setMenuStatus((cur) => (cur === status ? null : status))} title="More options">
+                      <MoreHorizontal size={16} />
+                    </button>
+                    {menuStatus === status && (
+                      <div className="composer-dropdown board-status-menu">
+                        <button className="dd-row" onClick={() => { setMenuStatus(null); setComposerStatus(status); }}>
+                          <Plus size={14} /> Add task
+                        </button>
+                        <button className="dd-row" onClick={() => { setMenuStatus(null); setCollapsed(p => ({ ...p, [status]: true })); }}>
+                          <ChevronRight size={14} /> Collapse column
+                        </button>
+                        {onSaveStatuses && (
+                          <button className="dd-row" onClick={() => { setMenuStatus(null); setAddingStatus(true); }}>
+                            <Plus size={14} /> Add status
+                          </button>
+                        )}
+                        {custom && onSaveStatuses && (
+                          <>
+                            <button className="dd-row" onClick={() => { setMenuStatus(null); setRenamingStatus(status); }}>
+                              <Pencil size={14} /> Rename status
+                            </button>
+                            <button className="dd-row board-status-delete" onClick={() => deleteStatus(custom)}>
+                              <Trash2 size={14} /> Delete status
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <button className="board-col-action" onClick={() => setComposerStatus(status)} title="Add task">
+                    <Plus size={16} />
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="board-column-body">
               {isComposing && (
@@ -287,6 +432,18 @@ export const BoardView: React.FC<BoardViewProps> = ({ tasks, projectId, projectN
           </div>
         );
       })}
+
+      {onSaveStatuses && (
+        <div className="board-column board-add-status">
+          {addingStatus ? (
+            <StatusEditor onSave={addStatus} onCancel={() => setAddingStatus(false)} />
+          ) : (
+            <button className="board-add-card" style={{ marginTop: 0 }} onClick={() => setAddingStatus(true)}>
+              <Plus size={14} /> Add status
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };

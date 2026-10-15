@@ -8,4 +8,13 @@ export interface Project {
   color?: string;
   icon?: string;
   members?: { id: number; name: string; initials: string; avatarUrl?: string | null }[];
+  // Custom board statuses; the built-in To Do / In Progress / Complete (0-2) are implicit.
+  statuses?: ProjectStatus[];
+}
+
+// A custom status column. Tasks in it carry status === id (always >= 3).
+export interface ProjectStatus {
+  id: number;
+  name: string;
+  color: string;
 }

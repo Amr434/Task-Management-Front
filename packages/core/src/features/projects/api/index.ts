@@ -1,5 +1,5 @@
 import apiClient from '../../../services/apiClient';
-import { Project } from '../types';
+import { Project, ProjectStatus } from '../types';
 import { getTasksByProject, createTask } from '../../tasks/api';
 
 
@@ -22,6 +22,13 @@ export interface UpdateProjectDTO {
 
 export const updateProject = async (id: number, data: UpdateProjectDTO): Promise<Project> => {
   return apiClient.put<UpdateProjectDTO, Project>(`/Projects/${id}`, data);
+};
+
+
+// Replaces the project's custom statuses. Send id 0 for a new one; tasks in a
+// status that's left out are moved back to To Do by the server.
+export const updateProjectStatuses = async (id: number, statuses: ProjectStatus[]): Promise<Project> => {
+  return apiClient.put<ProjectStatus[], Project>(`/Projects/${id}/statuses`, statuses);
 };
 
 

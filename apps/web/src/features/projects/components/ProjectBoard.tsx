@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { getProjectById, getProjectsBySpace } from '@task/core/features/projects/api';
+import { getProjectById, getProjectsBySpace, updateProjectStatuses } from '@task/core/features/projects/api';
 import { getTasksByProject, patchTask, createTask, addTagToTask, removeTagFromTask, assignUserToTask } from '@task/core/features/tasks/api';
 import { ComposerResult } from '@/features/tasks/components/InlineTaskComposer';
-import { Project } from '@task/core/features/projects/types';
+import { ProjectStatus } from '@task/core/features/projects/types';
 import { TaskItem, TaskStatus } from '@task/core/features/tasks/types';
 import { SpaceListView } from '@/features/spaces/components/SpaceListView';
 import { BoardView } from '@/features/tasks/components/BoardView';
@@ -136,6 +136,20 @@ export const ProjectBoard = ({ projectId, spaceId }: { projectId: number; spaceI
     });
   }, [tasks, fetchData, updateTaskLocally]);
 
+  // Add / rename / delete custom status columns. The server reassigns tasks of a
+  // deleted status to To Do, so refetch tasks when one goes away.
+  const handleSaveStatuses = useCallback(async (statuses: ProjectStatus[]) => {
+    const removed = (project?.statuses ?? []).some((s) => !statuses.some((n) => n.id === s.id));
+    try {
+      const updated = await updateProjectStatuses(projectId, statuses);
+      setProjectLocally({ ...project!, statuses: updated.statuses ?? [] });
+      if (removed) setTasksForProject(projectId, await getTasksByProject(projectId));
+    } catch (error) {
+      console.warn("Failed to save statuses", error instanceof Error ? error.message : String(error));
+      window.alert('Could not save the status. Please try again.');
+    }
+  }, [project, projectId, setProjectLocally, setTasksForProject]);
+
   if (isLoading) {
     return <div className="space-loading" style={{ padding: '24px' }}>Loading Project...</div>;
   }
@@ -224,6 +238,8 @@ export const ProjectBoard = ({ projectId, spaceId }: { projectId: number; spaceI
             tasks={tasks}
             projectId={project.id}
             projectName={project.name}
+            customStatuses={project.statuses}
+            onSaveStatuses={handleSaveStatuses}
             onMoveTask={handleMoveTask}
             onCreateTask={handleCreateTask}
             onUpdateTask={handleUpdateTask}

@@ -168,7 +168,7 @@ export default function TodayAndOverduePage() {
                 key={tabKey}
                 onClick={() => setTab(tabKey)}
                 style={tab === tabKey
-                  ? { fontWeight: 'bold', color: 'var(--accent-color)', borderBottom: '2px solid var(--accent-color)', paddingBottom: '8px', marginBottom: '-1px', cursor: 'pointer' }
+                  ? { fontWeight: 'bold', color: 'var(--accent-text)', borderBottom: '2px solid var(--accent-text)', paddingBottom: '8px', marginBottom: '-1px', cursor: 'pointer' }
                   : { color: 'var(--text-secondary)', paddingBottom: '8px', cursor: 'pointer' }}
               >
                 {tabKey === 'todo' ? t.toDo : t.done}

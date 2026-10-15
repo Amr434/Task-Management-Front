@@ -1,10 +1,9 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'motion/react';
-import { BellRing, Camera, ChevronRight, LogOut, Menu, Palette } from 'lucide-react';
+import { BellRing, Camera, LogOut, Menu, Palette } from 'lucide-react';
 import { ThemeModal } from '@/features/theme/components/ThemeModal';
 import { useAuthStore } from '@task/core/features/auth/store/useAuthStore';
 import { useI18n } from '@/contexts/I18nContext';
@@ -17,10 +16,9 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { ProfilePictureModal } from '@/features/users/components/ProfilePictureModal';
 import { useMobileNav } from './mobileNav';
 
-type Crumb = { label: string; href?: string };
-
 const menuItem =
-  'flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-start text-sm text-ink transition-colors hover:bg-hover';
+  // No Tailwind preflight here, so reset the browser's default button border/background/font.
+  'flex w-full cursor-pointer items-center gap-2.5 rounded-lg border-0 bg-transparent px-3 py-2 text-start font-[inherit] text-sm text-ink transition-colors hover:bg-hover';
 
 export const Topbar = () => {
   const router = useRouter();
@@ -59,19 +57,6 @@ export const Topbar = () => {
     router.replace('/login');
   };
 
-  // Section names come from the existing dictionary so they follow the language.
-  const crumbs: Crumb[] = [{ label: t.home, href: '/' }];
-  if (pathname.startsWith('/dashboards')) crumbs.push({ label: t.dashboards });
-  else if (pathname.startsWith('/my-tasks')) {
-    crumbs.push({ label: t.myTasks });
-    if (pathname.endsWith('/assigned')) crumbs.push({ label: t.assignedToMe });
-    else if (pathname.endsWith('/today')) crumbs.push({ label: t.todayOverdue });
-    else if (pathname.endsWith('/personal')) crumbs.push({ label: t.personalList });
-  } else if (pathname.startsWith('/assigned-comments')) crumbs.push({ label: t.assignedComments });
-  else if (pathname.startsWith('/replies')) crumbs.push({ label: t.replies });
-  else if (pathname.startsWith('/users')) crumbs.push({ label: t.manageUsers });
-  else if (pathname.startsWith('/spaces') || pathname.startsWith('/projects')) crumbs.push({ label: t.spaces });
-
   const fullName = user ? `${user.firstName} ${user.lastName}` : '';
 
   return (
@@ -84,27 +69,7 @@ export const Topbar = () => {
       >
         <Menu size={22} />
       </button>
-      <nav aria-label="Breadcrumb" className="min-w-0 flex-1">
-        <ol className="flex items-center gap-1.5 text-sm">
-          {crumbs.map((c, i) => {
-            const last = i === crumbs.length - 1;
-            return (
-              <li key={c.label} className={`flex min-w-0 items-center gap-1.5${last ? '' : ' max-md:hidden'}`}>
-                {i > 0 && <ChevronRight size={14} className="text-muted/60 max-md:hidden rtl:rotate-180" aria-hidden />}
-                {last || !c.href ? (
-                  <span aria-current={last ? 'page' : undefined} className="truncate font-semibold text-ink">
-                    {c.label}
-                  </span>
-                ) : (
-                  <Link href={c.href} className="text-muted transition-colors hover:text-ink">
-                    {c.label}
-                  </Link>
-                )}
-              </li>
-            );
-          })}
-        </ol>
-      </nav>
+      <div className="min-w-0 flex-1" />
 
       <div className="flex items-center gap-1.5 md:gap-3">
         <TaskSearch />

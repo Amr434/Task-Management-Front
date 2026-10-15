@@ -1,5 +1,6 @@
 import { TaskItem, Priority, PRIORITY_META, toPriority } from './types';
 import type { GroupBy, GroupDir } from '../../store/useSpaceStore';
+import type { ProjectStatus } from '../projects/types';
 
 export interface TaskGroup {
   key: string;
@@ -12,7 +13,7 @@ export interface TaskGroup {
 const startOfToday = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; };
 
 // Split top-level tasks into ordered groups for the chosen field/direction.
-export function buildGroups(tasks: TaskItem[], groupBy: GroupBy, dir: GroupDir): TaskGroup[] {
+export function buildGroups(tasks: TaskItem[], groupBy: GroupBy, dir: GroupDir, customStatuses: ProjectStatus[] = []): TaskGroup[] {
   let groups: TaskGroup[];
 
   switch (groupBy) {
@@ -20,6 +21,8 @@ export function buildGroups(tasks: TaskItem[], groupBy: GroupBy, dir: GroupDir):
       const defs = [
         { key: 's0', label: 'TO DO', color: '#87909e', outline: true, status: 0 },
         { key: 's1', label: 'IN PROGRESS', color: '#2684ff', status: 1 },
+        // Custom statuses sit between In Progress and Complete, as on the board.
+        ...customStatuses.map((c) => ({ key: `s${c.id}`, label: c.name.toUpperCase(), color: c.color, status: c.id })),
         { key: 's2', label: 'COMPLETE', color: '#00c875', status: 2 },
       ];
       // Status always shows all columns (even empty ones).

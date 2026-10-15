@@ -113,7 +113,10 @@ export const TaskDetailSidebar: React.FC = () => {
     1: { label: t.statusInProgress, color: '#2684ff', bg: 'rgba(38, 132, 255, 0.1)' },
     2: { label: t.statusComplete, color: '#00c875', bg: 'rgba(0, 200, 117, 0.1)' },
   };
-  const st = statusLabels[task.status];
+  const customStatuses = projects.find((p) => p.id === task.projectId)?.statuses ?? [];
+  const custom = customStatuses.find((c) => c.id === task.status);
+  const st = statusLabels[task.status]
+    ?? (custom ? { label: custom.name, color: custom.color, bg: `${custom.color}1a` } : statusLabels[0]);
 
   const handleUpdate = (patch: Partial<TaskItem>) => {
     if (!task) return;
@@ -180,7 +183,8 @@ export const TaskDetailSidebar: React.FC = () => {
                 {openField === 'status' && (
                   <div className="popup-anchor bottom-left" style={{ marginTop: 8 }}>
                     <StatusMenu 
-                      value={task.status} 
+                      value={task.status}
+                      customStatuses={customStatuses}
                       onSelect={(s) => { handleUpdate({ status: s }); setOpenField(null); }} 
                     />
                   </div>

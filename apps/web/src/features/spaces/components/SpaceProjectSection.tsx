@@ -38,8 +38,8 @@ export const SpaceProjectSection: React.FC<SpaceProjectSectionProps> = ({ projec
   }, [filteredTasks]);
 
   const groups = useMemo(
-    () => buildGroups(topLevelTasks, groupBy, groupDir),
-    [topLevelTasks, groupBy, groupDir]
+    () => buildGroups(topLevelTasks, groupBy, groupDir, project.statuses),
+    [topLevelTasks, groupBy, groupDir, project.statuses]
   );
 
   return (
